@@ -1,0 +1,166 @@
+/* 主题可用css定义 */
+:root {
+    --bg-color: #e0e0e0;
+    --bg-color-2: #e0e0e0;
+    --divider-color: #e0e0e0;  /* 分割线 */
+
+    --text-color: #b98787;  /* 普通文本颜色 */
+    --text-small: 23px;     /* 小号字 */
+    --text-medium: 25px;    /* 中号字 */
+    --text-large: 42px;     /* 大号字 */
+
+    --error-color: #e0e0e0;  /* 错误消息颜色 */
+    --success-color: #e0e0e0;  /* 成功消息颜色 */
+
+    --popper-bg-color: #e0e0e0;  /* 弹出框颜色 */
+    --popper-hover-bg-color: #ffffff;  /* 弹出框悬浮背景色 */
+    --popper-border-color: #595959;  /* 弹出框边框颜色 */
+
+    --a-color: #e0e0e0;
+    --a-color-2: #e0e0e0;
+    --navbar-color: #e0e0e0;
+    --navbar-bg-color: #e0e0e0;
+    /* 用户登录页 */
+    --redirect-card-bg-color: #e0e0e0;
+    --box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.7)  /* 默认阴影 */
+}
+
+a {
+    color: var(--a-color);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    font-weight: normal;
+}
+
+@font-face {
+    font-family: 'FZMiShaoTi';
+    src: url('@/assets/fonts/FZMiShaoTi.ttf') format('truetype'); /* 根据字体格式修改路径 */
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    min-height: 100vh;
+    color: var(--text-color);
+    background: var(--bg-color);
+    transition: color 0.5s, background-color 0.5s;
+    line-height: 1.6;
+    font-family: FZMiShaoTi, sans-serif;  /* 选用方正喵体 */
+    font-size: var(--text-medium);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 小号字 */
+.text-small {
+    font-size: var(--text-small);
+}
+
+/* 中耗子 */
+.text-medium {
+    font-size: var(--text-medium);
+}
+
+/* 大号字 */
+.text-large {
+    font-size: var(--text-large);
+}
+
+/* 失败消息字体颜色 */
+.text-error {
+    color: var(--error-color);
+}
+
+/* 成功消息字体颜色 */
+.text-success {
+    color: var(--success-color)
+}
+
+/* 不可被选中的组件 */
+.unselectable {
+    user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+}
+
+/* 所有弹出框 */
+.el-popper {
+    color: var(--text-color) !important;
+    font-size: var(--text-medium) !important;
+    background-color: var(--popper-bg-color) !important;
+    /*padding: 5px 0 5px 0 !important;*/
+    border: 1px solid var(--popper-border-color) !important;
+    box-shadow: var(--box-shadow) !important;
+    /*box-shadow: none !important;  !* 弹出框阴影设定 *!*/
+    user-select: none;  /* 用户不可选中 */
+}
+
+/* 导航栏弹出框 */
+.el-popper.navbar-popper {
+    padding: 5px 0 5px 0 !important;
+}
+
+/* 弹出框箭头设定 */
+.el-popper>.el-popper__arrow:before {
+    background-color: var(--popper-bg-color) !important;
+    border: none !important;  /* 将箭头的边框取消 */
+    /*border-top: 1px solid var(--popper-border-color) !important;*/
+    /*border-left: 1px solid var(--popper-border-color) !important;*/
+    /*border-right: none !important;*/
+    /*border-bottom: none !important;*/
+}
+
+/* 选择框样式 */
+.el-select__wrapper {
+    background-color: var(--popper-bg-color) !important;
+    box-shadow: none !important;
+    border: 2px solid var(--popper-border-color) !important;
+}
+
+/* 选择框下拉选单选项样式 */
+.el-select-dropdown__item {
+    font-size: var(--text-small) !important;
+    color: var(--text-color) !important;
+}
+
+    /* 选择框占位 */
+.el-select__placeholder {
+    color: var(--text-color) !important;
+    font-size: var(--text-small) !important;
+}
+
+/* 选择框三角标 */
+.el-select__caret {
+    color: var(--text-color) !important;
+}
+
+.el-select-dropdown__item.is-hovering {
+    background-color: var(--popper-hover-bg-color) !important;
+}
+
+/* 背景图片 */
+.background {
+    position: fixed; /* 固定定位 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover; /* 背景覆盖 */
+    background-position: center; /* 背景居中 */
+    z-index: -1; /* 确保在其他元素后面 */
+    right: 0;
+    bottom: 0;
+    background-repeat: no-repeat; /* 不重复背景图 */
+    /*transition: background-image 1s ease-in-out;*/ /* 平滑过渡 */
+}
+
+
+
+
