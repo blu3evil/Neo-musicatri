@@ -4,6 +4,7 @@ from utils.locale import locales
 
 def lifecycle_configure(app: Flask):
     """ 配置flask生命周期事件 """
+
     @app.before_request
     def before_request():
         """ 接收请求前事件挂载 """

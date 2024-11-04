@@ -10,29 +10,6 @@ from utils.logger import log
 from utils.result import HttpResult, HttpCode
 
 
-def handle_404_not_found_exception(not_found_exception) -> Response:
-    """
-    404资源未找到异常
-    """
-    # 构建Result对象
-    log.debug(_("404_resource_not_found: %s") % not_found_exception)
-    result = HttpResult.error(HttpCode.NOT_FOUND,
-                              HttpCode.NOT_FOUND.describe,
-                              None)
-    return jsonify(result.to_dict())
-
-def handle_500_not_found_exception(internal_server_error) -> Response:
-    """
-    服务器内部异常
-    """
-    # 构建Result对象
-    log.debug(_("500_internal_server_error: %s") % internal_server_error)
-    result = HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR,
-                              HttpCode.INTERNAL_SERVER_ERROR.describe,
-                              None)
-    return jsonify(result.to_dict())
-
-
 class BusinessException(Exception):
     """
     业务级别异常，这一类异常通常与应用程序的业务逻辑相关，一般是在业务流程执行过程中发生的特定错误
@@ -45,20 +22,6 @@ class BusinessException(Exception):
         self.message = message
         self.code = code
         self.data = data
-
-
-def handle_business_exception(business_exception: BusinessException) -> Response:
-    """
-    业务级别异常处理器，处理业务级别异常并构建Result对象返回前端进行渲染
-    """
-    # 构建result对象
-    log.error(_("business_exception_occur: %s") % business_exception.message)
-    result = HttpResult.error(business_exception.code,
-                              business_exception.message,
-                              business_exception.data)
-    # 序列化成json后返回
-    return jsonify(result.to_dict())
-
 
 class SystemException(Exception):
     """
@@ -73,77 +36,72 @@ class SystemException(Exception):
         self.code = code
         self.data = data
 
+def handle_404(exception) -> Response:
+    """ 404 NOT FOUND处理 """
+    log.debug(str(exception))
+    result = HttpResult.error(HttpCode.NOT_FOUND, HttpCode.NOT_FOUND.describe)
+    return jsonify(result.to_dict())
 
-def handle_system_exception(system_exception: SystemException) -> Response:
-    """
-    业务级别异常处理器，处理业务级别异常并构建Result对象返回前端进行渲染
-    """
-    # 构建result对象
-    log.error(_("system_exception_occur: %s") % system_exception)
-    result = HttpResult.error(system_exception.code,
-                              system_exception.message,
-                              system_exception.data)
-    # 序列化成json后返回到前端
+def handle_500(exception) -> Response:
+    """ 500 INTERNAL SERVER ERROR处理 """
+    log.debug(str(exception))
+    result = HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR, HttpCode.INTERNAL_SERVER_ERROR.describe)
+    return jsonify(result.to_dict())
 
+def handle_business(exception: BusinessException) -> Response:
+    """ 业务级别异常处理 """
+    code = exception.code
+    log.error(_("%(code)s %(description): %(message)s")
+              % {'code': code, 'description': code.describe , 'message': exception.message})
+    result = HttpResult.error(exception.code, exception.message, exception.data)
+    return jsonify(result.to_dict())  # 序列化成json后返回
+
+def handle_system(exception: SystemException) -> Response:
+    """ 系统级别异常处理 """
+    code = exception.code
+    log.error(_("%(code)s %(description): %(message)s")
+              % {'code': code, 'description': code.describe, 'message': exception.message})
+    result = HttpResult.error(exception.code, exception.message, exception.data)
     # todo: 向开发者提交系统级别异常消息，并记录错误日志信息
-
     return jsonify(result.to_dict())
 
 
-def handle_generic_exception(generic_exception: Exception) -> Response:
+def handle_generic(generic_exception: Exception) -> Response:
     """
     通用类型异常处理器，当业务级别异常和系统级别异常无法处理的时候，
     此异常处理进行兜底避免程序报错
 
     在开发阶段应该避免使用这个异常处理，会导致错误堆栈输出遗漏，难以排查错误原因
     """
-    log.error(_("unknown_exception_occur: %s") % generic_exception)
-
+    log.error(_("unknown: %s") % generic_exception)
     # todo: 此处向开发者提交未知异常消息，记录错误日志信息
-
-    result = HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR,
-                              HttpCode.INTERNAL_SERVER_ERROR.describe,
-                              None)
+    result = HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR, HttpCode.INTERNAL_SERVER_ERROR.describe)
     return jsonify(result.to_dict())
 
 
 def exception_handler_configure(app: Flask) -> None:
-    """
-    注册异常处理器，在app.py中使用此方法注册异常处理器
-    """
+    """ 注册异常处理器，在app.py中使用此方法注册异常处理器 """
     @app.errorhandler(404)
     def not_found_exception_handle(exception: Exception) -> Response:
-        """
-        404资源未找到异常处理器
-        """
-        return handle_404_not_found_exception(exception)
-
+        """ 404资源未找到异常处理器 """
+        return handle_404(exception)
 
     @app.errorhandler(500)
     def internal_server_error_handle(exception: Exception) -> Response:
-        """
-        500服务器内部错误
-        """
-        return handle_500_not_found_exception(exception)
-
+        """ 500服务器异常处理器 """
+        return handle_500(exception)
 
     @app.errorhandler(BusinessException)
-    def business_exception_handler(business_exception: BusinessException) -> Response:
-        """
-        业务级别异常处理
-        """
-        return handle_business_exception(business_exception)
+    def business_exception_handler(exception: BusinessException) -> Response:
+        """ 业务级别异常处理器 """
+        return handle_business(exception)
 
     @app.errorhandler(SystemException)
-    def system_exception_handler(system_exception: SystemException) -> Response:
-        """
-        系统级别异常处理
-        """
-        return handle_system_exception(system_exception)
+    def system_exception_handler(exception: SystemException) -> Response:
+        """ 系统级别异常处理器 """
+        return handle_system(exception)
 
     @app.errorhandler(Exception)
-    def generic_exception_handler(generic_exception: Exception) -> Response:
-        """
-        处理未知异常
-        """
-        return handle_generic_exception(generic_exception)
+    def generic_exception_handler(exception: Exception) -> Response:
+        """ 未知异常处理器 """
+        return handle_generic(exception)

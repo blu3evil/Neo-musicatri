@@ -8,6 +8,11 @@ test/
 logs/
 
 
+# python字节码文件
+__pycache__/
+*.pyc
+
+
 
 
 

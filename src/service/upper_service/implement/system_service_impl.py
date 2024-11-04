@@ -17,7 +17,7 @@ class SystemServiceImpl(SystemService):
         current_time = time.time()
         uptime = math.floor(current_time - start_time)
 
-        #  todo: 修改版本信息来源于resource_utils的config
+        # todo: 修改版本信息来源于resource_utils的config
         from utils.result import HttpCode, HttpResult
 
         # 构建Result
