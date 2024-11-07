@@ -155,22 +155,22 @@ msgstr ""
 
 #:
 #: D:\Users\pinec\Documents\Code\python\musicatri1\src\repository\mongodb\mapper\profile_mapper_impl.py:69
-msgid "discord user mapper error: cannot inserting data %(data)s, 'id' is invalid"
+msgid "discord user abs error: cannot inserting data %(data)s, 'id' is invalid"
 msgstr ""
 
 #:
 #: D:\Users\pinec\Documents\Code\python\musicatri1\src\repository\mongodb\mapper\session_mapper_impl.py:61
-msgid "discord oauth session mapper error: cannot inserting data %(data)s, 'id' is invalid"
+msgid "discord oauth session abs error: cannot inserting data %(data)s, 'id' is invalid"
 msgstr ""
 
 #:
 #: D:\Users\pinec\Documents\Code\python\musicatri1\src\repository\mongodb\mongodb_client.py:28
-msgid "initializing mongodb client..."
+msgid "initializing mongo client..."
 msgstr ""
 
 #:
 #: D:\Users\pinec\Documents\Code\python\musicatri1\src\repository\mongodb\mongodb_client.py:34
-msgid "MongodbClient initialization error: invalid prototype : %(prototype)s, fallback to 'mongodb' as prototype"
+msgid "MongodbClient initialization error: invalid prototype : %(prototype)s, fallback to 'mongo' as prototype"
 msgstr ""
 
 #:
@@ -190,12 +190,12 @@ msgstr ""
 
 #:
 #: D:\Users\pinec\Documents\Code\python\musicatri1\src\repository\mongodb\mongodb_client.py:58
-msgid "successfully build mongodb client: host: %(host)s, port: %(port)s, username: %(username)s, password: %(password)s"
+msgid "successfully build mongo client: host: %(host)s, port: %(port)s, username: %(username)s, password: %(password)s"
 msgstr ""
 
 #:
 #: D:\Users\pinec\Documents\Code\python\musicatri1\src\repository\mongodb\mongodb_entity_adaptor.py:30
-msgid "mongodb entity adaptor error: %(clazz)s must be a subclass of BaseEntity"
+msgid "mongo entity adaptor error: %(clazz)s must be a subclass of BaseEntity"
 msgstr ""
 
 #:

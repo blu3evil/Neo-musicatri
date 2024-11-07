@@ -83,15 +83,15 @@ sudo apt install gnupg curl wget -y
 wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
 
 # 为Ubuntu 20.04(Focal)创建列表文件(其他版本参考上面的安装指南链接)
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongo-org-5.0.list
 
 # 更新apt源
 sudo apt update
 
 # 安装最新稳定版本mongodb
-sudo apt install mongodb-org -y
-# apt安装mongodb的默认数据目录: /var/lib/mongodb
-# apt安装mongodb的默认日志目录: /var/log/mongodb
+sudo apt install mongo-org -y
+# apt安装mongodb的默认数据目录: /var/lib/mongo
+# apt安装mongodb的默认日志目录: /var/log/mongo
 # 配置文件: /etc/mongod.conf
 
 # 启动mongodb服务
@@ -143,7 +143,7 @@ pip install -r requirements.txt  # 安装项目所需依赖
 ```json
 {
   "NETEASECLOUDMUSICAPI_URL": "http://localhost:3000",  // neteasecloudmusicapi地址
-  "MONGODB_URL": "mongodb://localhost:27017",  // mongodb地址
+  "MONGODB_URL": "mongo://localhost:27017",  // mongodb地址
   "SERVER_PORT": 5000,  // 服务器监听端口
   "PUBLIC_URL": "http://localhost:5000",  // 公开路径，如果服务部署在公网上，那么修改它
   "APP_SECRET_KEY": "musicatri",  // 服务器密匙，修改它别让他这么好被猜到

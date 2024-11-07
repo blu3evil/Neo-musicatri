@@ -4,7 +4,7 @@ from abc import abstractmethod
 from typing import List
 
 from domain.entity.profile_entity import DiscordUserEntity
-from repository.mapper.base_mapper import BaseMapper
+from repository.abs.base_mapper import BaseMapper
 
 # noinspection PyShadowingBuiltins
 class DiscordUserMapper(BaseMapper):

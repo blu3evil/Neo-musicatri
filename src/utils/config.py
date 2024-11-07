@@ -33,15 +33,15 @@ class DefaultConfigTag(BaseConfigTag):
     }
 
     DATABASE_URL = {  # 数据库资源路径
-        'default': "mongodb://127.0.0.1:27017/musicatri",
+        'default': "mongo://127.0.0.1:27017/musicatri",
         'type': 'string',
         'required': True,
     }
 
     MONGODB_URL = {  # mongodb数据库url(已经弃用)
-        'default': "mongodb://127.0.0.1:3000",
+        'default': "mongo://127.0.0.1:3000",
         'type': 'string',
-        'regex': "^(mongodb://)[a-zA-Z0-9._-]+(:[0-9]+)?(/.*)?$",
+        'regex': "^(mongo://)[a-zA-Z0-9._-]+(:[0-9]+)?(/.*)?$",
         'required': True,
         'deprecated': True
     }

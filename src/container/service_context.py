@@ -7,30 +7,30 @@ class ServiceContext(BaseContext):
 
         # 上层service
         # system service
-        from service.upper_service.system_service import SystemService  # 懒加载
+        from service.abs.system_service import SystemService  # 懒加载
         def system_service_supplier() -> SystemService:
-            from service.upper_service.implement.system_service_impl import SystemServiceImpl
+            from service.impl.system_service_impl import SystemServiceImpl
             return SystemServiceImpl()
         self.lazy_register(SystemService, system_service_supplier)
 
         # musicatri service
-        from service.upper_service.atri_service import AtriService
+        from service.abs.atri_service import AtriService
         def atri_service_supplier() -> AtriService:
-            from service.upper_service.implement.atri_service_impl import AtriServiceImpl
+            from service.impl.atri_service_impl import AtriServiceImpl
             return AtriServiceImpl()
         self.lazy_register(AtriService, atri_service_supplier)
 
         # auth session
-        from service.upper_service.auth_service import AuthService
+        from service.abs.auth_service import AuthService
         def oauth_service_supplier() -> AuthService:
-            from service.upper_service.implement.auth_service_impl import AuthServiceImpl
-            return AuthServiceImpl()
+            from service.impl.auth_service_impl import AuthServiceDiscordImpl
+            return AuthServiceDiscordImpl()
         self.lazy_register(AuthService, oauth_service_supplier)
 
         # permission service
-        from service.base_service.permission_service import PermissionService
+        from service.abs.permission_service import PermissionService
         def permission_service_supplier() -> PermissionService:
-            from service.base_service.implement.permission_service_impl import PermissionServiceImpl
+            from service.impl.permission_service_impl import PermissionServiceImpl
             return PermissionServiceImpl()
         self.lazy_register(PermissionService, permission_service_supplier)
 

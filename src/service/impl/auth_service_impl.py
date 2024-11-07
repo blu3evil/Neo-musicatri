@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from typing import Tuple
 
 import jwt
 from flask import request, g
@@ -19,20 +19,23 @@ from domain.dto.discord_client_dto import DiscordOAuth2CredentialDTO, DiscordUse
 from domain.entity.profile_entity import DiscordUserEntity
 from domain.entity.session_entity import DiscordOAuth2SessionEntity, UserSessionEntity
 from domain.vo.auth_vo import CredentialVO
-from repository.mapper.profile_mapper import DiscordUserMapper
-from repository.mapper.session_mapper import DiscordOAuth2SessionMapper, UserSessionMapper
-from repository.transaction_manager import TransactionManager
-from service.base_service.permission_service import PermissionTag, PermissionService
-from service.upper_service.auth_service import AuthService, AuthStrategy
+from repository.abs.discord_user_mapper import DiscordUserMapper
+from repository.abs.user_session_mapper import UserSessionMapper
+from repository.abs.discord_oauth2_session_mapper import DiscordOAuth2SessionMapper
+from repository.abs.transaction_manager import TransactionManager
+from service.abs.permission_service import PermissionTag, PermissionService
+from service.abs.auth_service import AuthService, AuthStrategy, AuthStrategyContext
 from utils import HttpResult, HttpCode, default_locale as _, log
 from utils import default_config, DefaultConfigTag
 
 
 # todo: controller本地化，需要替换所有的default_locale到g.t
-class AuthServiceImpl(AuthService):
-    """ 认证服务实现类 """
+class AuthServiceDiscordImpl(AuthService):
+    """ 认证服务discord实现类 """
+    user_session_mapper: UserSessionMapper
     def __init__(self):
-        self.auth_ctx: AuthStrategyContext = AuthStrategyContext()
+        self.ctx = AuthStrategyContext()
+        self.ctx.user_session_mapper = self.user_session_mapper
 
     @override
     def auth_code_authenticate(self) -> HttpResult[CredentialVO]:
@@ -49,8 +52,8 @@ class AuthServiceImpl(AuthService):
 
         # 使用auth code认证策略
         log.info(_(f"Received authentication request: device_id: {request.headers.get('device_id')}"))
-        self.auth_ctx.set_strategy(DiscordOAuth2CodeStrategy())
-        return self.__do_authenticate(self.auth_ctx)
+        self.ctx.set_strategy(DiscordOAuth2CodeStrategy())
+        return self.__do_authenticate()
 
     @override
     def access_token_authenticate(self) -> HttpResult[CredentialVO]:
@@ -66,15 +69,15 @@ class AuthServiceImpl(AuthService):
 
         # access token认证策略
         log.info(_(f"Received authentication request: device_id: {request.headers.get('device_id')}"))
-        self.auth_ctx.set_strategy(AccessTokenStrategy())
-        return self.__do_authenticate(self.auth_ctx)
+        self.ctx.set_strategy(AccessTokenStrategy())
+        return self.__do_authenticate()
 
-    @staticmethod
-    def __do_authenticate(context: AuthStrategyContext) -> HttpResult[CredentialVO]:
+    def __do_authenticate(self) -> HttpResult[CredentialVO]:
         transaction_manager = mappers.get(TransactionManager)
         transaction_manager.begin()  # 开启事务
         try:
-            credential_vo: CredentialVO = context.authenticate()  # 执行认证策略
+            # 通过认证上下文执行认证策略
+            credential_vo: CredentialVO = self.ctx.authenticate()
             transaction_manager.commit()  # 提交事务
             return HttpResult.success(HttpCode.SUCCESS, _("authenticate successfully"), credential_vo)
         except BusinessException as error:  # 客户端错误
@@ -89,25 +92,14 @@ class AuthServiceImpl(AuthService):
             transaction_manager.rollback()
             return HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR, HttpCode.INTERNAL_SERVER_ERROR.describe)
         finally:
-            transaction_manager.stop()  # 停止事务
+            transaction_manager.close()  # 停止事务
 
-
-from pattern.singleton import BaseSingleton
-class AuthStrategyContext(BaseSingleton):
-    """ 认证策略上下文，针对参数不同切换不同的认证策略 """
-    def __init__(self):
-        self._strategy: Optional[AuthStrategy] = None
-
-    def set_strategy(self, strategy: AuthStrategy):
-        self._strategy = strategy
-
-    def authenticate(self) -> CredentialVO:
-        return self._strategy.authenticate()
 
 class AccessTokenStrategy(AuthStrategy):
+
     """ 使用access token进行权限校验 """
     @override
-    def authenticate(self) -> CredentialVO:
+    def authenticate(self, ctx: AuthStrategyContext) -> CredentialVO:
         """
         使用前端提交的jwt进行校验
         """
@@ -115,7 +107,7 @@ class AccessTokenStrategy(AuthStrategy):
         device_id = request.headers.get('device_id')  # device_id
 
         # 1.校验access token有效性
-        access_token_expired, user_id = self.verify_access_token(access_token, device_id)
+        access_token_expired, user_id = self.verify_access_token(ctx, access_token, device_id)
         if not access_token_expired:
             # access token没有过期，可以直接返回结果放行
             return CredentialVO()
@@ -141,9 +133,8 @@ class AccessTokenStrategy(AuthStrategy):
                     raise BusinessException(HttpCode.TOKEN_EXPIRED, _("Refresh token expired"))
 
 
-
     @staticmethod
-    def verify_access_token(access_token: str, device_id: str) -> Tuple[bool, int]:
+    def verify_access_token(ctx:AuthStrategyContext, access_token: str, device_id: str) -> Tuple[bool, int]:
         """
         1.校验access token有效性
         返回access token是否过期，以及用户id，如果过期，应当执行discord access token验证流程
@@ -163,7 +154,7 @@ class AccessTokenStrategy(AuthStrategy):
             raise BusinessException(HttpCode.TOKEN_INVALID, HttpCode.TOKEN_INVALID.describe)
 
         # 校验会话状态
-        user_session_mapper = mappers.get(UserSessionMapper)
+        user_session_mapper = ctx.user_session_mapper
         user_session_condition = UserSessionEntity(access_token=access_token, device_id=device_id)
         user_session_records = user_session_mapper.select_by_condition(user_session_condition)
 
@@ -279,7 +270,7 @@ class AccessTokenStrategy(AuthStrategy):
 class DiscordOAuth2CodeStrategy(AuthStrategy):
     """ 使用discord授权code登入 """
     @override
-    def authenticate(self) -> CredentialVO:
+    def authenticate(self, ctx: AuthStrategyContext) -> CredentialVO:
         """ 前端提供授权code参数进行校验 """
         code = request.get_json().get('code')   # code
         device_id = request.headers.get('device_id')  # device_id

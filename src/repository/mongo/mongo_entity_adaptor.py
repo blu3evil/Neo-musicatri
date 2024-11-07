@@ -27,7 +27,7 @@ class MongodbEntityAdaptor:
         * 注: 反序列化采用反射实现，因此对于性能敏感的场景应考虑是否手动构建domain对象
         """
         if not issubclass(clazz, BaseDomain):  # 类型检查
-            raise TypeError(_("mongodb entity adaptor error: %(clazz)s must be a subclass of BaseEntity")
+            raise TypeError(_("mongo entity adaptor error: %(clazz)s must be a subclass of BaseEntity")
                             % {'clazz': clazz.__name__})
 
         if not document: return None  # 未查询到文档时

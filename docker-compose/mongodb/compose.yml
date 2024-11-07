@@ -2,8 +2,8 @@ version: '3.8'
 services:
   mongo:
     image: mongo:7
-    container_name: mongodb
-#    command: --auth --bind_ip_all --replSet rs0 --keyFile /data/mongodb/keyFile
+    container_name: mongo
+#    command: --auth --bind_ip_all --replSet rs0 --keyFile /data/mongo/keyFile
     command: --bind_ip_all --replSet rs0
     ports:
       - "27017:27017"
@@ -11,4 +11,4 @@ services:
 #      - ./data:/data/db
 #      - ./conf:/data/configdb
 #      - ./backup:/data/backup
-#      - ./keyFile:/data/mongodb/keyFile
+#      - ./keyFile:/data/mongo/keyFile

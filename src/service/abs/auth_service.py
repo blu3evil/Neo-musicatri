@@ -6,16 +6,14 @@ from __future__ import annotations
 from abc import abstractmethod
 from datetime import datetime, timedelta
 
-import flask
 import jwt
-from flask import Response
 from jwt import ExpiredSignatureError, InvalidTokenError
 
 from config.exception_configuration import BusinessException
 from domain.base_domain import BaseDomain
 from domain.dto.session_dto import TokenPayloadDTO
-
 from domain.vo.auth_vo import CredentialVO
+from repository.abs.user_session_mapper import UserSessionMapper
 from utils import HttpResult, default_config, DefaultConfigTag, HttpCode, default_locale as _
 
 
@@ -34,13 +32,38 @@ class AuthService:
         """
 
 
+class AuthStrategyContext:
+    """
+    认证策略上下文，通过认证策略上下文实现不同认证策略切换，然后执行authenticate方法完成认证流程
+    """
+
+    strategy: AuthStrategy  # 当前策略
+    user_session_mapper: UserSessionMapper  # 用户会话映射
+
+    def __init__(self,
+                 user_session_mapper: UserSessionMapper
+                 ):
+        self.user_session_mapper = user_session_mapper
+
+    def set_strategy(self, strategy: AuthStrategy):
+        """ 切换认证策略 """
+        self.strategy = strategy
+
+    def authenticate(self) -> CredentialVO:
+        """ 执行认证策略 """
+        return self.strategy.authenticate(self)
+
+
 class AuthStrategy:
     """
-    认证策略，discord_login接口通过前端传入参数的种类不同，采用不同的认证策略实现登入
+    认证策略，discord_login接口通过前端传入参数的种类不同，采用不同的认证策略实现登入，配合
+    认证策略上下文使用
     """
     @abstractmethod
-    def authenticate(self) -> CredentialVO:
-        """ 登录校验 """
+    def authenticate(self, ctx: AuthStrategyContext) -> CredentialVO:
+        """
+        认证流程具体实现
+        """
         pass
 
 
@@ -75,3 +98,5 @@ class TokenHelper:
         dto = TokenPayloadDTO()
         BaseDomain.copy_properties(payload, dto)
         return dto  # 返回payload
+
+

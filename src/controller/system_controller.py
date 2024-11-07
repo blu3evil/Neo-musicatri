@@ -2,14 +2,15 @@
 系统级别API接口
 """
 from flask import Blueprint, jsonify
+from injector import inject
 
-from container import services
-from service.upper_service.system_service import SystemService
+from service.abs.system_service import SystemService
 
 system_bp = Blueprint('system_bp', __name__, url_prefix='/api/system')
 
+@inject
 @system_bp.route('/health', methods=['GET'])
-def status():
+def status(system_service: SystemService):
     """
     健康检查接口
     ---
@@ -57,13 +58,13 @@ def status():
               example: "unhealthy"
               description: 服务器健康状态标记为unhealthy
     """
-    system_service = services.get(SystemService)
     result = system_service.status()
     return jsonify(result.to_dict())
 
 
+@inject
 @system_bp.route("/config", methods=['GET'])
-def config():
+def config(system_service: SystemService):
     """
     Musicatri当前配置参数检视接口
     ---
@@ -119,6 +120,5 @@ def config():
               description: 服务器无法正常响应请求
     """
     # 此接口上线后需要做好权限校验避免滥用
-    system_service = services.get(SystemService)
     result = system_service.config()
     return jsonify(result.to_dict())

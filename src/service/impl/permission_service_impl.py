@@ -3,8 +3,9 @@ from typing_extensions import override
 
 from container import mappers
 from domain.entity.permission_entity import PermissionEntity, UserPermissionEntity
-from repository.mapper.permission_mapper import PermissionMapper, UserPermissionMapper
-from service.base_service.permission_service import PermissionService, PermissionTag
+from repository.abs.permission_mapper import PermissionMapper
+from repository.abs.user_permission_mapper import UserPermissionMapper
+from service.abs.permission_service import PermissionService, PermissionTag
 from utils import log
 from utils.locale import default_locale as _
 

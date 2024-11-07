@@ -2,15 +2,16 @@
 认证接口
 """""
 from flask import Blueprint, Response, jsonify
+from injector import inject
 
-from container.service_context import services
-from service.upper_service.auth_service import AuthService
+from service.abs.auth_service import AuthService
 
 auth_bp = Blueprint('auth_bp', __name__, url_prefix='/api/auth')
 
 
+@inject
 @auth_bp.route('/login', methods=['POST'])
-def auth_code_authenticate() -> Response:
+def auth_code_authenticate(auth_service: AuthService) -> Response:
     """
         用户授权码登录接口
         ---
@@ -134,13 +135,13 @@ def auth_code_authenticate() -> Response:
                   example: "<error_message>"
                   description: 网络连接问题
         """
-    oauth_service = services.get(AuthService)
-    result = oauth_service.auth_code_authenticate()
+    result = auth_service.auth_code_authenticate()
     return jsonify(result.to_dict())
 
 
+@inject
 @auth_bp.route('/validate', methods=['POST'])
-def access_token_authenticate() -> Response:
+def access_token_authenticate(auth_service: AuthService) -> Response:
     """
         用户access token登录验证接口
         ---
@@ -299,8 +300,7 @@ def access_token_authenticate() -> Response:
                   example: "<error_message>"
                   description: 网络连接问题
         """
-    oauth_service = services.get(AuthService)
-    result = oauth_service.access_token_authenticate()
+    result = auth_service.access_token_authenticate()
     return jsonify(result.to_dict())
 
 

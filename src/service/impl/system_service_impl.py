@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 
 from domain.vo.system_vo import SystemStatusVO, SystemConfigVO
-from service.upper_service.system_service import SystemService
+from service.abs.system_service import SystemService
 from utils import default_locale as _, default_config, HttpResult, HttpCode, DefaultConfigTag
 from utils.toolkit import BaseConfig
 

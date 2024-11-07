@@ -3,7 +3,10 @@ Musicatri启动入口模块
 """
 
 from flask import Flask  # 导入Flask
-from service.base_service.permission_service import PermissionService
+from flask_injector import FlaskInjector
+from injector import Injector
+
+from service.abs.permission_service import PermissionService
 from utils.locale import default_locale as _
 from utils import default_config, log, DefaultConfigTag
 
@@ -22,11 +25,21 @@ def main():
     init_lifecycle()                # 初始化生命事件钩子
     init_flasgger()                 # 初始化接口文档
     init_blueprint()                # 初始化蓝图
-    init_database()                 # 初始化数据库
+    # init_database()                 # 初始化数据库
 
+    init_container()                # 初始化容器
     print_banner()                  # 打印旗帜
     run_server()                    # 初始化socketio，启动项目
 
+def init_container():
+    """
+    初始化flask injector，实现依赖注入
+    """
+    # 默认容器
+    from container.context import ApplicationContext
+    base_injector = Injector()
+    base_injector.binder.install(ApplicationContext())
+    FlaskInjector(app=flask_app, injector=base_injector)
 
 def init_config():
     """

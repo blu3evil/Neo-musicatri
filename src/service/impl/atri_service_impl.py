@@ -5,7 +5,7 @@ from discord import LoginFailure, HTTPException
 from flask import Response, jsonify
 
 from discord_bot.atri import atri_facade
-from service.upper_service.atri_service import AtriService
+from service.abs.atri_service import AtriService
 from utils import default_config, DefaultConfigTag, log, default_locale as _, HttpResult, HttpCode
 
 

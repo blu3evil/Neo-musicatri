@@ -3,7 +3,7 @@ Musicatri机器人RESTFUL API接口
 """
 from flask import Blueprint, jsonify
 from discord_bot.atri import atri_facade
-from service.upper_service.atri_service import AtriService
+from service.abs.atri_service import AtriService
 from container.service_context import services
 from utils.result import HttpResult, HttpCode, BotCode
 

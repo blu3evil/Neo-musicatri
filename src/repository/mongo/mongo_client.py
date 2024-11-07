@@ -1,23 +1,24 @@
 from urllib.parse import urlparse
 
-from pymongo import MongoClient
+from pymongo import MongoClient as pyMongoClient
 from typing_extensions import override
 
-from repository.database_client import DatabaseClient
-from repository.mongodb.mapper.session_mapper_impl import DiscordOAuth2SessionMapperImpl, UserSessionMapperImpl, \
-    SocketIOSessionMapperImpl
-from repository.mongodb.mapper.profile_mapper_impl import DiscordUserMapperImpl
-from repository.mongodb.mapper.permission_mapper_impl import PermissionMapperImpl, UserPermissionMapperImpl
-from repository.mongodb.transaction_manager_impl import TransactionManagerImpl
+from repository.abs.database_client import DatabaseClient
+from repository.mongo.mongo_socketio_session_mapper import SocketIOSessionMapperImpl
+from repository.mongo.mongo_discord_oauth2_session_mapper import DiscordOAuth2SessionMapperMongoImpl
+from repository.mongo.mongo_user_session_mapper import UserSessionMapperImpl
+from repository.mongo.mongo_profile_mapper import DiscordUserMapperMongoImpl
+from repository.mongo.mongo_permission_mapper import PermissionMapperMongoImpl
+from repository.mongo.mongo_user_permission_mapper import UserPermissionMapperImpl
+from repository.mongo.mongo_transaction_manager import TransactionManagerMongoImpl
 from utils import log, default_config, DefaultConfigTag
 from utils.locale import default_locale as _
 
 
-class MongodbClient(DatabaseClient):
+class MongoClient(DatabaseClient):
     """ mongodb抽象工厂实现，使用pymongo实现数据库连接 """
 
     # todo: 抽离库表名称作为变量，集中定义
-
     def __init__(self):
         """ 初始化mongodb """
         database_url = default_config.get(DefaultConfigTag.DATABASE_URL)  # 获取连接路径
@@ -25,13 +26,13 @@ class MongodbClient(DatabaseClient):
 
     def __init_mongodb_client(self, database_url):
         """ 通过传入参数解析url，获取连接信息，初始化数据库 """
-        log.debug(_("initializing mongodb client..."))
+        log.debug(_("initializing mongo client..."))
         result = urlparse(database_url)
 
         prototype = result.scheme
-        if not prototype == 'mongodb':  # 校验协议
-            prototype = 'mongodb'
-            log.warning(_("MongodbClient initialization error: invalid prototype : %(prototype)s, fallback to 'mongodb' as prototype")
+        if not prototype == 'mongo':  # 校验协议
+            prototype = 'mongo'
+            log.warning(_("MongodbClient initialization error: invalid prototype : %(prototype)s, fallback to 'mongo' as protocol")
                       % {'prototype': prototype})
 
         host = result.hostname  # 主机名
@@ -54,28 +55,28 @@ class MongodbClient(DatabaseClient):
         username = result.username  # 用户名
         password = result.password  # 密码
 
-        client = MongoClient(host=host, port=port, username=username, password=password)  # 初始化mongodb连接
-        log.debug(_("connecting to mongodb: host: %(host)s, port: %(port)s, username: %(username)s, password: %(password)s")
+        client = pyMongoClient(host=host, port=port, username=username, password=password)  # 初始化mongodb连接
+        log.debug(_("connecting to mongo: host: %(host)s, port: %(port)s, username: %(username)s, password: %(password)s")
                   % {'host': host, 'port': port, 'username': username, 'password': password})
 
         # 初始化数据库
         self.database = client[database]
         # 配置平台事务管理器
-        self.transaction_manager = TransactionManagerImpl(client)
+        self.transaction_manager = TransactionManagerMongoImpl(client)
 
     """ 数据库连接客户端抽象工厂，实现之后返回对应的mapper实例，从而实现底层数据库的连接驱动切换 """
     @override
-    def get_discord_user_mapper(self) -> DiscordUserMapperImpl:
+    def get_discord_user_mapper(self) -> DiscordUserMapperMongoImpl:
         """ 返回discord用户信息映射器 """
-        return DiscordUserMapperImpl(self.database, self.transaction_manager)
+        return DiscordUserMapperMongoImpl(self.database, self.transaction_manager)
 
     @override
-    def get_discord_oauth_session_mapper(self) -> DiscordOAuth2SessionMapperImpl:
+    def get_discord_oauth2_session_mapper(self) -> DiscordOAuth2SessionMapperMongoImpl:
         """ 获取discord oauth认证会话信息映射器 """
-        return DiscordOAuth2SessionMapperImpl(self.database, self.transaction_manager)
+        return DiscordOAuth2SessionMapperMongoImpl(self.database, self.transaction_manager)
 
     @override
-    def get_jwt_session_mapper(self) -> UserSessionMapperImpl:
+    def get_user_session_mapper(self) -> UserSessionMapperImpl:
         """ 获取jwt会话映射器 """
         return UserSessionMapperImpl(self.database, self.transaction_manager)
 
@@ -85,16 +86,16 @@ class MongodbClient(DatabaseClient):
         return UserPermissionMapperImpl(self.database, self.transaction_manager)
 
     @override
-    def get_permission_mapper(self) -> PermissionMapperImpl:
+    def get_permission_mapper(self) -> PermissionMapperMongoImpl:
         """ 获取权限信息详情映射器 """
-        return PermissionMapperImpl(self.database, self.transaction_manager)
+        return PermissionMapperMongoImpl(self.database, self.transaction_manager)
 
     @override
-    def get_user_socketio_session_mapper(self) -> SocketIOSessionMapperImpl:
+    def get_socketio_session_mapper(self) -> SocketIOSessionMapperImpl:
         """ 获取用户websocket连接信息表 """
         return SocketIOSessionMapperImpl(self.database, self.transaction_manager)
 
     @override
-    def get_transaction_manager(self) -> TransactionManagerImpl:
+    def get_transaction_manager(self) -> TransactionManagerMongoImpl:
         """ 获取平台事务管理器 """
         return self.transaction_manager

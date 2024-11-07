@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify
 from utils.result import HttpResult, HttpCode
 from container.mapper_context import mappers
-from repository.mapper.profile_mapper import DiscordUserMapper
+from repository.abs.discord_user_mapper import DiscordUserMapper
 from utils import log
 
 test_bp = Blueprint('test_bp', __name__, url_prefix='/test')
