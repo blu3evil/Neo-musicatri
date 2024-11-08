@@ -2,7 +2,7 @@
   "GITHUB_LINK": "https://github.com/blu3evil/musicatri1/",
   "ISSUE_LINK": "https://github.com/blu3evil/musicatri1/",
   "DISCORD_LINK": "https://discord.gg/9FwdKEGQXf",
-  "API_ENDPOINT": "http://localhost:5000",
+  "API_ENDPOINT": "http://localhost:5000/api/v1",
   "PUBLIC_URL": "http://localhost:5173",
   "DISCORD_CLIENT_ID": "1295653634234650624",
   "DISCORD_OAUTH2_SCOPE": "identify guilds guilds.join"
