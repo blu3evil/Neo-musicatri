@@ -5,34 +5,11 @@ import os
 from enum import Enum
 from typing import Type, Callable, Any, Dict
 from cerberus import Validator
+
 from pattern.singleton import BaseSingleton
 from utils.logger import log
+from utils.locale import ResourceUtils
 
-class ResourceUtils(BaseSingleton):
-    @staticmethod
-    def __get_root_dir() -> str:
-        """ 返回项目根路径 """
-        return  os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
-    @staticmethod
-    def get_root_resource(*path_segments) -> str:
-        """
-        返回根路径下的资源绝对路径，此方法路径计算从根路径开始，即Musicatri项目根目录，例如
-        get_root_resource("dir", "config.json")将会返回/musicatri/dir/config.json
-        """
-        root_path = ResourceUtils.__get_root_dir()  # __file__ 是当前文件的路径
-        full_path = os.path.join(root_path, *path_segments)
-        return str(full_path)
-
-    @staticmethod
-    def get_resource(*path_segments) -> str:
-        """
-        返回resources目录下的资源文件，即/musicatri/resources/目录下的资源文件，例如
-        get_resource("dir", "config.json")会返回/musicatri/resources/dir/config.json下的资源
-        """
-        root_path = ResourceUtils.__get_root_dir()
-        full_path = os.path.join(root_path, "resources", *path_segments)
-        return str(full_path)
 
 class BaseConfigTag(Enum):
     def sensitive(self) -> bool:
@@ -60,7 +37,7 @@ class BaseConfigTag(Enum):
         schema = {}
         for tag in cls:
             # 规则定义
-            rules = tag.value.copy()        # 浅克隆规则
+            rules = schema.copy()        # 浅克隆规则
             rules.pop('required', None)     # 删除自定义标签required
             rules.pop('sensitive', None)    # 删除自定义标签sensitive
             rules.pop('default', None)      # 删除自定义标签default

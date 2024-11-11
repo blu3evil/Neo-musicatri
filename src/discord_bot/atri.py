@@ -8,7 +8,7 @@ from aiohttp import ClientConnectorError
 from discord import Intents, LoginFailure, HTTPException
 from discord.ext import commands
 
-from utils.config import default_config, DefaultConfigTag
+from utils.config_old import default_config, DefaultConfigTag
 from utils.locale import default_locale as _
 from utils.logger import log
 from utils.result import BotResult, BotCode

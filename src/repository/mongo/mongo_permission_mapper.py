@@ -6,7 +6,7 @@ from typing_extensions import override
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
 
-from domain.entity.permission_entity import PermissionEntity
+from modo.entity.permission_entity import PermissionEntity
 from repository.abs.permission_mapper import PermissionMapper
 from repository.mongo.mongo_entity_adaptor import MongodbEntityAdaptor
 from repository.mongo.mongo_transaction_manager import TransactionManagerMongoImpl

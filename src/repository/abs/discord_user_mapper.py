@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List
 
-from domain.entity.profile_entity import DiscordUserEntity
+from modo.entity.profile_entity import DiscordUserEntity
 from repository.abs.base_mapper import BaseMapper
 
 # noinspection PyShadowingBuiltins

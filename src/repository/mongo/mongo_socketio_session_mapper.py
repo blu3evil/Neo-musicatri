@@ -6,7 +6,7 @@ from typing_extensions import override
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
 
-from domain.entity.session_entity import SocketIOSessionEntity
+from modo.entity.session_entity import SocketIOSessionEntity
 from repository.abs.socketio_session_mapper import SocketIOSessionMapper
 from repository.mongo.mongo_entity_adaptor import MongodbEntityAdaptor
 from repository.mongo.mongo_transaction_manager import TransactionManagerMongoImpl

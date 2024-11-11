@@ -2,46 +2,50 @@
 项目本地化
 """
 import gettext
-import logging
 import subprocess
 from pathlib import Path
 import os
 import cmd
 
-from utils.toolkit import BaseConfig, BaseConfigTag, ResourceUtils
+class ResourceUtils:
+    @staticmethod
+    def __get_root_dir() -> str:
+        """ 返回项目根路径 """
+        return os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+    @staticmethod
+    def get_root_resource(*path_segments) -> str:
+        """
+        返回根路径下的资源绝对路径，此方法路径计算从根路径开始，即Musicatri项目根目录，例如
+        get_root_resource("dir", "config.json")将会返回/musicatri/dir/config.json
+        """
+        root_path = ResourceUtils.__get_root_dir()  # __file__ 是当前文件的路径
+        full_path = os.path.join(root_path, *path_segments)
+        return str(full_path)
+
+    @staticmethod
+    def get_resource(*path_segments) -> str:
+        """
+        返回resources目录下的资源文件，即/musicatri/resources/目录下的资源文件，例如
+        get_resource("dir", "config.json")会返回/musicatri/resources/dir/config.json下的资源
+        """
+        root_path = ResourceUtils.__get_root_dir()
+        full_path = os.path.join(root_path, "resources", *path_segments)
+        return str(full_path)
 
 locales_dir = ResourceUtils.get_resource("locales")  # 本地化资源目录
-class LocaleConfigTag(BaseConfigTag):
-    """ 本地化配置文件标签 """
-    DEFAULT_LANGUAGE = {
-        'type': 'string',
-        'required': True,
-        'default': 'en-US',
-    }
-
-
-class LocaleConfig(BaseConfig):
-    """ 本地化配置文件 """
-    def __init__(self):
-        super().__init__(LocaleConfigTag)
-        self.load_default()  # 加载默认配置
-        config_file = ResourceUtils.get_root_resource('config.json')
-        self.load_jsonfile(config_file)  # 加载config.json配置
-        self.load_env()  # 加载环境配置
-
-
 DEFAULT_DOMAIN = "flask_app"  # flaks应用文本域
-locale_config = LocaleConfig()  # 本地化相关配置类
-DEFAULT_LANG = locale_config.get(LocaleConfigTag.DEFAULT_LANGUAGE)  # 通过配置文件读取默认语言
+DEFAULT_LANG = 'en-US'  # 默认采用英文  # todo: 修改默认语言采用配置
 default_locale = None
+
 try:
     # flask app文本域本地化方法
     default_locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [DEFAULT_LANG]).gettext
 except FileNotFoundError as error:
     default_locale = gettext.gettext
 
-from pattern.singleton import BaseSingleton
-class LocaleFactory(BaseSingleton):
+
+class LocaleFactory:
     """ 本地化工厂，提供本地化的策略 """
     AVAILABLE_LOCALES = ['en-US', 'zh-CN']
 
@@ -71,8 +75,6 @@ class LocaleFactory(BaseSingleton):
 
 # 本地化工厂
 locales = LocaleFactory()
-
-log = logging.getLogger(__name__)
 class I18nUtils:
     """
     本地化资源构建工具类，通过调用本地化脚本生成.po以及.mo本地化文件
@@ -84,13 +86,6 @@ class I18nUtils:
 
     pygettext_script = "pygettext.py"  # 通过_()方法抓取文本的python脚本
     msgfmt_script = "msgfmt.py"  # 编译.po文件为.mo文件的python脚本
-    domain = "resources"  # 文本域，通过文本域来构建<domain>.po和<domain>.mo文件
-
-    _instance = None  # 单例模式
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(I18nUtils, cls).__new__(cls)
-        return cls._instance
 
     from typing import Tuple
     @staticmethod
@@ -99,11 +94,11 @@ class I18nUtils:
                        excludes: Tuple[str, ...] = ()):
         """
         根据指定的域以及语言生成翻译原始.po文件
-        调用方法前最好检查一下是否会于已经存在的<domain>.po文件产生冲突
+        调用方法前最好检查一下是否会于已经存在的<modo>.po文件产生冲突
 
         参数说明:
             - lang: 目标语言，例如: zh-CN en-US en-UK
-            - domain: 语言域，通常用于区分不同的业务逻辑，例如: flask_app_domain, discord_bot_domain
+            - modo: 语言域，通常用于区分不同的业务逻辑，例如: flask_app_domain, discord_bot_domain
             - includes: 包含目录，扫描哪些目录进行资源加载，会自动扫描目录下的子级目录，如果没有传入目录那么针对src进行扫描
         """
 
@@ -111,11 +106,8 @@ class I18nUtils:
         lang_dir = os.path.join(locales_dir, lang, "LC_MESSAGES")
         try:
             os.makedirs(lang_dir, exist_ok=True)
-        except Exception as e:
-            # 目录创建失败
-            log.error(
-                f"localize directory create failed while trying creating lang file: {lang}, file path is {lang_dir}, exception: {e}")
-            return
+        except Exception as e:  # 目录创建失败
+            raise RuntimeError(f"failed in creating localize directory for lang: {lang}, file path: {lang_dir}, exception: {e}")
 
         py_files = []  # py文件列表，用于加载翻译资源文件
         # src_dir = os.path.join(root_dir, "src")
@@ -145,7 +137,7 @@ class I18nUtils:
             py_files = _py_files
 
         pygettext_script = os.path.join(I18nUtils.i18n_dir, I18nUtils.pygettext_script)  # python脚本位置
-        lang_po = os.path.join(lang_dir, f"{domain}.po")  # <domain>.po语言原文件路径
+        lang_po = os.path.join(lang_dir, f"{domain}.po")  # <modo>.po语言原文件路径
 
         # 构建python命令
         command = ["python",
@@ -156,15 +148,15 @@ class I18nUtils:
 
         try:  # 执行命令
             subprocess.run(command, check=True)
-            log.info(f"localized execute success, generate: {lang_po}")
+            print(f"localized execute success, generate: {lang_po}")
         except subprocess.CalledProcessError as e:
-            log.error(f"localized execute failed: {e}")
+            print(f"localized execute failed: {e}")
 
     @staticmethod
     def generate_mo_v2(lang: str, domain: str):
         """
         将generate_po方法生成的原始翻译文本编译，生成翻译.mo目标文件，使用domain和lang同时指定po文件
-        假定.po文件命名为<domain>.po
+        假定.po文件命名为<modo>.po
         调用方法前最好检查一下是否会于已经存在的resources.mo文件产生冲突
         """
         import os
@@ -174,7 +166,7 @@ class I18nUtils:
 
         if not os.path.exists(lang_po):
             # 原始翻译.po文件不存在
-            log.error(f"cannot found available {lang_po}，please make sure that the pygettext.py script is called correctly")
+            print(f"cannot found available {lang_po}，please make sure that the pygettext.py script is called correctly")
             return
 
         # 执行编译
@@ -192,9 +184,9 @@ class I18nUtils:
 
         try:  # 执行命令
             subprocess.run(command, check=True)
-            log.info(f"localized execute success, generate: {lang_mo}")
+            print(f"localized execute success, generate: {lang_mo}")
         except subprocess.CalledProcessError as e:
-            log.error(f"localized execute failed: {e}")
+            print(f"localized execute failed: {e}")
 
 
 class LocaleFacade:

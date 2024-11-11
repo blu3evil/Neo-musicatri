@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List
 
-from domain.entity.permission_entity import PermissionEntity
+from modo.entity.permission_entity import PermissionEntity
 from repository.abs.base_mapper import BaseMapper
 # 默认权限等级
 

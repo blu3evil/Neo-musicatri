@@ -6,7 +6,7 @@ from typing_extensions import override
 from pymongo.synchronous.collection import Collection
 from pymongo.synchronous.database import Database
 
-from domain.entity.profile_entity import DiscordUserEntity
+from modo.entity.profile_entity import DiscordUserEntity
 from repository.abs.discord_user_mapper import DiscordUserMapper
 from repository.mongo.mongo_entity_adaptor import MongodbEntityAdaptor
 from repository.mongo.mongo_transaction_manager import TransactionManagerMongoImpl

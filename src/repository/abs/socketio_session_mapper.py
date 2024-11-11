@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List
 
-from domain.entity.session_entity import SocketIOSessionEntity
+from modo.entity.session_entity import SocketIOSessionEntity
 from repository.abs.base_mapper import BaseMapper
 
 # noinspection PyShadowingBuiltins

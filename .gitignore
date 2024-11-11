@@ -4,8 +4,12 @@ config.json
 
 # 项目测试目录
 test/
-# 项目运行时产生的日志目录
+# 项目运行时缓存
+# 项目默认日志目录
 logs/
+# 默认的filesystem会话文件缓存
+session/
+cache/
 
 
 # python字节码文件

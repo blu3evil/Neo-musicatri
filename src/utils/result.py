@@ -4,7 +4,7 @@ from typing import TypeVar
 
 from typing_extensions import Generic
 
-from domain.base_domain import BaseDomain
+from modo.base_domain import BaseDomain
 from utils.locale import default_locale as _
 
 class Code(Enum):

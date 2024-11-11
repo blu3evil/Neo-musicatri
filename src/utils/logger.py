@@ -6,6 +6,7 @@ import sys
 
 import colorlog
 from colorlog import ColoredFormatter
+from utils.configs import config, ConfigEnum
 
 # flask风格的控制台输出
 FLASK_STYLE_CONSOLE_FORMATTER = ColoredFormatter(
@@ -84,10 +85,8 @@ class LoggerFactory(object):
         return filelog_handler
 
 import time, os
-from pattern.singleton import BaseSingleton
 name_levels_mapping = logging.getLevelNamesMapping()
-
-class SimpleLoggerFacade(BaseSingleton):
+class SimpleLoggerFacade:
     """ 简单日志门户 """
     _instance = None
     console_handler: logging.StreamHandler  # 控制台日志输出
@@ -157,5 +156,15 @@ class SimpleLoggerFacade(BaseSingleton):
     def get_logger(self):
         return self.logger
 
-facade = SimpleLoggerFacade()  # 提供修改锚点
+# 提供修改锚点
+facade = SimpleLoggerFacade()
+# 设置日志等级
+default_level = config.get(ConfigEnum.APP_LOG_DEFAULT_LEVEL)
+console_level = config.get(ConfigEnum.APP_LOG_CONSOLE_LEVEL)
+filelog_level = config.get(ConfigEnum.APP_LOG_FILELOG_LEVEL)
+facade.set_default_level(default_level)
+facade.set_console_level(console_level)
+facade.set_logfile_level(filelog_level)
+
+# 访问点
 log = facade.get_logger()

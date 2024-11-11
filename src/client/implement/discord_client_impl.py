@@ -4,8 +4,8 @@ from typing_extensions import override
 
 from client.discord_client import DiscordClient
 from decorator import fallback
-from domain.base_domain import BaseDomain
-from domain.dto.discord_client_dto import DiscordOAuth2CredentialDTO, DiscordUserDTO
+from modo.base_domain import BaseDomain
+from modo.dto.discord_client_dto import DiscordOAuth2CredentialDTO, DiscordUserDTO
 from utils import HttpResult, HttpCode, default_locale as _, default_config, DefaultConfigTag
 
 
@@ -28,7 +28,6 @@ class DiscordClientImpl(DiscordClient):
         discord_api_endpoint = default_config.get(DefaultConfigTag.DISCORD_API_ENDPOINT)
         # 请求刷新access token
         res = requests.post(f'{discord_api_endpoint}/oauth2/token', data=data, headers=headers, auth=(client_id, client_secret))
-
         res.raise_for_status()
 
         if res.status_code == 200:

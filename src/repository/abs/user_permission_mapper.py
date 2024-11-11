@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List
 
-from domain.entity.permission_entity import UserPermissionEntity
+from modo.entity.permission_entity import UserPermissionEntity
 from repository.abs.base_mapper import BaseMapper
 
 

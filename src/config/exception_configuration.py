@@ -3,11 +3,10 @@
 """
 from typing import Any
 
-from flask import jsonify, Response, Flask
+from flask import jsonify, Response, Flask, g
 
-from utils.locale import default_locale as _
 from utils.logger import log
-from utils.result import HttpResult, HttpCode
+from utils.result import HttpCode
 
 
 class BusinessException(Exception):
@@ -36,72 +35,23 @@ class SystemException(Exception):
         self.code = code
         self.data = data
 
-def handle_404(exception) -> Response:
-    """ 404 NOT FOUND处理 """
-    log.debug(str(exception))
-    result = HttpResult.error(HttpCode.NOT_FOUND, HttpCode.NOT_FOUND.describe)
-    return jsonify(result.to_dict())
-
-def handle_500(exception) -> Response:
-    """ 500 INTERNAL SERVER ERROR处理 """
-    log.debug(str(exception))
-    result = HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR, HttpCode.INTERNAL_SERVER_ERROR.describe)
-    return jsonify(result.to_dict())
-
-def handle_business(exception: BusinessException) -> Response:
-    """ 业务级别异常处理 """
-    code = exception.code
-    log.error(_("%(code)s %(description): %(message)s")
-              % {'code': code, 'description': code.describe , 'message': exception.message})
-    result = HttpResult.error(exception.code, exception.message, exception.data)
-    return jsonify(result.to_dict())  # 序列化成json后返回
-
-def handle_system(exception: SystemException) -> Response:
-    """ 系统级别异常处理 """
-    code = exception.code
-    log.error(_("%(code)s %(description): %(message)s")
-              % {'code': code, 'description': code.describe, 'message': exception.message})
-    result = HttpResult.error(exception.code, exception.message, exception.data)
-    # todo: 向开发者提交系统级别异常消息，并记录错误日志信息
-    return jsonify(result.to_dict())
-
-
-def handle_generic(generic_exception: Exception) -> Response:
-    """
-    通用类型异常处理器，当业务级别异常和系统级别异常无法处理的时候，
-    此异常处理进行兜底避免程序报错
-
-    在开发阶段应该避免使用这个异常处理，会导致错误堆栈输出遗漏，难以排查错误原因
-    """
-    log.error(_("unknown: %s") % generic_exception)
-    # todo: 此处向开发者提交未知异常消息，记录错误日志信息
-    result = HttpResult.error(HttpCode.INTERNAL_SERVER_ERROR, HttpCode.INTERNAL_SERVER_ERROR.describe)
-    return jsonify(result.to_dict())
-
-
 def exception_handler_configure(app: Flask) -> None:
     """ 注册异常处理器，在app.py中使用此方法注册异常处理器 """
-    @app.errorhandler(404)
-    def not_found_exception_handle(exception: Exception) -> Response:
-        """ 404资源未找到异常处理器 """
-        return handle_404(exception)
+    @app.errorhandler(404)  # not found
+    def handle_404(exception: Exception) -> Response:
+        _ = g.t
+        return jsonify({'message': _('not found')})
 
     @app.errorhandler(500)
-    def internal_server_error_handle(exception: Exception) -> Response:
-        """ 500服务器异常处理器 """
-        return handle_500(exception)
-
-    @app.errorhandler(BusinessException)
-    def business_exception_handler(exception: BusinessException) -> Response:
-        """ 业务级别异常处理器 """
-        return handle_business(exception)
-
-    @app.errorhandler(SystemException)
-    def system_exception_handler(exception: SystemException) -> Response:
-        """ 系统级别异常处理器 """
-        return handle_system(exception)
+    def handle_500(exception: Exception) -> Response:
+        _ = g.t
+        # todo: 此处向开发者提交未知异常消息，记录错误日志信息
+        log.debug(str(exception))
+        return jsonify({'message': _('internal error')})
 
     @app.errorhandler(Exception)
-    def generic_exception_handler(exception: Exception) -> Response:
-        """ 未知异常处理器 """
-        return handle_generic(exception)
+    def handle_uncaught(exception: Exception) -> Response:
+        _ = g.t
+        # todo: 此处向开发者提交未知异常消息，记录错误日志信息
+        log.error(_("unknown: %s") % exception)
+        return jsonify({'message': _('uncaught error')})

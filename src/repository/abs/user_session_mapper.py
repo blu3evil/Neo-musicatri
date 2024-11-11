@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import List
 
-from domain.entity.session_entity import UserSessionEntity
+from modo.entity.session_entity import UserSessionEntity
 from repository.abs.base_mapper import BaseMapper
 
 

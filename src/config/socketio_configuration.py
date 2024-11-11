@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_socketio import SocketIO
-from utils.config import default_config, DefaultConfigTag
+from utils.config_old import default_config, DefaultConfigTag
 
 
 def socketio_configure(app: Flask):

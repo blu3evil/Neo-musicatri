@@ -3,7 +3,7 @@ discord客户端
 """
 from abc import abstractmethod
 
-from domain.dto.discord_client_dto import DiscordOAuth2CredentialDTO, DiscordUserDTO
+from modo.dto.discord_client_dto import DiscordOAuth2CredentialDTO, DiscordUserDTO
 from utils.result import HttpResult
 class DiscordClient:
     """ discord客户端接口 """

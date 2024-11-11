@@ -1,6 +1,7 @@
 from bson import ObjectId
 
-from domain.base_domain import BaseDomain
+import domains
+from modo.base_domain import BaseDomain
 from typing import Type, Dict, TypeVar, Optional
 from utils.locale import default_locale as _
 from utils import log
@@ -14,7 +15,7 @@ class MongodbEntityAdaptor:
     @staticmethod
     def serialize(domain: BaseDomain) -> Dict:
         """ 将对象序列化为Mongodb文档的格式 """
-        data = domain.to_dict().copy()  # 获取原始字典
+        data = domains.copy()  # 获取原始字典
         if 'id' in data and data['id'] is not None and data['id'] != '':
             data['_id'] = data.pop('id')  # 若字典存在id字段，则使用id作为文档id
 

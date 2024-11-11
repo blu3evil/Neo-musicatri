@@ -1,24 +1,16 @@
 from injector import Module, provider, singleton
 
-from repository.abs.user_session_mapper import UserSessionMapper
-from service.abs.auth_service import AuthService
-from service.abs.system_service import SystemService
+from services.abs.auth_service import AuthService
 
 
 class ApplicationContext(Module):
-    @provider
-    @singleton
-    def system_service_provider(self) -> SystemService:
-        """ 系统业务 """
-        from service.impl.system_service_impl import SystemServiceImpl
-        return SystemServiceImpl()
 
     @provider
     @singleton
-    def auth_service_provider(self, user_session_mapper: UserSessionMapper) -> AuthService:
+    def auth_service_provider(self) -> AuthService:
         """ 认证业务 """
-        from service.impl.auth_service_impl import AuthServiceDiscordImpl
-        return AuthServiceDiscordImpl(user_session_mapper)
+        from services.impl.auth_service_impl import AuthServiceDiscordImpl
+        return AuthServiceDiscordImpl()
 
     def configure(self, binder):
         """
