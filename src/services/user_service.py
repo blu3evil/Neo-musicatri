@@ -1,5 +1,5 @@
 from utils import cache
-from domains import db, copy, DiscordUser, to_dict
+from dao import db, copy, DiscordUser, to_dict
 
 
 user_info_prefix = 'user_info'

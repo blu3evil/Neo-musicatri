@@ -2,7 +2,7 @@
 权限校验蓝图
 """
 
-from services import user_service
+from service import user_service
 from flask import Blueprint, session, jsonify, request, g, abort
 from requests_oauthlib import OAuth2Session
 

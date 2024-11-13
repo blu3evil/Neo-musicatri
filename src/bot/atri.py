@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from abc import abstractmethod
-from asyncio import Future
-
 from aiohttp import ClientConnectorError
 from discord import Intents, LoginFailure, HTTPException
 from discord.ext import commands
 
-from utils.config_old import default_config, DefaultConfigTag
-from utils.locale import default_locale as _
-from utils.logger import log
+from utils.locales import default_locale as _
+from utils import log, config, ConfigEnum
 from utils.result import BotResult, BotCode
 
 class Atri(commands.AutoShardedBot):
@@ -23,7 +20,7 @@ class Atri(commands.AutoShardedBot):
 class AtriFactory:
     """ 亚托莉工厂 """
     @staticmethod
-    def assemble_atri(command_prefix: str, intents: Intents) -> Atri:
+    def assemble_atri(command_prefix: str='a', intents: Intents=Intents.all()) -> Atri:
         """ 创建新的亚托莉对象 """
         atri = Atri(command_prefix=command_prefix, intents=intents)
 
@@ -58,8 +55,8 @@ class AtriStopped(AtriState):
         """ 建立到discord的连接 """
         ctx.state = AtriAwaiting()  # 切换到awaiting状态 pythonic
         if ctx.atri.is_closed():  # 若亚托莉处于休眠状态, 唤醒亚托莉
-            command_prefix = default_config.get(DefaultConfigTag.DISCORD_BOT_COMMAND_PREFIX)
-            atri = AtriFactory.assemble_atri(command_prefix, Intents.all())
+            # command_prefix = config.get(DefaultConfigTag.DISCORD_BOT_COMMAND_PREFIX)
+            atri = AtriFactory.assemble_atri()
             ctx.atri = atri
 
         # 使用闭包的形式传递
@@ -72,7 +69,7 @@ class AtriStopped(AtriState):
         # 异步启动亚托莉
         async def async_start():
             message = None
-            token = default_config.get(DefaultConfigTag.DISCORD_BOT_TOKEN)
+            token = config.get(ConfigEnum.DISCORD_BOT_TOKEN)
             try: await ctx.atri.start(token)  # 尝试启动亚托莉
             except LoginFailure as exception:
                 # 亚托莉登录失败
@@ -174,9 +171,9 @@ class AtriFacade:
     @classmethod
     def __init_facade(cls):
         """ 初始化外观 """
-        command_prefix = default_config.get(DefaultConfigTag.DISCORD_BOT_COMMAND_PREFIX)
+        # command_prefix = config.get(ConfigEnum.DISCORD_BOT_COMMAND_PREFIX)
 
-        atri = AtriFactory.assemble_atri(command_prefix=command_prefix, intents=Intents.all())
+        atri = AtriFactory.assemble_atri()
         ctx = AtriContext(atri=atri, state=AtriStopped())
         cls._instance.ctx = ctx  # 初始化上下文
 

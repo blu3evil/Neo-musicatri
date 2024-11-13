@@ -1,4 +1,4 @@
-from .models import DiscordUser, db
+from .entities import DiscordUserModel, db
 
 
 def copy(data, instance):
@@ -23,7 +23,7 @@ def to_dict(instance) -> dict:
     return {}
 
 
-__all__ = [copy, DiscordUser, db, to_dict]
+__all__ = [copy, DiscordUserModel, db, to_dict]
 
 
 

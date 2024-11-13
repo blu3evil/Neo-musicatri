@@ -1,11 +1,12 @@
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
+
+from core import db
 from sqlalchemy.dialects.postgresql import JSON
 
-db = SQLAlchemy()
-def init(app):  # 初始化数据库
+def create_tables(app: Flask):
     with app.app_context():
-        db.init_app(app)
         db.create_all()
+
 
 class DiscordUser(db.Model):
     __tablename__ = 'discord_users'
@@ -24,6 +25,7 @@ class DiscordUser(db.Model):
     mfa_enabled = db.Column(db.Boolean, nullable=False, default=False)
     locale = db.Column(db.String(10), nullable=True, default='en-US')
     premium_type = db.Column(db.Integer, nullable=True, default=0)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)         # 用户账号是否处于激活状态
 
     def __repr__(self):
         return f'<DiscordUser {self.username}#{self.discriminator}>'

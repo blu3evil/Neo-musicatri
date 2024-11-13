@@ -6,8 +6,8 @@ import os
 
 from flask import Blueprint, send_from_directory
 
-from utils.logger import log
-from utils.locale import default_locale as _
+from utils.loggers import log
+from utils.locales import default_locale as _
 
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 static_dir = os.path.join(root_dir, 'resources', 'static')
