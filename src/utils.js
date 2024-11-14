@@ -1,4 +1,6 @@
 // 状态模式
+// 健康检查
+
 class AbstractState {
   // 切入状态时被调用
   enter(context) {
@@ -23,44 +25,8 @@ class StateContext {
   }
 }
 
-// 健康检查
-import { useClient } from '@/client.js'
-import store from '@/storage/index.js'
-const client = useClient()
-const config = store.getters.config
-const HEALTH_CHECK_INTERVAL = config['HEALTH_CHECK_INTERVAL']
-
-class HealthCheck {
-  constructor () {
-    this.healthcheckIntervalId = 0
-  }
-
-  begin(onConnectError) {
-    clearInterval(this.healthcheckIntervalId)  // 避免重复创建
-    this.healthcheckIntervalId = setInterval(async () => {
-      // 执行健康检查
-      try {
-        await client.get('/status/health')
-      } catch (error) {
-        if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-          clearInterval(this.healthcheckIntervalId)
-          onConnectError()
-        }
-      }
-    }, HEALTH_CHECK_INTERVAL * 1000)
-  }
-
-  stop() {
-    clearInterval(this.healthcheckIntervalId)
-  }
-}
-
-const createHealthCheck = () => {
-  return new HealthCheck()
-}
-
 export {
   AbstractState,
   StateContext,
-  createHealthCheck,
+
 }

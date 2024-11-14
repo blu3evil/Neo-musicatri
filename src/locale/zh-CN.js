@@ -57,7 +57,7 @@ export default {
 
       'reach_reconnect_limit': '无法建立到服务端的连接',
       'reach_reconnect_limit_subtitle': '重连次数达到上线',
-      'try_reconnect': '继续尝试重连',
+      'try_reconnect': '尝试重连',
       'sending_issue': '给开发者发送issue!',
       'current_retry_times': '正在进行第 {times} 次重连尝试',
       'error_occur_title': '连接状态异常',
@@ -69,6 +69,7 @@ export default {
       'client_error': '客户端异常',
     },
     'UserLoginCallback': {
+      'retry_authorize': '重新授权',
       'return_login': '返回登录主页',
       'auth_success': '授权成功',
     }

@@ -1,7 +1,6 @@
 <!-- discord认证页面 -->
 <!--suppress ALL -->
 <script>
-import { useClient } from '@/client.js'
 import {
   computed,
   getCurrentInstance,
@@ -15,10 +14,12 @@ import { useI18n } from 'vue-i18n'
 import CommonNavbar from '@/components/common-navbar.vue'
 import CommonPanel from '@/components/common-panel.vue'
 import { getActiveLanguage } from '@/locale/index.js'
-import { AbstractState, StateContext, createHealthCheck } from '@/utils.js'
+import { AbstractState, StateContext } from '@/utils.js'
+import { getAuthorizeUrl, userAuthorize } from '@/services/auth-service.js'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import router from '@/router.js'
+import { createHealthCheck } from '@/services/system-service.js'
 
 export default {
   components: {
@@ -29,7 +30,6 @@ export default {
     const { t } = useI18n() // 本地化
     const store = useStore() // 存储
     const router = useRouter() // 路由
-    const client = useClient() // axios客户端
     const config = store.getters.config // 项目配置
     let context = null
 
@@ -59,12 +59,11 @@ export default {
           )
 
           try {
-            const response = await client.post('/auth/authorize',
-              { 'code': code, 'redirect_uri': redirectUri })
+            const response = userAuthorize(code)
             if (response.status === 200) {
               // 认证成功，切换到认证成功状态
               context.setState(new AuthSuccessState())
-            } else if (response.status === 500) {
+            } else if (response.status >= 500) {
               // 服务端错误
               context.setState(ErrorState.serverErrorState(response.statusText))
             } else {
@@ -152,16 +151,31 @@ export default {
         return new UnkonwnErrorState(message)
       }
 
-      enter(context) {
-        preloadImage('/src/assets/user-login-pending/ev005bl.png')
-        panelRef.value.setTitle(this.title)
-        panelRef.value.setMessage(this.message, true)
+      // 增加重新登录链接
+      addReturnLink() {
         panelRef.value.addLink({
           desc: t('view.UserLoginCallback.return_login'),
           click: () => router.push('/'),
           href: '/',
         })
       }
+
+      // 增加重新授权链接
+      async addRetryLink() {
+        const response = await getAuthorizeUrl()
+        panelRef.value.addLink({
+          desc: t('view.UserLoginCallback.retry_authorize'),
+          href: response.data.authorize_url,
+          target: null
+        })
+      }
+
+      enter(context) {
+        preloadImage('/src/assets/user-login-pending/ev005bl.png')
+        panelRef.value.setTitle(this.title)
+        panelRef.value.setMessage(this.message, true)
+      }
+
       fadeout(context) {
         panelRef.value.clearTitle()
         panelRef.value.clearMessage()
@@ -175,6 +189,8 @@ export default {
       }
       enter(context) {
         super.enter(context)
+        super.addReturnLink()
+        super.addRetryLink()
       }
       fadeout(context) {
         super.fadeout(context)
@@ -187,8 +203,11 @@ export default {
       }
       enter(context) {
         super.enter(context)
+        super.addReturnLink()
         panelRef.value.addIssueLink()
+        super.addRetryLink()
       }
+
       fadeout(context) {
         super.fadeout(context)
       }
@@ -198,10 +217,13 @@ export default {
       constructor(_message) {
         super(t('view.UserLogin.unknown_error'), _message)
       }
+
       enter(context) {
         super.enter(context)
         panelRef.value.addIssueLink()
+        super.addReturnLink()
       }
+
       fadeout(context) {
         super.fadeout(context)
       }

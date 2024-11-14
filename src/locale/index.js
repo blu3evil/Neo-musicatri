@@ -36,7 +36,7 @@ const getActiveLanguage = () => {
   if (availableLanguages.indexOf(navigatorLang) !== -1) {
     // 用户浏览器语言存在列表中，重置localstorage存储语言
     localStorage.setItem(localstorageTag, navigatorLang)
-    return localstorageLang
+    return navigatorLang
   }
 
   // 未找到可用语言，使用英文作为默认语言

@@ -1,4 +1,7 @@
+// noinspection JSUnresolvedReference
+
 import { createRouter, createWebHistory } from 'vue-router'
+import { getUserLoginStatus } from '@/services/auth-service.js'
 
 // vue路由定义
 const router = createRouter({
@@ -37,6 +40,7 @@ const router = createRouter({
           path: 'home',
           name: 'user-home',
           component: () => import('./views/UserHome.vue'),
+          meta: { loginRequired: true }
         }
       ]
     },
@@ -95,5 +99,20 @@ const router = createRouter({
     }
   ]
 })
+
+// 路由守卫
+router.beforeEach((
+  to, from, next) => {
+  if (to.meta.loginRequired) {
+    getUserLoginStatus().then(response => {
+      if (response.status === 200) next()  // 放行
+      else next('/user/login')  // 拒行
+    })
+  } else {
+    next()  // 放行
+  }
+})
+
+
 
 export default router

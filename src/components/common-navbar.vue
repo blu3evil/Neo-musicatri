@@ -2,7 +2,7 @@
 import { computed, getCurrentInstance, onMounted, ref } from 'vue'
 import { setTheme, getThemes, getActiveThemeId } from '@/theme'
 import { useRouter } from 'vue-router'
-import { availableLanguages, getActiveLanguage, getLanguageDisplayName } from '@/locale'
+import { availableLanguages, getActiveLanguage, getLanguageDisplayName } from '@/locale/index.js'
 import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
 

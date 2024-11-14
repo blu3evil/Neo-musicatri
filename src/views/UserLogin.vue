@@ -14,8 +14,9 @@ import CommonNavbar from '@/components/common-navbar.vue'
 import CommonPanel from '@/components/common-panel.vue'
 import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
-import { useClient } from '@/client.js'
-import { AbstractState, StateContext, createHealthCheck } from '@/utils.js'
+import { AbstractState, StateContext } from '@/utils.js'
+import { getAuthorizeUrl, userLogin } from '@/services/auth-service.js'
+import { createHealthCheck, getSystemHealth } from '@/services/system-service.js'
 
 export default {
   name: 'UserLogin',
@@ -26,7 +27,6 @@ export default {
   setup() {
     const store = useStore() // 存储
     const { t } = useI18n() // 本地化
-    const client = useClient() // axios客户端
     const panelRef = useTemplateRef('panel-ref') // 面板
     const config = store.getters.config // 配置
 
@@ -45,9 +45,7 @@ export default {
           true,
         )
         try {
-          const response = await client.get('/status/health')
-          if (response.status === 200) {
-            // 状态健康，进入校验自身登陆情况状态
+          if (await getSystemHealth()) {  // 状态健康，进入校验自身登陆情况状态
             context.setState(new CheckUserLoginState())
           } else {
             // 服务异常，无法继续，切换到错误状态
@@ -98,8 +96,7 @@ export default {
           // 定义健康检查函数，定时查询亚托莉状态检测其是否恢复
           const healthCheck = async () => {
             try {
-              const response = await client.get('/status/health')
-              if (response.status === 200) {
+              if (await getSystemHealth()) {
                 resolve() // 完成promise
                 context.setState(new CheckMusicatriServerState()) // 切换状态
               } else {
@@ -148,15 +145,14 @@ export default {
         // console.log('checking login status')
         panelRef.value.setTitle(t('view.UserLogin.checking_login_status'), true)
         try {
-          const response = await client.get('/auth/login')
-
+          const response = await userLogin()
           if (response.status === 200) {
             // 认证成功，跳转到用户主页
             console.log('user already login, redirect to home page...')
             // todo: 执行跳转逻辑...
           } else if (response.status === 401) {
             // 用户未登录，切换到等待登录状态
-            context.setState(new AwaitingRedirectDiscordOauthState(response))
+            context.setState(new AwaitingRedirectDiscordOauthState())
           } else if (response.status === 403) {
             // 用户状态被禁用
             context.setState(ErrorState.clientErrorState(response.statusText))
@@ -182,16 +178,16 @@ export default {
 
     // 等待重定向到discord页面
     class AwaitingRedirectDiscordOauthState extends AbstractState {
-      constructor(_response) {
+      constructor() {
         super()
-        this.response = _response // 后端响应
       }
 
-      enter(context) {
+      async enter(context) {
         panelRef.value.setTitle(t('view.UserLogin.not_login_yet'), false)
+        const response = await getAuthorizeUrl()
         panelRef.value.addLink({
           desc: t('view.UserLogin.to_discord'),
-          href: `${this.response.data.authorize_url}`,
+          href: response.data.authorize_url,
         })
 
         // 启用健康检查
