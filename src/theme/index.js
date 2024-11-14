@@ -1,4 +1,3 @@
-// index.js
 // todo: 补齐主题定义
 import { darkTheme } from '@/theme/dark-theme.js'
 import { baseStyle } from '@/theme/base-theme.js'

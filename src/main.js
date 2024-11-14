@@ -13,7 +13,7 @@ import { initI18n } from '@/locale/index.js'
 app.use(initI18n())  // 本地化
 
 // 路由初始化
-import router from './router'
+import router from './router.js'
 app.use(router)
 
 // 事件总线初始化

@@ -1,4 +1,3 @@
-// src/store/index.js
 // noinspection JSIgnoredPromiseFromCall
 
 import { createStore } from 'vuex'

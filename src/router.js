@@ -8,17 +8,17 @@ const router = createRouter({
       // 设置模块
       path: '/settings',
       name: 'setting',
-      component: () => import('../views/AppSetting.vue'),  // 主设置页面
+      component: () => import('./views/AppSetting.vue'),  // 主设置页面
       children: [
         {
           path: 'appearance',
           name: 'appearance-setting',
-          component: () => import('../views/AppearanceSetting.vue')  // 外观设置页面
+          component: () => import('./views/AppearanceSetting.vue')  // 外观设置页面
         },
         {
           path: 'profile',
           name: 'profile-setting',
-          component: () => import('../views/ProfileSetting.vue')  // 账户设置界面
+          component: () => import('./views/ProfileSetting.vue')  // 账户设置界面
         }
       ]
     },
@@ -30,13 +30,13 @@ const router = createRouter({
         {
           path: 'login',
           name: 'login',
-          component: () => import('../views/UserLogin.vue'),
+          component: () => import('./views/UserLogin.vue'),
         },
         {
           // 用户主页
           path: 'home',
           name: 'user-home',
-          component: () => import('../views/UserHome.vue'),
+          component: () => import('./views/UserHome.vue'),
         }
       ]
     },
@@ -49,13 +49,13 @@ const router = createRouter({
           // 管理员登录页面
           path: 'login',
           name: 'admin-login',
-          component: () => import('../views/AdminLogin.vue'),
+          component: () => import('./views/AdminLogin.vue'),
         },
         {
           // 管理员仪表盘
           path: 'dashboard',
           name: 'admin-dashboard',
-          component: () => import('../views/AdminDashboard.vue'),
+          component: () => import('./views/AdminDashboard.vue'),
         }
       ]
     },
@@ -66,22 +66,24 @@ const router = createRouter({
       children: [
         {
           // 认证模块
-          path: 'oauth2',
-          name: 'auth-route',
+          path: 'v1',
+          name: 'version1',
           children: [
             {
-              // discord认证模块
-              path: 'discord',
-              name: 'auth-discord',
+              path: 'auth',
               children: [
                 {
-                  // discord oauth认证回调
-                  path: 'callback',
-                  name: 'discord-callback',
-                  component: () => import('../views/UserloginPending.vue'),
-                }
+                  path: 'discord',
+                  children: [
+                    {
+                      // discord oauth认证回调
+                      path: 'authorized',
+                      component: () => import('@/views/UserLoginCallback.vue'),
+                    }
+                  ]
+                },
               ]
-            },
+            }
           ]
         }
       ]

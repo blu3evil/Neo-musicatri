@@ -4,6 +4,5 @@
   "DISCORD_LINK": "https://discord.gg/9FwdKEGQXf",
   "API_ENDPOINT": "http://localhost:5000/api/v1",
   "PUBLIC_URL": "http://localhost:5173",
-  "DISCORD_CLIENT_ID": "1295653634234650624",
-  "DISCORD_OAUTH2_SCOPE": "identify guilds guilds.join"
+  "HEALTH_CHECK_INTERVAL": 5
 }
