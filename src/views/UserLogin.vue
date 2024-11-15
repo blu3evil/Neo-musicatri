@@ -17,6 +17,7 @@ import { useStore } from 'vuex'
 import { AbstractState, StateContext } from '@/utils.js'
 import { getAuthorizeUrl, userLogin } from '@/services/auth-service.js'
 import { createHealthCheck, getSystemHealth } from '@/services/system-service.js'
+import { isConnectionError, isServerError, isClientError } from '@/services/error-types.js'
 
 export default {
   name: 'UserLogin',
@@ -44,22 +45,28 @@ export default {
           t('view.UserLogin.checking_musicatri_status'),
           true,
         )
-        try {
-          if (await getSystemHealth()) {  // 状态健康，进入校验自身登陆情况状态
-            context.setState(new CheckUserLoginState())
-          } else {
-            // 服务异常，无法继续，切换到错误状态
-            console.log('musicatri server error')
-            context.setState(ErrorState.serverErrorState(response.statusText))
-          }
-        } catch (error) {
-          // axios发生异常
-          if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-            // 对于连接超时，本地连接超时，进入轮询等待状态，等待服务器响应正常
-            context.setState(new ReconnectMusicatriServerState(error))
-          } else {
-            context.setState(ErrorState.clientErrorState(error))
-          }
+
+        const result = await getSystemHealth()
+        if (result.success) {  // 状态健康，进入校验自身登陆情况状态
+          context.setState(new CheckUserLoginState())
+          return
+        }
+
+        let errorType = result.errorType
+        let message = result.message
+
+        if (isServerError(errorType)) {
+          // 服务异常，无法继续，切换到错误状态
+          console.log('musicatri server error')
+          context.setState(ErrorState.serverErrorState(message))
+        } else if (isClientError(errorType)) {
+          // 客户端错误
+          context.setState(ErrorState.clientErrorState(message))
+        } else if (isConnectionError(errorType)) {
+          // 对于连接超时，本地连接超时，进入轮询等待状态，等待服务器响应正常
+          context.setState(new ReconnectMusicatriServerState(message))
+        } else {
+          context.setState(ErrorState.unknownErrorState(message))
         }
       }
 
@@ -238,7 +245,7 @@ export default {
 
       // 服务端异常
       static serverErrorState(message) {
-        return new ServerErrorState()
+        return new ServerErrorState(message)
       }
 
       // 未知异常

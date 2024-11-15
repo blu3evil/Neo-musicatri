@@ -1,6 +1,5 @@
 /* 通用客户端 */
 import { getActiveLanguage } from '@/locale/index.js'
-import { ErrorTypes } from '@/services/error-types.js'
 import store from '@/storage/index.js'
 import axios from 'axios'
 
@@ -22,39 +21,121 @@ client.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-client.interceptors.response.use(response => {
-  // 服务端异常处理，统一响应形式
-  let message = response.data.message
-  let data = response.data
-  let status = response.status
-  if (status === 200) {
-    // 请求成功
-    return { success: true, message: message, data: data }
-  } else if (status >= 400 && status < 500) {
-    // 客户端错误
-    if (status === 401) return { success: false, message: message, errorType: ErrorTypes.UNAUTHORIZED }
-    if (status === 403) return { success: false, message: message, errorType: ErrorTypes.FORBIDDEN }
-    if (status === 404) return { success: false, message: message, errorType: ErrorTypes.NOTFOUND }
-    return { success: false, message: message, data: data, errorType: ErrorTypes.CLIENT_ERROR }
-  } else if (status >= 500 && status < 600) {
-    // 服务端异常
-    return { success: false, message: message, data: data, errorType: ErrorTypes.SERVER_ERROR }
-  } else {
-    // 未知异常
-    return { success: false, message: message, data: data, errorType: ErrorTypes.UNAUTHORIZED }
+class MusicatriError extends Error {
+  constructor(type, message) {
+    super(message)
+    this.type = type
   }
-},
+
+  // 是否为客户端错误
+  isClientError() {
+    return [
+      ErrorTypes.CLIENT_ERROR,
+      ErrorTypes.UNAUTHORIZED,
+      ErrorTypes.FORBIDDEN,
+      ErrorTypes.NOTFOUND,
+    ].includes(this.type)
+  }
+
+  // 是否为服务端错误
+  isServerError() {
+    return [
+      ErrorTypes.UNKNOWN_ERROR,
+      ErrorTypes.SERVER_ERROR
+    ].includes(this.type)
+  }
+
+  // 是否为连接错误
+  isConnectionError() {
+    return [
+      ErrorTypes.CONNECTION_ERROR
+    ].includes(this.type)
+  }
+}
+
+export const ErrorTypes = {
+  SERVER_ERROR: 'SERVER_ERROR',
+  CLIENT_ERROR: 'CLIENT_ERROR',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  NOTFOUND: 'NOTFOUND',
+  UNKNOWN_ERROR: 'UNAUTHORIZED',
+  CONNECTION_ERROR: 'CONNECTION_ERROR', // axios无法链接到服务端
+}
+
+client.interceptors.response.use(
+  response => {
+    // 服务端异常处理，统一响应形式
+    let message = response.data.message
+    let data = response.data
+    let status = response.status
+    if (status === 200) {
+      // 请求成功
+      return { success: true, message: message, data: data }
+    } else if (status >= 400 && status < 500) {
+      // 客户端错误
+      if (status === 401)
+        return {
+          success: false,
+          message: message,
+          errorType: ErrorTypes.UNAUTHORIZED,
+        }
+      if (status === 403)
+        return {
+          success: false,
+          message: message,
+          errorType: ErrorTypes.FORBIDDEN,
+        }
+      if (status === 404)
+        return {
+          success: false,
+          message: message,
+          errorType: ErrorTypes.NOTFOUND,
+        }
+      return {
+        success: false,
+        message: message,
+        data: data,
+        errorType: ErrorTypes.CLIENT_ERROR,
+      }
+    } else if (status >= 500 && status < 600) {
+      // 服务端异常
+      return {
+        success: false,
+        message: message,
+        data: data,
+        errorType: ErrorTypes.SERVER_ERROR,
+      }
+    } else {
+      // 未知异常
+      return {
+        success: false,
+        message: message,
+        data: data,
+        errorType: ErrorTypes.UNAUTHORIZED,
+      }
+    }
+  },
 
   // axios异常处理
-error => {
-  if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-    // 服务器链接异常
-    return { success: false, message: error, errorType: ErrorTypes.CONNECTION_ERROR }
-  } else {
-    // 未知异常
-    return { success: false, message: error, errorType: ErrorTypes.UNKNOWN_ERROR }
-  }
-})
+  error => {
+    if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
+      // 服务器链接异常
+      return {
+        success: false,
+        message: error,
+        errorType: ErrorTypes.CONNECTION_ERROR,
+      }
+    } else {
+      // 未知异常
+      return {
+        success: false,
+        message: error,
+        errorType: ErrorTypes.UNKNOWN_ERROR,
+      }
+    }
+  },
+)
 
 
 /* 构建userClient对象 */

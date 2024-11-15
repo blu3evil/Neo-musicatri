@@ -1,9 +1,22 @@
-export const ErrorTypes = {
-  SERVER_ERROR: 'SERVER_ERROR',
-  CLIENT_ERROR: 'CLIENT_ERROR',
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  NOTFOUND: 'NOTFOUND',
-  UNKNOWN_ERROR: 'UNAUTHORIZED',
-  CONNECTION_ERROR: 'CONNECTION_ERROR',  // axios无法链接到服务端
-};
+import { ErrorTypes } from '@/services/axios-client.js'
+
+export const isClientError = errorType => {
+  return [
+    ErrorTypes.CLIENT_ERROR,
+    ErrorTypes.UNAUTHORIZED,
+    ErrorTypes.FORBIDDEN,
+    ErrorTypes.NOTFOUND,
+  ].includes(errorType)
+}
+
+export const isServerError = errorType => {
+  return [ErrorTypes.UNKNOWN_ERROR, ErrorTypes.SERVER_ERROR].includes(errorType)
+}
+
+export const isConnectionError = errorType => {
+  return [ErrorTypes.CONNECTION_ERROR].includes(errorType)
+}
+
+export const isUnknownError = errorType => {
+  return [ErrorTypes.UNKNOWN_ERROR].includes(errorType)
+}
