@@ -30,7 +30,7 @@ export default {
     const addReturnMainLink = () => {
       panelRef.value.addLink({
         desc: t('view.NotFound.return_index'),
-        click: () => navigateHelper.toIndex(),
+        click: () => navigateHelper.toUserIndex(),
         href: '/'
       })
     }

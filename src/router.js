@@ -118,18 +118,35 @@ router.beforeEach((
   }
 })
 
+// 跳转助手，封装跳转逻辑
 class NavigateHelper {
-  async toUserLogin () {
+  // 用户登录页面
+  async toUserLogin() {
     await router.push('/user/login')
   }
 
+  // 主页
   async toIndex () {
     await router.push('/')
   }
+
+  // 用户主页
+  async toUserHome() {
+    await router.push('/user/home')
+  }
+
+  // 前往用户主页，基于后端接口判断用户登陆状态后选择性跳转
+  async toUserIndex() {
+    const result = await getUserLoginStatus()
+    if (result.isSuccess()) await this.toUserHome()
+    else await this.toUserLogin()
+  }
 }
 
+const navigateHelper = new NavigateHelper()
+
 export const useNavigateHelper = () => {
-  return new NavigateHelper()
+  return navigateHelper
 }
 
 export default router

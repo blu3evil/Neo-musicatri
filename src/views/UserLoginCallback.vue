@@ -4,31 +4,26 @@
 import CommonNavbar from '@/components/common-navbar.vue'
 import CommonPanel from '@/components/common-panel.vue'
 import { useI18n } from 'vue-i18n'
-import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/utils.js'
 import { getAuthorizeUrl, userAuthorize } from '@/services/auth-service.js'
-import { useRouter } from 'vue-router'
+import { useNavigateHelper } from '@/router.js'
+import CommonBackground from '@/components/common-background.vue'
 
 export default {
   components: {
+    CommonBackground,
     CommonPanel,
     CommonNavbar,
   },
 
   setup() {
     const { t } = useI18n() // 本地化
-    const router = useRouter() // 路由
+    const navigateHelper = useNavigateHelper()
     let context = null
 
+    const bgRef = useTemplateRef('bg-ref')
     const panelRef = useTemplateRef('panel-ref') // 面板引用
-    const imageUrl = ref('/src/assets/user-login-callback/ev005al.png')
-
-    // 预加载图片
-    const preloadImage = _imageUrl => {
-      const img = new Image()
-      img.src = _imageUrl // 使用错误响应时的背景
-      img.onload = () => (imageUrl.value = img.src) // 等待图片加载完成后再刷新
-    }
 
     // 初始状态，等待授权响应
     class AwaitingAuthResponseState extends AbstractState {
@@ -76,12 +71,12 @@ export default {
         panelRef.value.clearLinks()
         panelRef.value.addLink({
           desc: `${t('view.UserLoginCallback.return_login')}(${this.surplus})`,
-          click: () => router.push('/'),
+          click: () => navigateHelper.toUserLogin(),
         })
       }
 
       async enter(context) {
-        preloadImage('/src/assets/user-login-callback/ev005cl.png')
+        bgRef.value.loadAsync('/src/assets/user-login-callback/ev005cl.png')
         panelRef.value.setTitle(t('view.UserLoginCallback.auth_success'))
         this.updateLink()
         this.countdownIntervalId = setInterval(() => {
@@ -89,7 +84,7 @@ export default {
           this.surplus--
           if (this.surplus <= 0) {
             clearInterval(this.countdownIntervalId)
-            router.push('/')
+            navigateHelper.toUserLogin()
           }
           this.updateLink()
         }, 1000)
@@ -147,7 +142,7 @@ export default {
       addReturnLink() {
         panelRef.value.addLink({
           desc: t('view.UserLoginCallback.return_login'),
-          click: () => router.push('/'),
+          click: () => navigateHelper.toUserLogin(),
           href: '/',
         })
       }
@@ -162,7 +157,7 @@ export default {
       }
 
       enter(context) {
-        preloadImage('/src/assets/user-login-callback/ev005bl.png')
+        bgRef.value.loadAsync('/src/assets/user-login-callback/ev005bl.png')
         panelRef.value.setTitle(this.title)
         panelRef.value.setMessage(this.message, true)
       }
@@ -262,6 +257,8 @@ export default {
     }
 
     onMounted(() => {
+      // 加载背景图片
+      bgRef.value.loadAsync('/src/assets/user-login-callback/ev005al.png')
       context = new StateContext() // 状态上下文
       context.setState(new AwaitingAuthResponseState())
     })
@@ -269,18 +266,12 @@ export default {
     onBeforeUnmount(() => {
       context.setState(null)
     })
-
-    return {
-      imageUrl,
-    }
   },
 }
 </script>
 
 <template>
-  <div class="background" :style="{ backgroundImage: `url(${imageUrl})` }" />
+  <CommonBackground ref="bg-ref" />
   <CommonNavbar />
   <CommonPanel ref="panel-ref" />
 </template>
-
-<style scoped></style>

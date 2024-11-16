@@ -6,11 +6,8 @@ import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/utils.js'
 import { getAuthorizeUrl, userLogin } from '@/services/auth-service.js'
-import {
-  createHealthCheck,
-  getSystemHealth,
-} from '@/services/system-service.js'
-import router from '@/router.js'
+import { createHealthCheck, getSystemHealth } from '@/services/system-service.js'
+import { useNavigateHelper } from '@/router.js'
 import CommonBackground from '@/components/common-background.vue'
 
 export default {
@@ -24,6 +21,7 @@ export default {
     const { t } = useI18n() // 本地化
     const panelRef = useTemplateRef('panel-ref') // 面板
     const bgRef = useTemplateRef('bg-ref')
+    const navigateHelper = useNavigateHelper()
 
     let defaultInterval = 5000 // 默认间隔时间
     let defaultReconnectMaxTimes = 3 // 默认最大允许重连次数
@@ -125,8 +123,7 @@ export default {
         const result = await userLogin()
         if (result.isSuccess()) {
           // 认证成功，跳转到用户主页
-          console.log('user already login, redirect to home page...')
-          await router.push('/user/home')
+          await navigateHelper.toUserHome()
         } else if (result.isConnectionError()) {
           // 连接异常，需要切换到重连状态
           context.setState(new ReconnectMusicatriServerState(result.message))

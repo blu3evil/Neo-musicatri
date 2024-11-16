@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { availableLanguages, getActiveLanguage, getLanguageDisplayName } from '@/locale/index.js'
 import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
+import { useNavigateHelper } from '@/router.js'
 
 export default {
   setup() {
@@ -15,12 +16,13 @@ export default {
 
     const router = useRouter()  // 路由
     const store = useStore()  // 存储
+    const navigateHelper = useNavigateHelper()
 
     const instance = getCurrentInstance() // 获取当前实例
     const config = instance.appContext.config.globalProperties.$config  // 配置
     const activeSettingPage = computed(() => store.getters.activeSettingPage)
 
-    const {t ,locale} = useI18n()  // 本地化
+    const { t ,locale } = useI18n()  // 本地化
     const activeLanguage = ref('')
     const activeThemeId = ref('')
     const hoverIndex = ref({})  // 当前鼠标悬停索引，用于着重染色
@@ -54,7 +56,7 @@ export default {
     const onAppSettingClick = () => {
       let currentPath = router.currentRoute.value.path
       if (!currentPath.startsWith('/settings')) {
-        // 当前路径不以/settings开头，记录下这个路径，方便跳转
+        // 当前路径不以/settings开头，记录下这个路径，并在将来回溯
         store.commit('setPathBeforeIntoSettingPage', currentPath)
         router.push(`/settings/${activeSettingPage.value}`)
       } else {
@@ -63,7 +65,7 @@ export default {
         if (before != null && before !== '') {
           router.push(before)  // 如果before路径存在
         } else {
-          router.push(`/`)  // 否则跳转到主页
+          navigateHelper.toIndex()  // 否则跳转到主页
         }
       }
     }
@@ -87,7 +89,7 @@ export default {
 
     // logo链接，跳转到登录页/user/login
     const onNavbarLogoClick = () => {
-      router.push('/')
+      navigateHelper.toUserIndex()
     }
 
     return {
