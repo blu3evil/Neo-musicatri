@@ -1,6 +1,5 @@
 // 状态模式
 // 健康检查
-
 class AbstractState {
   // 切入状态时被调用
   enter(context) {
@@ -28,5 +27,4 @@ class StateContext {
 export {
   AbstractState,
   StateContext,
-
 }

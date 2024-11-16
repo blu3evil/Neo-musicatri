@@ -6,12 +6,11 @@ import store from '@/storage/index.js'
 
 const client = useClient()  // 客户端
 
-// 获取服务器当前健康状态
-const getSystemHealth = async () => {
-  return await client.get('/system/health')
-}
+const urlPrefix = '/system'
 
-export { getSystemHealth }
+// 获取服务器当前健康状态
+export const getSystemHealth = () => client.get(`${urlPrefix}/health`)
+
 const config = store.getters.config
 const HEALTH_CHECK_INTERVAL = config['HEALTH_CHECK_INTERVAL']
 
@@ -20,17 +19,13 @@ class HealthCheck {
     this.healthcheckIntervalId = 0
   }
 
-  begin(onConnectError) {
+  begin(onConnectionError) {
     clearInterval(this.healthcheckIntervalId) // 避免重复创建
     this.healthcheckIntervalId = setInterval(async () => {
       // 执行健康检查
-      try {
-        await getSystemHealth()
-      } catch (error) {
-        if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-          clearInterval(this.healthcheckIntervalId)
-          onConnectError()
-        }
+      const result = await getSystemHealth()
+      if (result.isConnectionError()) {
+        onConnectionError(result)
       }
     }, HEALTH_CHECK_INTERVAL * 1000)
   }
@@ -43,4 +38,7 @@ class HealthCheck {
 const createHealthCheck = () => {
   return new HealthCheck()
 }
-export { createHealthCheck }
+
+export {
+  createHealthCheck
+}

@@ -8,7 +8,7 @@ console.log(store.getters['config']['API_ENDPOINT'])
 const config = store.getters.config
 
 const client = axios.create({
-  validateStatus: status => status >= 200 && status < 500, // 禁用异常抛出
+  validateStatus: status => status >= 200 && status < 600, // 禁用异常抛出
   baseURL: config['API_ENDPOINT'],
   timeout: 10000,
 })
@@ -21,120 +21,56 @@ client.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-class MusicatriError extends Error {
-  constructor(type, message) {
-    super(message)
-    this.type = type
+// 服务端响应类
+class MusicatriResult {
+  constructor(code, message, data) {
+    this.code = code
+    this.message = message
+    this.data = data
+  }
+
+  // 是否成功
+  isSuccess() {
+    return this.code === 200
   }
 
   // 是否为客户端错误
   isClientError() {
-    return [
-      ErrorTypes.CLIENT_ERROR,
-      ErrorTypes.UNAUTHORIZED,
-      ErrorTypes.FORBIDDEN,
-      ErrorTypes.NOTFOUND,
-    ].includes(this.type)
+    return this.code >= 400 && this.code < 500
   }
 
   // 是否为服务端错误
   isServerError() {
-    return [
-      ErrorTypes.UNKNOWN_ERROR,
-      ErrorTypes.SERVER_ERROR
-    ].includes(this.type)
+    return this.code >= 500 && this.code < 600
   }
 
   // 是否为连接错误
   isConnectionError() {
-    return [
-      ErrorTypes.CONNECTION_ERROR
-    ].includes(this.type)
+    return this.code === 601 || this.code === 602
   }
 }
 
-export const ErrorTypes = {
-  SERVER_ERROR: 'SERVER_ERROR',
-  CLIENT_ERROR: 'CLIENT_ERROR',
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  NOTFOUND: 'NOTFOUND',
-  UNKNOWN_ERROR: 'UNAUTHORIZED',
-  CONNECTION_ERROR: 'CONNECTION_ERROR', // axios无法链接到服务端
-}
-
+// 将响应封装为统一对象
 client.interceptors.response.use(
   response => {
     // 服务端异常处理，统一响应形式
-    let message = response.data.message
-    let data = response.data
-    let status = response.status
-    if (status === 200) {
-      // 请求成功
-      return { success: true, message: message, data: data }
-    } else if (status >= 400 && status < 500) {
-      // 客户端错误
-      if (status === 401)
-        return {
-          success: false,
-          message: message,
-          errorType: ErrorTypes.UNAUTHORIZED,
-        }
-      if (status === 403)
-        return {
-          success: false,
-          message: message,
-          errorType: ErrorTypes.FORBIDDEN,
-        }
-      if (status === 404)
-        return {
-          success: false,
-          message: message,
-          errorType: ErrorTypes.NOTFOUND,
-        }
-      return {
-        success: false,
-        message: message,
-        data: data,
-        errorType: ErrorTypes.CLIENT_ERROR,
-      }
-    } else if (status >= 500 && status < 600) {
-      // 服务端异常
-      return {
-        success: false,
-        message: message,
-        data: data,
-        errorType: ErrorTypes.SERVER_ERROR,
-      }
-    } else {
-      // 未知异常
-      return {
-        success: false,
-        message: message,
-        data: data,
-        errorType: ErrorTypes.UNAUTHORIZED,
-      }
-    }
+    return Promise.resolve(
+      new MusicatriResult(
+        response.status, response.data.message, response.data.data
+      )
+    )
   },
-
-  // axios异常处理
+  // axios异常处理，统一相应格式
   error => {
-    if (error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED') {
-      // 服务器链接异常
-      return {
-        success: false,
-        message: error,
-        errorType: ErrorTypes.CONNECTION_ERROR,
-      }
-    } else {
-      // 未知异常
-      return {
-        success: false,
-        message: error,
-        errorType: ErrorTypes.UNKNOWN_ERROR,
-      }
-    }
-  },
+    let code = 600
+    let message = error.message  || error
+
+    if (error.code === 'ERR_NETWORK') code = 601  // 网络错误
+    else if (error.code === 'ECONNABORTED') code = 602  // 连接错误
+
+    // 避免抛出异常
+    return Promise.resolve(new MusicatriResult(code, message, error))
+  }
 )
 
 

@@ -41,7 +41,7 @@ const initTheme = () => {
  * @param themeId 主题名称，参考{@link themes}键名定义
  */
 const setTheme = (themeId) => {
-  if (themeId == null) return false  // themeId为null，不执行修改
+  if (themeId == null || typeof themeId !== 'number') return false  // themeId为null，不执行修改
 
   let targetTheme = themes[themeId]
   if (targetTheme !== -1) {  // 检查是否存在指定id的主题

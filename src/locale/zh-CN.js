@@ -58,9 +58,10 @@ export default {
       'reach_reconnect_limit': '无法建立到服务端的连接',
       'reach_reconnect_limit_subtitle': '重连次数达到上线',
       'try_reconnect': '尝试重连',
-      'sending_issue': '给开发者发送issue!',
+      'sending_issue': '发送issue!',
       'current_retry_times': '正在进行第 {times} 次重连尝试',
       'error_occur_title': '连接状态异常',
+      'connection_error': '连接状态异常',
       'retry_login': '返回重新登陆',
       'checking_login_status': '正在校验登录状态',
       'not_login_yet': '还没有登陆喵',
@@ -70,8 +71,13 @@ export default {
     },
     'UserLoginCallback': {
       'retry_authorize': '重新授权',
-      'return_login': '返回登录主页',
+      'return_login': '返回主页',
       'auth_success': '授权成功',
+      'awaiting_authorize': '努力跳转到授权页面'
+    },
+    'NotFound': {
+      'title': '这个路径不存在(っ`-´c)!',
+      'return_index': '返回主页',
     }
   }
 }

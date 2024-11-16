@@ -16,7 +16,6 @@ export default {
     const router = useRouter()  // 路由
     const store = useStore()  // 存储
 
-    const imageErrorHandler = () => true  // avatar加载错误回退
     const instance = getCurrentInstance() // 获取当前实例
     const config = instance.appContext.config.globalProperties.$config  // 配置
     const activeSettingPage = computed(() => store.getters.activeSettingPage)
@@ -97,10 +96,9 @@ export default {
       hoverIndex,
 
       handleSelect, //
-      imageErrorHandler, // avatar图片错误处理
+      onNavbarLogoClick, // logo被点击
       onGithubLinkClick, // github链接被点击
       onDiscordLinkClick, // discord链接被点击
-      onNavbarLogoClick, // logo被点击
       onAppSettingClick, // 项目设置页面
       popperStyle,  // 弹出框统一样式1
 
@@ -171,43 +169,6 @@ export default {
         </template>
       </el-popover>
     </el-menu-item>
-
-    <!-- 语言切换 -->
-<!--    <el-menu-item index="1">-->
-<!--      <el-popover-->
-<!--        :width="260"-->
-<!--        popper-class="navbar-popper"-->
-<!--        :popper-style="popperStyle"-->
-<!--      >-->
-<!--        <template #reference>-->
-<!--          <el-image-->
-<!--            style="width: 60px"-->
-<!--            src="/src/assets/common-navbar/pngwing.com.png"-->
-<!--            fit="contain"-->
-<!--            @error="imageErrorHandler"-->
-<!--          />-->
-<!--        </template>-->
-<!--        <template #default>-->
-<!--          <div v-for="(lang, index) in langs">-->
-<!--            <div v-bind:key="index"-->
-<!--                 class="lang-select-item"-->
-<!--                 @mouseover="hoverIndex.value = index"-->
-<!--                 @mouseleave="hoverIndex.value = null"-->
-<!--                 :style="{-->
-<!--                  backgroundColor: hoverIndex.value === index ? 'var(&#45;&#45;popper-hover-bg-color)' : 'transparent',-->
-<!--                  width: '100%',-->
-<!--                  textIndent: '20px'  // 文本偏移-->
-<!--                }"-->
-<!--                 @click="onLangOptionClick(lang)"-->
-<!--            >-->
-<!--              <span v-if="currentLang === lang">> {{getDisplayName(lang)}}</span>-->
-<!--              <span v-else>- {{getDisplayName(lang)}}</span>-->
-<!--            </div>-->
-<!--          </div>-->
-
-<!--        </template>-->
-<!--      </el-popover>-->
-<!--    </el-menu-item>-->
 
     <!-- discord跳转链接 -->
     <el-menu-item index="1">

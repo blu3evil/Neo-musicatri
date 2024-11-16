@@ -2,34 +2,24 @@
 // noinspection JSUnresolvedReference
 
 import { useClient } from '@/services/axios-client.js'
-
 const client = useClient()  // 客户端
 
-// 获取认证路径
-const getAuthorizeUrl = async () => {
-  return await client.get('/auth/authorize-url')
-}
+const urlPrefix = '/auth'
 
-// 获取用户登入状态
-const getUserLoginStatus = async () => {
-  return await client.get('/auth/status')
-}
+// 获取认证路径
+export const getAuthorizeUrl = () =>
+  client.get(`${urlPrefix}/authorize-url`)
 
 // 用户登入
-const userLogin = async () => {
-  return await client.get('/auth/login')
-}
+export const userLogin = () =>
+  client.get(`${urlPrefix}/login`)
+
+// 获取用户登入状态
+export const getUserLoginStatus = () =>
+  client.get(`${urlPrefix}/status`)
 
 // 用户授权
-const userAuthorize = async (code) => {
-  return await client.post('/auth/authorize', { code: code })
-}
-
-export {
-  userLogin,
-  userAuthorize,
-  getAuthorizeUrl,
-  getUserLoginStatus
-}
+export const userAuthorize = code =>
+  client.post(`${urlPrefix}/authorize`, { code: code })
 
 

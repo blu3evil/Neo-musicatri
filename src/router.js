@@ -96,6 +96,11 @@ const router = createRouter({
       // 默认跳转页
       path: '/',
       redirect: '/user/login'
+    },
+    {
+      // 未定义路径
+      path: '/:catchAll(.*)',
+      component: () => import('./views/NotFound.vue'),
     }
   ]
 })
@@ -104,8 +109,8 @@ const router = createRouter({
 router.beforeEach((
   to, from, next) => {
   if (to.meta.loginRequired) {
-    getUserLoginStatus().then(response => {
-      if (response.status === 200) next()  // 放行
+    getUserLoginStatus().then(result => {
+      if (result.isSuccess()) next()  // 放行
       else next('/user/login')  // 拒行
     })
   } else {
@@ -113,6 +118,18 @@ router.beforeEach((
   }
 })
 
+class NavigateHelper {
+  async toUserLogin () {
+    await router.push('/user/login')
+  }
 
+  async toIndex () {
+    await router.push('/')
+  }
+}
+
+export const useNavigateHelper = () => {
+  return new NavigateHelper()
+}
 
 export default router
