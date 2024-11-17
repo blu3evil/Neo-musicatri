@@ -6,8 +6,8 @@
 
     --text-color: #b98787;  /* 普通文本颜色 */
     --text-small: 23px;     /* 小号字 */
-    --text-medium: 25px;    /* 中号字 */
-    --text-large: 42px;     /* 大号字 */
+    --text-medium: 27px;    /* 中号字 */
+    --text-large: 3.3em;     /* 大号字 */
 
     --error-color: #e0e0e0;  /* 错误消息颜色 */
     --success-color: #e0e0e0;  /* 成功消息颜色 */
@@ -90,15 +90,26 @@ body {
     -ms-user-select: none;     /* Internet Explorer/Edge */
 }
 
+/* 设定页面分割线 */
+.setting-divider {
+    height: 1px;
+    width: 78%;
+    background-color: var(--divider-color);
+    margin: 40px 0 10px 0;
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+}
+
 /* 所有弹出框 */
 .el-popper {
     color: var(--text-color) !important;
     font-size: var(--text-medium) !important;
     background-color: var(--popper-bg-color) !important;
-    /*padding: 5px 0 5px 0 !important;*/
     border: 1px solid var(--popper-border-color) !important;
     box-shadow: var(--box-shadow) !important;
-    /*box-shadow: none !important;  !* 弹出框阴影设定 *!*/
     user-select: none;  /* 用户不可选中 */
 }
 
@@ -111,10 +122,6 @@ body {
 .el-popper>.el-popper__arrow:before {
     background-color: var(--popper-bg-color) !important;
     border: none !important;  /* 将箭头的边框取消 */
-    /*border-top: 1px solid var(--popper-border-color) !important;*/
-    /*border-left: 1px solid var(--popper-border-color) !important;*/
-    /*border-right: none !important;*/
-    /*border-bottom: none !important;*/
 }
 
 /* 选择框样式 */
@@ -161,6 +168,42 @@ body {
     /*transition: background-image 1s ease-in-out;*/ /* 平滑过渡 */
 }
 
+/* 消息弹窗 */
+.el-message-box {
+    background-color: var(--redirect-card-bg-color) !important;
+    border: 1px solid var(--redirect-card-bg-color) !important;
+    box-shadow: var(--box-shadow) !important;
+    --el-messagebox-width: 700px !important;
+    border-radius: 13px !important;
+    pointer-events: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+}
 
+/* 消息弹窗标题 */
+.el-message-box__title {
+    color: var(--text-color) !important;
+    font-size: var(--text-medium) !important;
+    pointer-events: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+}
+
+/* 消息弹窗消息提示 */
+.el-message-box__content {
+    color: var(--error-color) !important;
+    font-size: var(--text-medium) !important;
+    pointer-events: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+}
+
+/* 主要按钮 */
+.el-button-primary {
+
+}
 
 

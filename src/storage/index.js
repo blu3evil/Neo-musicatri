@@ -1,17 +1,21 @@
 // noinspection JSIgnoredPromiseFromCall
 
 import { createStore } from 'vuex'
+import theme from '@/storage/theme-module.js'  // 主题模块
+import socket from '@/storage/socket-module.js'  // socketio模块
+
 import axios from 'axios'
-// todo: 可能将axios逻辑优化到vuex
 const availableSettingPages = ['appearance', 'profile']  // 可用设置页面列表
 
 const store = createStore({
   modules: {
+    theme  /* 主题模块 */,
+    socket  /* socketio模块 */
   },
   state: {
     activeSettingPage: 'appearance',    // 当前激活的设置页面
     pathBeforeIntoSettingPage: '',      // 进入设置页面之前所在页面，用于从设置页面回溯
-    config: null                       // 项目配置
+    config: null,                       // 项目配置
   },
   mutations: {
     // Setter
@@ -41,9 +45,12 @@ const store = createStore({
       else commit('setActiveSettingPage', availableSettingPages[0])
     },
     // 加载项目配置
-    async loadConfig({ commit }) {
-      const response = await axios.get('/config.json')
-      commit('setConfig', response.data)
+    async loadConfig({ state, commit }) {
+      // 避免重复初始化配置
+      if (state.config === null) {
+        const response = await axios.get('/config.json')
+        commit('setConfig', response.data)
+      }
     },
   },
   getters: {
@@ -58,12 +65,16 @@ const store = createStore({
 store.subscribe((mutation, state) => {
   // 数据监听，变化时自动同步到localstorage
   if (mutation.type === 'setActiveSettingPage') {
+    // 同步设置页面
     localStorage.setItem('activeSettingPage', state.activeSettingPage)
+  } else if (mutation.type === 'setActiveTheme') {
+    // 同步主题，此处应当使用模块引用
+    localStorage.setItem('activeTheme', state.theme.activeTheme)
   }
 })
 
 store.dispatch('loadActiveSettingPage') // 加载activeSettingPage
 store.dispatch('loadConfig')  // 加载config
-
+store.dispatch('loadActiveTheme')
 
 export default store

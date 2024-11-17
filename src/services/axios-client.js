@@ -2,9 +2,9 @@
 import { getActiveLanguage } from '@/locale/index.js'
 import store from '@/storage/index.js'
 import axios from 'axios'
+import { MusicatriResult } from '@/utils.js'
 
 await store.dispatch('loadConfig')  // 等待加载完成
-console.log(store.getters['config']['API_ENDPOINT'])
 const config = store.getters.config
 
 const client = axios.create({
@@ -20,35 +20,6 @@ client.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
-
-// 服务端响应类
-class MusicatriResult {
-  constructor(code, message, data) {
-    this.code = code
-    this.message = message
-    this.data = data
-  }
-
-  // 是否成功
-  isSuccess() {
-    return this.code === 200
-  }
-
-  // 是否为客户端错误
-  isClientError() {
-    return this.code >= 400 && this.code < 500
-  }
-
-  // 是否为服务端错误
-  isServerError() {
-    return this.code >= 500 && this.code < 600
-  }
-
-  // 是否为连接错误
-  isConnectionError() {
-    return this.code === 601 || this.code === 602
-  }
-}
 
 // 将响应封装为统一对象
 client.interceptors.response.use(
@@ -72,7 +43,6 @@ client.interceptors.response.use(
     return Promise.resolve(new MusicatriResult(code, message, error))
   }
 )
-
 
 /* 构建userClient对象 */
 const useClient = () => client;

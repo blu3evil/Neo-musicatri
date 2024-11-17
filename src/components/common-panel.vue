@@ -6,14 +6,14 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 export default {
   setup(props, { expose }) {
-    const store = useStore()  // 存储
-    const { t } = useI18n()  // 本地化
+    const store = useStore() // 存储
+    const { t } = useI18n() // 本地化
 
-    const links = ref([])  // 所有可用连接
+    const links = ref([]) // 所有可用连接
     const title = ref('') // 标题
     const subtitle = ref('') // 子标题
     const ellipsis = ref('.') // 字符串加载动画
-    const ellipsisDisplay = ref(false)  // 加载字符串显示
+    const ellipsisDisplay = ref(false) // 加载字符串显示
 
     const message = ref('') // 消息
     const isError = ref(false) // 是否为错误消息
@@ -79,7 +79,7 @@ export default {
     })
 
     onUnmounted(() => {
-      clearInterval(ellipsisIntervalId)  // 清除字符串循环
+      clearInterval(ellipsisIntervalId) // 清除字符串循环
     })
 
     // 将方法暴露到外部
@@ -91,7 +91,7 @@ export default {
       addIssueLink,
       clearTitle,
       clearLinks,
-      clearMessage
+      clearMessage,
     })
 
     return {
@@ -110,8 +110,8 @@ export default {
 
 <template>
   <el-row class="row-bg full-height" align="middle" justify="center">
-    <el-col :span="9">
-      <el-card id="redirect-card" class="unselectable">
+    <el-col :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+      <el-card id="redirect-card" style="width: 800px" class="unselectable">
         <!-- 设置背景色 -->
         <template #header>
           <div class="card-header">
@@ -126,15 +126,19 @@ export default {
               <a
                 :href="link['href']"
                 :target="link['target']"
-                v-if="link['click'] == null">
-                {{ link['desc'] }}  <!-- 超链接 -->
+                v-if="link['click'] == null"
+              >
+                {{ link['desc'] }}
+                <!-- 超链接 -->
               </a>
               <a
                 :href="link['href']"
                 :target="link['target']"
                 v-if="link['click'] != null"
-                @click.prevent="link['click']">
-                {{ link['desc'] }}  <!-- 事件链接 -->
+                @click.prevent="link['click']"
+              >
+                {{ link['desc'] }}
+                <!-- 事件链接 -->
               </a>
             </div>
           </div>
@@ -156,20 +160,20 @@ a {
   text-decoration: none; /* 去掉默认的下划线 */
   //text-decoration-color: lightgray;
   //text-decoration-thickness: 1px;
-  position: relative;    /* 设置为相对定位以便定位伪元素 */
+  position: relative; /* 设置为相对定位以便定位伪元素 */
   display: inline-block; /* 让元素像块级元素一样行为，方便控制大小 */
 }
 
 a:after {
-  content: "";                            /* 伪元素不需要文本内容 */
-  position: absolute;                     /* 定位到父元素的底部 */
-  bottom: 7px;                            /* 让线条位于超链接的底部 */
-  left: 0;                                /* 从左边开始 */
-  width: 100%;                            /* 初始宽度为 0 */
-  height: 2px;                            /* 设置线条的高度 */
-  background-color: var(--a-color);       /* 设置线条颜色 */
-  transform: scaleX(0);                   /* 初始状态为缩放为0 */
-  transform-origin: bottom left;          /* 动画从右侧开始 */
+  content: ''; /* 伪元素不需要文本内容 */
+  position: absolute; /* 定位到父元素的底部 */
+  bottom: 7px; /* 让线条位于超链接的底部 */
+  left: 0; /* 从左边开始 */
+  width: 100%; /* 初始宽度为 0 */
+  height: 2px; /* 设置线条的高度 */
+  background-color: var(--a-color); /* 设置线条颜色 */
+  transform: scaleX(0); /* 初始状态为缩放为0 */
+  transform-origin: bottom left; /* 动画从右侧开始 */
   transition: transform 0.3s ease-in-out;
 }
 

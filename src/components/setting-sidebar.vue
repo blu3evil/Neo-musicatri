@@ -6,11 +6,14 @@ import {
   Menu as IconMenu,
   Location,
   Setting,
+  UserFilled,
+  InfoFilled,
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { computed, onMounted, ref } from 'vue' // 路由
+import { computed, onMounted, h } from 'vue' // 路由
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
+import { ElIcon } from 'element-plus'
 
 export default {
   components: {
@@ -18,6 +21,7 @@ export default {
     Document,
     Location,
     Setting,
+    InfoFilled,
   },
   setup() {
     const router = useRouter() // 路由
@@ -26,7 +30,6 @@ export default {
 
     // 通过vuex获取当前激活页面
     const activeSettingPage = computed(() => store.getters.activeSettingPage)
-    const availableSettingPages = computed(() => store.getters.availableSettingPages)
 
     /**
      * 处理菜单点击事件，回调函数中传入不同菜单控件的index信息
@@ -36,14 +39,35 @@ export default {
       store.commit('setActiveSettingPage', index) // 设置activeSettingPage属性
     }
 
+    const items = [
+      {
+        name: 'appearance',
+        path: '/settings/appearance',
+        icon: h(ElIcon, null, { default: () => h(IconMenu) }),
+        span: t('component.setting-sidebar.appearance_setting')
+      },
+      {
+        name: 'profile',
+        path: '/settings/profile',
+        icon: h(ElIcon, null, { default: () => h(UserFilled) }),
+        span: t('component.setting-sidebar.profile_setting')
+      },
+      {
+        name: 'about',
+        path: '/settings/about',
+        icon: h(ElIcon, null, { default: () => h(InfoFilled) }),
+        span: t('component.setting-sidebar.about_setting')
+      }
+    ]
+
     onMounted(() => {})
 
     return {
       handleMenuSelect,
       activeSettingPage,
-      availableSettingPages,  // 可用激活页面列表
       router,
       t,
+      items,
     }
   },
 }
@@ -58,25 +82,13 @@ export default {
     @select="handleMenuSelect">
 
     <el-menu-item
-      index="appearance"
-      :class="['menu-item', activeSettingPage === 'appearance'? 'is-active': '' ]"
-      @click="router.push('/settings/appearance')">
-      <el-icon>
-        <icon-menu />
-      </el-icon>
-      <span>{{ t('component.setting-sidebar.appearance_setting') }}</span>
+      v-for="(item, index) in items"
+      :index="item['name']"
+      :class="['menu-item', activeSettingPage === item['name']? 'is-active': '' ]"
+      @click="router.push(item['path'])">
+      <component :is="item['icon']" />
+      <span>{{item['span']}}</span>
     </el-menu-item>
-
-    <el-menu-item
-      index="profile"
-      :class="['menu-item', activeSettingPage === 'profile'? 'is-active': '' ]"
-      @click="router.push('/settings/profile')">
-      <el-icon>
-        <UserFilled />
-      </el-icon>
-      <span>{{ t('component.setting-sidebar.profile_setting') }}</span>
-    </el-menu-item>
-
   </el-menu>
 </template>
 

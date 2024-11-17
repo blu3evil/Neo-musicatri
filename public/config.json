@@ -3,6 +3,9 @@
   "ISSUE_LINK": "https://github.com/blu3evil/musicatri1/",
   "DISCORD_LINK": "https://discord.gg/9FwdKEGQXf",
   "API_ENDPOINT": "http://localhost:5000/api/v1",
+  "SOCKET_ENDPOINT": "http://localhost:5000/socket",
   "PUBLIC_URL": "http://localhost:5173",
-  "HEALTH_CHECK_INTERVAL": 5
+  "SYSTEM_HEALTH_CHECK_INTERVAL": 5000,
+  "MAX_RECONNECT_TIMES": 5,
+  "LOGIN_STATUS_HEALTH_CHECK_INTERVAL": 30000
 }

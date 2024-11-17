@@ -5,10 +5,10 @@ import CommonPanel from '@/components/common-panel.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/utils.js'
-import { getAuthorizeUrl, userLogin } from '@/services/auth-service.js'
-import { createHealthCheck, getSystemHealth } from '@/services/system-service.js'
+import { useSystemHealthCheck, useSystemService, useAuthService } from '@/services'
 import { useNavigateHelper } from '@/router.js'
 import CommonBackground from '@/components/common-background.vue'
+import { useStore } from 'vuex'
 
 export default {
   name: 'UserLogin',
@@ -22,12 +22,16 @@ export default {
     const panelRef = useTemplateRef('panel-ref') // 面板
     const bgRef = useTemplateRef('bg-ref')
     const navigateHelper = useNavigateHelper()
+    const systemService = useSystemService()
+    const authService = useAuthService()
+    const store = useStore()
+    const config = store.getters.config
 
-    let defaultInterval = 5000 // 默认间隔时间
-    let defaultReconnectMaxTimes = 3 // 默认最大允许重连次数
+    const systemHealthcheckInterval = config['SYSTEM_HEALTH_CHECK_INTERVAL']
+    let maxReconnectTimes = config['MAX_RECONNECT_TIMES'] // 默认最大允许重连次数
     let context = null // 登录状态上下文
 
-    const healthcheck = createHealthCheck() // 健康检查
+    const healthcheck = useSystemHealthCheck() // 健康检查
 
     // 检查亚托莉服务状态
     class CheckMusicatriServerState extends AbstractState {
@@ -37,7 +41,7 @@ export default {
           t('view.UserLogin.checking_musicatri_status'),
           true,
         )
-        const result = await getSystemHealth()
+        const result = await systemService.getSystemHealth()
         if (result.isSuccess()) {
           // 状态健康，进入校验自身登陆情况状态
           context.setState(new CheckUserLoginState())
@@ -61,8 +65,6 @@ export default {
       constructor(message) {
         super()
         this.reconnectTimes = 1 // 重试次数
-        this.reconnectInterval = defaultInterval // 重连间隔
-        this.reconnectMaxTimes = defaultReconnectMaxTimes // 最大重连次数
         this.message = message
       }
 
@@ -82,14 +84,14 @@ export default {
         await new Promise((resolve, reject) => {
           // 定义健康检查函数，定时查询亚托莉状态检测其是否恢复
           const healthCheck = async () => {
-            const result = await getSystemHealth()
+            const result = await systemService.getSystemHealth()
             if (result.isSuccess()) {
               resolve() // 完成promise
               context.setState(new CheckMusicatriServerState()) // 切换状态
             } else if (result.isConnectionError()) {
               // 仅仅对于这两种异常需要执行重连
               this.reconnectTimes++ // 计数器+1
-              if (this.reconnectTimes > this.reconnectMaxTimes) {
+              if (this.reconnectTimes > maxReconnectTimes) {
                 // 已经超过最大重连次数，停止重试
                 reject()
                 context.setState(new ReachReconnectLimitState())
@@ -97,7 +99,7 @@ export default {
                 // 还没有超过最大重连次数，继续尝试重连
                 panelRef.value.setMessage(result.message, true)
                 this.updateReconnectTimes()
-                setTimeout(healthCheck, this.reconnectInterval) // 再次循环
+                setTimeout(healthCheck, systemHealthcheckInterval) // 再次循环
               }
             } else {
               // 对于一般错误分类后处理
@@ -105,7 +107,7 @@ export default {
               ErrorState.handleErrorResult(result)
             }
           }
-          setTimeout(healthCheck, this.reconnectInterval)
+          setTimeout(healthCheck, systemHealthcheckInterval)
         })
       }
 
@@ -120,10 +122,10 @@ export default {
       async enter(context) {
         // console.log('checking login status')
         panelRef.value.setTitle(t('view.UserLogin.checking_login_status'), true)
-        const result = await userLogin()
+        const result = await authService.login()
         if (result.isSuccess()) {
-          // 认证成功，跳转到用户主页
-          await navigateHelper.toUserHome()
+          // 认证成功，尝试建立socketio连接后跳转到用户主页
+          context.setState(new BuildSocketConnectionState())
         } else if (result.isConnectionError()) {
           // 连接异常，需要切换到重连状态
           context.setState(new ReconnectMusicatriServerState(result.message))
@@ -131,6 +133,27 @@ export default {
           // 单独处理401错误，此状态码表示用户没有登入，从后端拉取授权链接
           context.setState(new AwaitingRedirectDiscordOauthState())
         } else {
+          ErrorState.handleErrorResult(result)
+        }
+      }
+
+      fadeout(context) {
+        panelRef.value.clearTitle()
+      }
+    }
+
+    // 建立socketio连接
+    class BuildSocketConnectionState extends AbstractState {
+      async enter(context) {
+        panelRef.value.setTitle(
+          t('view.UserLogin.build_socket_connection'), true)
+        // 尝试建立socketio连接
+        const result = await authService.verifyLoginStatus()
+        if (result.isSuccess()) {
+          // 连接建立成功，将用户引导到主页
+          await navigateHelper.toUserIndex()
+        } else {
+          // 其他返回码使用分类处理器
           ErrorState.handleErrorResult(result)
         }
       }
@@ -155,7 +178,7 @@ export default {
         panelRef.value.addLink({
           desc: t('view.UserLogin.to_discord'),
           href: '/',
-          click: () => context.setState(new TryingAuthorizeState())
+          click: () => context.setState(new TryingAuthorizeState()),
         })
       }
 
@@ -173,7 +196,7 @@ export default {
           t('view.UserLoginCallback.awaiting_authorize'),
           true,
         )
-        const result = await getAuthorizeUrl()
+        const result = await authService.getAuthorizeUrl()
         if (result.isSuccess()) {
           // 成功拉取授权链接，切换到等待用户登录状态
           window.location.href = result.data.authorize_url // 跳转到授权链接
@@ -315,8 +338,9 @@ export default {
       }
     }
 
-    onMounted(() => {
-      bgRef.value.loadAsync('/src/assets/user-login/ev000al.jpg')  // 加载背景图片
+    onMounted(async () => {
+      // 阻塞加载背景图片
+      await bgRef.value.loadAsync('/src/assets/user-login/ev000al.jpg')
       context = new StateContext()
       context.setState(new CheckMusicatriServerState())
     })

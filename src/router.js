@@ -1,7 +1,10 @@
 // noinspection JSUnresolvedReference
 
 import { createRouter, createWebHistory } from 'vue-router'
-import { getUserLoginStatus } from '@/services/auth-service.js'
+import { useAuthService } from '@/services'
+
+const authService = useAuthService()
+
 
 // vue路由定义
 const router = createRouter({
@@ -12,6 +15,7 @@ const router = createRouter({
       path: '/settings',
       name: 'setting',
       component: () => import('./views/AppSetting.vue'),  // 主设置页面
+      meta: { loginRequired: true },
       children: [
         {
           path: 'appearance',
@@ -22,7 +26,12 @@ const router = createRouter({
           path: 'profile',
           name: 'profile-setting',
           component: () => import('./views/ProfileSetting.vue')  // 账户设置界面
-        }
+        },
+        {
+          path: 'about',
+          name: 'about-setting',
+          component: () => import('./views/AboutSetting.vue')  // 账户设置界面
+        },
       ]
     },
     {
@@ -109,7 +118,8 @@ const router = createRouter({
 router.beforeEach((
   to, from, next) => {
   if (to.meta.loginRequired) {
-    getUserLoginStatus().then(result => {
+    // 直接通过SocketIO状态来判断登录状态
+    authService.verifyLoginStatus().then(result => {
       if (result.isSuccess()) next()  // 放行
       else next('/user/login')  // 拒行
     })
@@ -137,7 +147,7 @@ class NavigateHelper {
 
   // 前往用户主页，基于后端接口判断用户登陆状态后选择性跳转
   async toUserIndex() {
-    const result = await getUserLoginStatus()
+    const result = await authService.verifyLoginStatus()
     if (result.isSuccess()) await this.toUserHome()
     else await this.toUserLogin()
   }
@@ -145,8 +155,12 @@ class NavigateHelper {
 
 const navigateHelper = new NavigateHelper()
 
-export const useNavigateHelper = () => {
+const useNavigateHelper = () => {
   return navigateHelper
 }
 
-export default router
+export {
+  useNavigateHelper,
+  router
+}
+

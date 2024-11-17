@@ -8,13 +8,27 @@ const client = useClient()  // 客户端
 
 const urlPrefix = '/system'
 
-// 获取服务器当前健康状态
-export const getSystemHealth = () => client.get(`${urlPrefix}/health`)
+
+
+class SystemService {
+  // 获取服务器当前健康状态
+  getSystemHealth() {
+    return client.get(`${urlPrefix}/health`)
+  }
+
+  // 获取服务信息
+  getSystemInfo() {
+    return client.get(`${urlPrefix}/info`)
+  }
+}
+
+const systemService = new SystemService()
+export const useSystemService = () => systemService
 
 const config = store.getters.config
-const HEALTH_CHECK_INTERVAL = config['HEALTH_CHECK_INTERVAL']
+const SYSTEM_HEALTH_CHECK_INTERVAL = config['SYSTEM_HEALTH_CHECK_INTERVAL']
 
-class HealthCheck {
+class SystemHealthCheck {
   constructor() {
     this.healthcheckIntervalId = 0
   }
@@ -23,11 +37,11 @@ class HealthCheck {
     clearInterval(this.healthcheckIntervalId) // 避免重复创建
     this.healthcheckIntervalId = setInterval(async () => {
       // 执行健康检查
-      const result = await getSystemHealth()
+      const result = await systemService.getSystemHealth()
       if (result.isConnectionError()) {
         onConnectionError(result)
       }
-    }, HEALTH_CHECK_INTERVAL * 1000)
+    }, SYSTEM_HEALTH_CHECK_INTERVAL)
   }
 
   stop() {
@@ -35,10 +49,10 @@ class HealthCheck {
   }
 }
 
-const createHealthCheck = () => {
-  return new HealthCheck()
+const useSystemHealthCheck = () => {
+  return new SystemHealthCheck()
 }
 
 export {
-  createHealthCheck
+  useSystemHealthCheck
 }

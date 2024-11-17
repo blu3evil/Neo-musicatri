@@ -13,9 +13,20 @@ export default {
 
     // 异步加载背景图
     const loadAsync = url => {
-      const img = new Image()
-      img.src = url // 使用错误响应时的背景
-      img.onload = () => (imageUrl.value = img.src) // 等待图片加载完成后再刷新
+      return new Promise((resolve, reject) => {
+        const img = new Image()
+        img.src = url
+        img.onload = () => {
+          // 预加载图片
+          imageUrl.value = img.src
+          resolve(imageUrl.value)
+        }
+
+        img.onerror = () => {
+          // 图片加载失败
+          reject(new Error('Image load failed'))
+        }
+      })
     }
 
     expose({

@@ -1,7 +1,7 @@
-const darkTheme = {
+export default {
   '--bg-color': '#252525',
   '--bg-color-2': '#181818',
-  '--divider-color': '#e0e0e0',  /* 分割线 */
+  '--divider-color': 'rgba(107,72,72,0.55)',  /* 分割线 */
 
   '--text-color': 'rgb(239,233,233)',
   '--error-color': '#b57ce3' /* 错误消息颜色 */,
@@ -19,6 +19,3 @@ const darkTheme = {
   '--redirect-card-bg-color': 'rgba(24, 24, 24, 1.0)',
 }
 
-export {
-  darkTheme,
-}

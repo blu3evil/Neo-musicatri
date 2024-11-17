@@ -6,7 +6,7 @@ import CommonPanel from '@/components/common-panel.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/utils.js'
-import { getAuthorizeUrl, userAuthorize } from '@/services/auth-service.js'
+import { useAuthService } from '@/services/auth-service.js'
 import { useNavigateHelper } from '@/router.js'
 import CommonBackground from '@/components/common-background.vue'
 
@@ -24,6 +24,7 @@ export default {
 
     const bgRef = useTemplateRef('bg-ref')
     const panelRef = useTemplateRef('panel-ref') // 面板引用
+    const authService = useAuthService()
 
     // 初始状态，等待授权响应
     class AwaitingAuthResponseState extends AbstractState {
@@ -38,10 +39,11 @@ export default {
             t('component.pending-panel.waiting_response'),
             true,
           )
-          const result = await userAuthorize(code) // 执行用户登入
+          const result = await authService.authorize(code) // 执行用户登入
           if (result.isSuccess()) {
             // 认证成功，切换到认证成功状态
-            context.setState(new AuthSuccessState())
+            // await bgRef.value.loadAsync('/src/assets/user-login-callback/ev005cl.png')
+            context.setState(new UserLoginStatus())
           } else {
             // 分4类处理异常
             ErrorState.handleErrorResult(result)
@@ -58,42 +60,43 @@ export default {
       }
     }
 
-    // 授权成功，倒计时3s后响应到主页
-    class AuthSuccessState extends AbstractState {
-      constructor() {
-        super()
-        this.surplus = 3 // 倒计时
-        this.countdownIntervalId = 0 // 倒计时循环id
-      }
-
-      // 更新链接
-      updateLink() {
-        panelRef.value.clearLinks()
-        panelRef.value.addLink({
-          desc: `${t('view.UserLoginCallback.return_login')}(${this.surplus})`,
-          click: () => navigateHelper.toUserLogin(),
-        })
-      }
-
+    // 执行用户登入逻辑
+    class UserLoginStatus extends AbstractState {
       async enter(context) {
-        bgRef.value.loadAsync('/src/assets/user-login-callback/ev005cl.png')
-        panelRef.value.setTitle(t('view.UserLoginCallback.auth_success'))
-        this.updateLink()
-        this.countdownIntervalId = setInterval(() => {
-          // 倒计时回退
-          this.surplus--
-          if (this.surplus <= 0) {
-            clearInterval(this.countdownIntervalId)
-            navigateHelper.toUserLogin()
-          }
-          this.updateLink()
-        }, 1000)
+        // console.log('checking login status')
+        panelRef.value.setTitle(t('view.UserLoginCallback.user_login'), true)
+        const result = await authService.login()
+        if (result.isSuccess()) {
+          // 认证成功，尝试建立socketio连接后跳转到用户主页
+          context.setState(new BuildSocketConnectionState())
+        } else {
+          ErrorState.handleErrorResult(result)
+        }
       }
 
       fadeout(context) {
         panelRef.value.clearTitle()
-        panelRef.value.clearLinks()
-        clearInterval(this.countdownIntervalId)
+      }
+    }
+
+    // 建立socketio连接
+    class BuildSocketConnectionState extends AbstractState {
+      async enter(context) {
+        panelRef.value.setTitle(
+          t('view.UserLogin.build_socket_connection'), true)
+        // 尝试建立socketio连接
+        const result = await authService.verifyLoginStatus()
+        if (result.isSuccess()) {
+          // 连接建立成功，将用户引导到主页
+          await navigateHelper.toUserIndex()
+        } else {
+          // 其他返回码使用分类处理器
+          ErrorState.handleErrorResult(result)
+        }
+      }
+
+      fadeout(context) {
+        panelRef.value.clearTitle()
       }
     }
 
@@ -192,7 +195,7 @@ export default {
           t('view.UserLoginCallback.awaiting_authorize'),
           true,
         )
-        const result = await getAuthorizeUrl()
+        const result = await authService.getAuthorizeUrl()
         if (result.isSuccess()) {
           // 成功拉取授权链接，切换到等待用户登录状态
           window.location.href = result.data.authorize_url // 跳转到授权链接
@@ -256,9 +259,9 @@ export default {
       }
     }
 
-    onMounted(() => {
+    onMounted(async () => {
       // 加载背景图片
-      bgRef.value.loadAsync('/src/assets/user-login-callback/ev005al.png')
+      await bgRef.value.loadAsync('/src/assets/user-login-callback/ev005al.png')
       context = new StateContext() // 状态上下文
       context.setState(new AwaitingAuthResponseState())
     })

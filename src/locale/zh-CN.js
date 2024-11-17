@@ -25,7 +25,8 @@ export default {
     },
     'setting-sidebar': {
       'appearance_setting': '外观',
-      'profile_setting': '账号'
+      'profile_setting': '账号',
+      'about_setting': '关于',
     },
   },
   'view': {
@@ -34,10 +35,24 @@ export default {
       'language_setting': '语言设定',
       'language_setting_description': '您可以选择应用程序的显示语言。选择您熟悉的语言可以提高使用体验，让您更轻松地浏览内容和理解信息。',
       'language_select_label': '选择一种语言',
-      'language_select_placeholder': '没有选择语言'
+      'language_select_placeholder': '没有选择语言',
+      'theme_setting': '主题设定',
+      'theme_select_label': '选择偏好主题',
+      'theme_select_placeholder': '选择一种主题'
     },
     'ProfileSetting': {
       'title': '账号设定',
+    },
+    'AboutSetting': {
+      'title': '关于音乐亚托莉',
+      'musicatri_audio1': '"是吧，我是高性能的嘛，哼哼!"',
+      'musicatri_audio2': '"好吃就是高兴嘛!"',
+      'musicatri_audio3': '"地球也包括我吗?"',
+      'system_info': '服务端信息',
+      'system_name': '名称',
+      'system_version': '版本',
+      'system_description': '描述',
+
     },
     'UserLoginPending': {
       'invalid_auth_code': '非法的认证code参数'
@@ -68,16 +83,25 @@ export default {
       'unknown_error': '未知异常',
       'server_error': '服务端异常',
       'client_error': '客户端异常',
+      'build_socket_connection': '建立长连接'
     },
     'UserLoginCallback': {
       'retry_authorize': '重新授权',
       'return_login': '返回主页',
       'auth_success': '授权成功',
-      'awaiting_authorize': '努力跳转到授权页面'
+      'awaiting_authorize': '等待跳转',
+      'user_login': '登录中',
     },
     'NotFound': {
       'title': '这个路径不存在(っ`-´c)!',
       'return_index': '返回主页',
+    }
+  },
+  'services': {
+    'auth-service': {
+      'login_status_expired_confirm': '返回主页',
+      'login_status_expired_title': '登录状态过期',
+      'login_status_expired_message': '过期的登录状态会自动中断您的长连接，请返回主页重新登录...'
     }
   }
 }

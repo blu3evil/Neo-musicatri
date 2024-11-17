@@ -53,19 +53,17 @@ const getLanguageDisplayName = (lang) => {
   return displayNames[lang] || 'unknown'
 }
 
-const initI18n = () => {
-  return createI18n({
-    // 优先选择用户本地语言
-    // globalInjection: true,  // 全局生效$t
-    legacy: false,
-    locale: getActiveLanguage(),
-    messages: messages
-  })
-}
+const i18n = createI18n({
+  // 优先选择用户本地语言
+  // globalInjection: true,  // 全局生效$t
+  legacy: false,
+  locale: getActiveLanguage(),
+  messages: messages
+})
 
 // 可用语言列表
 export {
-  initI18n,
+  i18n,
   availableLanguages,
   getActiveLanguage,
   getLanguageDisplayName,

@@ -1,14 +1,13 @@
 <!-- 用户页面 -->
+<!--suppress JSUnresolvedReference -->
 <script>
 import CommonNavbar from '../components/common-navbar.vue'
-import { onMounted } from 'vue'
 export default {
   components: {
     CommonNavbar,
   },
   setup() {
-    onMounted(() => {
-    })
+
   }
 }
 </script>
