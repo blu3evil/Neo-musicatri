@@ -1,7 +1,7 @@
-from .entities import DiscordUserModel, db
+from .models import DiscordUser, Role, UserRole
+from core import db
 
-
-def copy(data, instance):
+def copy_properties(data, instance):
     """ 属性拷贝 """
     if isinstance(data, dict):
         # 如果是字典，则按键值对赋值
@@ -23,7 +23,7 @@ def to_dict(instance) -> dict:
     return {}
 
 
-__all__ = [copy, DiscordUserModel, db, to_dict]
+__all__ = [copy_properties, DiscordUser, to_dict, Role, UserRole]
 
 
 

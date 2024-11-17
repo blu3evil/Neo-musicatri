@@ -1,19 +1,15 @@
 """
 权限校验蓝图
 """
+from clients import discord_oauth
+from services.user_service import current_user
+from flask import Blueprint, jsonify, request, g, abort
 
-from service import user_service
-from flask import Blueprint, session, jsonify, request, g, abort
-from requests_oauthlib import OAuth2Session
-
-from utils import config, ConfigEnum, auth
+from utils import config, ConfigEnum
+from core import cache
 
 auth_bp_v1 = Blueprint('auth_bp_v1', __name__, url_prefix='/api/v1/auth')
 
-client_id = config.get(ConfigEnum.DISCORD_OAUTH_CLIENT_ID)
-client_secret = config.get(ConfigEnum.DISCORD_OAUTH_CLIENT_SECRET)
-discord_api_endpoint = config.get(ConfigEnum.DISCORD_API_ENDPOINT)
-scope = config.get(ConfigEnum.DISCORD_OAUTH_SCOPE)
 redirect_uri = config.get(ConfigEnum.DISCORD_OAUTH_REDIRECT_URI)
 
 # 登入接口，检测用户是否登入，如果已经登入那么返回用户数据，否则返回重定向url指引用户登入
@@ -31,10 +27,9 @@ def login():
         schema:
           type: object
           properties:
-            properties:
-              message:
-                type: string
-                example: 'Login success'
+            message:
+              type: string
+              example: 'Login success'
       401:
         description: 用户未认证
         schema:
@@ -57,27 +52,36 @@ def login():
                 description: 用户不具备登入的权限
     """
     _ = g.t
-    if not auth.validate_login():
-        # 用户未登录，构建重定向url响应到前端
-        authorize_url = f'https://discord.com/api/oauth2/authorize?response_type=code&scope={scope}&client_id={client_id}&redirect_uri={redirect_uri}'
-        return jsonify({'authorize_url': authorize_url}), 401  # 未登录
+    if not current_user.is_login(): abort(401)  # 用户未登录
+    if not current_user.is_active(): abort(403)  # 账号未激活
+    return jsonify({ 'message': _('Login success') })  # 登录成功
 
-    # token存在执行用户权限校验
-    session_token = session.get('discord_oauth_token')  # 检查用户登入状态
-    user_id = session.get('user_id')  # 用户id
 
-    if not user_id or not user_service.exist_user(user_id):  # 用户id不存在，或者即使用户id存在，数据库不存在
-        oauth = OAuth2Session(token={'access_token': session_token.get('access_token')})
-        response = oauth.get(f'{discord_api_endpoint}/users/@me')  # 请求用户数据
-
-        if response.status_code != 200:  # 错误
-            abort(response.status_code)
-
-        # 成功拉取用户数据，将用户数据写入缓存和session
-        session['user_id'] = response.json()['id']
-        user_service.save_user(data=response.json())
-
-    return jsonify({'message': _('Login success')}), 200  # 登录成功
+# 提供前端请求获取认证url
+@auth_bp_v1.route('/authorize-url', methods=['GET'])
+@cache.cached(timeout=60)
+def authorize_url():
+    """
+    授权链接接口
+    ---
+    tags:
+      - 认证接口
+    description: 提供前端获取认证链接
+    responses:
+      200:
+        description: 成功获取授权链接
+        schema:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                authorize_url:
+                  type: string
+                  example: 'https://discord.com/api/oauth2/authorize'
+    """
+    url = discord_oauth.get_authorize_url()
+    return jsonify({ 'data': { 'authorize_url': url } })  # 成功获取认证url
 
 
 @auth_bp_v1.route('/authorize', methods=['POST'])
@@ -94,29 +98,44 @@ def authorize():
         schema:
           type: object
           properties:
-            properties:
-              message:
-                type: string
-                example: 'Authorize success'
+            message:
+              type: string
+              example: 'Authorize success'
       400:
         description: 参数错误
     """
     _ = g.t
-    body = request.get_json()
-    code = body.get('code')
-
-    if not code or not redirect_uri:
-        return abort(400)
-
-    oauth = OAuth2Session(client_id, scope=scope, redirect_uri=redirect_uri)
-    access_token = oauth.fetch_token(
-        code=code,
-        client_secret=client_secret,
-        token_url=f'{discord_api_endpoint}/oauth2/token'
-    )
-
-    # 设置会话信息
-    session['discord_oauth_token'] = access_token
-    return jsonify({'message': _('Authorize success')}), 200  # 认证成功
+    code = request.get_json().get('code')
+    if not code: abort(400)  # 参数错误
+    current_user.login(code)  # 执行登入
+    return jsonify({ 'message': _('Authorize success') })  # 认证成功
 
 
+# 会话检查接口，用于前端检查当前登入状态
+@auth_bp_v1.route('/status', methods=['GET'])
+@current_user.login_required
+@current_user.role_required('user')
+def status():
+    """
+    用户登录状态检查接口
+    ---
+    tags:
+      - 认证接口
+    description: 用于前端检查用户登陆状态执行路由守卫
+    responses:
+      200:
+        description: 用户已经登入
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: 'Logged in'
+
+      401:
+        description: 用户未登录
+      403:
+        description: 用户权限不足
+    """
+    _ = g.t
+    return jsonify({ 'message': _('Logged in') })  # 认证通过

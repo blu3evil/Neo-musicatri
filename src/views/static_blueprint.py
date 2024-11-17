@@ -5,14 +5,8 @@
 import os
 
 from flask import Blueprint, send_from_directory
-
-from utils.loggers import log
-from utils.locales import default_locale as _
-
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 static_dir = os.path.join(root_dir, 'resources', 'static')
-log.debug(_("static resource path locate in: %s") % static_dir)
-
 static_bp = Blueprint('static_bp', __name__, static_folder=static_dir)  # 静态资源蓝图
 
 @static_bp.route("/", methods=["GET"])

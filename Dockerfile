@@ -16,9 +16,10 @@ WORKDIR $WORKDIR
 COPY src $WORKDIR/src
 COPY resources $WORKDIR/resources
 # 复制项目配置文件
-COPY config.json requirements.txt .env $WORKDIR/
+COPY config.yaml requirements.txt $WORKDIR/
+
 # 启动入口点文件
-#COPY docker-compose/basic-services/musicatri-entrypoint.sh /musicatri/entrypoint.sh
+#COPY deploy/basic-services/musicatri-entrypoint.sh /musicatri/entrypoint.sh
 
 # 安装python第三方依赖
 RUN ["pip", "install", "--upgrade", "pip"]

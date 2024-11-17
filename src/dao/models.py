@@ -3,11 +3,6 @@ from flask import Flask
 from core import db
 from sqlalchemy.dialects.postgresql import JSON
 
-def create_tables(app: Flask):
-    with app.app_context():
-        db.create_all()
-
-
 class DiscordUser(db.Model):
     __tablename__ = 'discord_users'
     id = db.Column(db.BigInteger, primary_key=True, nullable=False)
@@ -27,5 +22,48 @@ class DiscordUser(db.Model):
     premium_type = db.Column(db.Integer, nullable=True, default=0)
     is_active = db.Column(db.Boolean, nullable=False, default=True)         # 用户账号是否处于激活状态
 
+    roles = db.relationship('Role', backref='users', secondary='user_roles')
+
     def __repr__(self):
         return f'<DiscordUser {self.username}#{self.discriminator}>'
+
+class Role(db.Model):
+    """ 角色表，例如管理员，用户，访客 """
+    __tablename__ = 'roles'
+    id = db.Column(db.BigInteger, primary_key=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+
+    def __repr__(self):
+        return f'<Role {self.name}>'
+
+    def __hash__(self):
+        return hash(self.id)
+
+    def __eq__(self, other):
+        if isinstance(other, Role):
+            return self.id == other.id
+        return False
+
+class UserRole(db.Model):
+    __tablename__ = 'user_roles'
+    user_id = db.Column(db.BigInteger, db.ForeignKey('discord_users.id'), primary_key=True)
+    role_id = db.Column(db.BigInteger, db.ForeignKey('roles.id'), primary_key=True)
+
+
+def init(app: Flask):
+    with app.app_context():
+        db.create_all()
+        init_roles()
+
+def init_roles():
+    def ensure_role(name, desc):
+        role = Role.query.filter_by(name=name).first()
+        if not role:
+            role = Role(name=name, description=desc)
+            db.session.add(role)
+
+    ensure_role('admin', 'Administrator role')
+    ensure_role('user', 'Normal user role')
+    ensure_role('anonymous', 'Anonymous user role')
+    db.session.commit()

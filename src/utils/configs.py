@@ -14,6 +14,7 @@ schema = {
         'schema': {
             # 是否开启dev模式
             'dev-mode': {'type': 'boolean', 'default': False},
+            'debug-mode': {'type': 'boolean', 'default': False},
             'information': {
                 'type': 'dict',
                 'schema': {
@@ -41,9 +42,35 @@ schema = {
                 'type': 'dict',
                 'schema': {
                     'print-banner': {'type': 'boolean', 'default': True},
-                    'default-level': {'type': 'string', 'default': 'DEBUG'},
-                    'console-level': {'type': 'string', 'default': 'DEBUG'},
-                    'filelog-level': {'type': 'string', 'default': 'DEBUG'},
+                    'default-logging': {
+                        'type': 'dict',
+                        'schema': {
+                            'enable': {'type': 'boolean', 'default': True},
+                            'level': {'type': 'string', 'default': 'DEBUG'},
+                        }
+                    },
+                    'console-logging': {
+                        'type': 'dict',
+                        'schema': {
+                            'enable': {'type': 'boolean', 'default': True},
+                            'level': {'type': 'string', 'default': 'DEBUG'},
+                        }
+                    },
+                    'logfile-logging': {
+                        'type': 'dict',
+                        'schema': {
+                            'enable': {'type': 'boolean', 'default': False},
+                            'level': {'type': 'string', 'default': 'DEBUG'},
+                            'extname': {'type': 'string', 'default': ''},
+                            'file-directory': {'type': 'string', 'default': 'runtime/logs'},
+                        }
+                    },
+                    'flask-logging': {
+                        'type': 'dict',
+                        'schema': {
+                            'enable': {'type': 'boolean', 'default': True},
+                        }
+                    }
                 }
             },
             # 网络配置
@@ -53,6 +80,15 @@ schema = {
                     'host': {'type': 'string', 'default': '127.0.0.1'},
                     'port': {'type': 'integer', 'default': 5000},
                     'public-url': {'type': 'string', 'default': 'http://127.0.0.1:5000'},
+                    'cors': {
+                        'type': 'dict',
+                        'schema': {
+                            'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
+                            'allow-headers': {'type': 'list', 'default': ['Content-Type', 'Authorization', 'Accept-Language']},
+                            'allow-methods': {'type': 'list', 'default': ['GET', 'POST', 'PUT', 'DELETE', 'TRACE']},
+                            'supports-credentials': {'type': 'boolean', 'default': True},
+                        }
+                    }
                 }
             },
             'database': {
@@ -93,7 +129,7 @@ schema = {
                         'type': 'dict',
                         'schema': {
                             'file-threshold': {'type': 'integer', 'default': 5000},
-                            'file-directory': {'type': 'string', 'default': 'session'},
+                            'file-directory': {'type': 'string', 'default': 'runtime/session'},
                         }
                     }
                 }
@@ -109,7 +145,7 @@ schema = {
                         'type': 'dict',
                         'schema': {
                             'file-threshold': {'type': 'integer', 'default': 5000},
-                            'file-directory': {'type': 'string', 'default': 'cache'},
+                            'file-directory': {'type': 'string', 'default': 'runtime/cache'},
                         }
                     },
                     'redis': {
@@ -171,6 +207,7 @@ from enum import Enum
 class ConfigEnum(Enum):
     # 应用配置
     APP_DEV_MODE = 'application.dev-mode'
+    APP_DEBUG_MODE = 'application.debug-mode'
     APP_INFO_NAME = 'application.information.name'
     APP_INFO_VERSION = 'application.information.version'
     APP_INFO_DESCRIPTION = 'application.information.description'
@@ -178,12 +215,22 @@ class ConfigEnum(Enum):
     APP_SECURITY_OAUTH_INSECURE_TRANSPORT = 'application.security.oauth.insecure-transport'
     APP_SECURITY_OAUTH_RELAX_TOKEN_SCOPE = 'application.security.oauth.insecure-transport'
     APP_LOG_PRINT_BANNER = 'application.logging.print-banner'
-    APP_LOG_DEFAULT_LEVEL = 'application.logging.default-level'
-    APP_LOG_CONSOLE_LEVEL = 'application.logging.console-level'
-    APP_LOG_FILELOG_LEVEL = 'application.logging.filelog-level'
+    APP_LOG_DEFAULT_LOGGING_ENABLE = 'application.logging.default-logging.enable'
+    APP_LOG_DEFAULT_LOGGING_LEVEL = 'application.logging.default-logging.level'
+    APP_LOG_CONSOLE_LOGGING_ENABLE = 'application.logging.console-logging.enable'
+    APP_LOG_CONSOLE_LOGGING_LEVEL = 'application.logging.console-logging.level'
+    APP_LOG_LOGFILE_LOGGING_ENABLE = 'application.logging.logfile-logging.enable'
+    APP_LOG_LOGFILE_LOGGING_LEVEL = 'application.logging.logfile-logging.level'
+    APP_LOG_LOGFILE_LOGGING_EXTNAME = 'application.logging.logfile-logging.extname'
+    APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY = 'application.logging.logfile-logging.file-directory'
+    APP_LOG_FLASK_LOGGING_ENABLE = 'application.logging.flask-logging.enable'
     APP_NETWORK_HOST = 'application.network.host'
     APP_NETWORK_PORT = 'application.network.port'
     APP_NETWORK_PUBLIC_URL = 'application.network.public-url'
+    APP_NETWORK_CORS_ALLOW_ORIGINS = 'application.network.cors.allow-origins'
+    APP_NETWORK_CORS_ALLOW_HEADERS = 'application.network.cors.allow-headers'
+    APP_NETWORK_CORS_ALLOW_METHODS = 'application.network.cors.allow-methods'
+    APP_NETWORK_CORS_SUPPORTS_CREDENTIALS = 'application.network.cors.supports-credentials'
 
     # 数据库配置
     DATABASE_DRIVER = 'application.database.driver'
@@ -256,8 +303,8 @@ class ApplicationConfig:
             if isinstance(value, dict) and key in result and isinstance(result[key], dict):
                 # 字典类型，执行递归拷贝
                 result[key] = self._merge_dicts(result[key], value)
-            elif value:
-                # 一般类型，仅仅当value存在时执行更新
+            elif value is not None:
+                # 一般类型，仅仅当value存在时执行更新，这里需要确切判断不为none
                 result[key] = value
         return result
 
@@ -373,10 +420,10 @@ class ApplicationConfig:
             # 未找到指定环境
             raise RuntimeError(f"'{active_config_name}' config not found")
 
+
         # 将全局环境和激活环境合成，得到最终配置
         merged_config = self._merge_dicts(global_config, active_config)
         self.configurations = v.normalized(merged_config)
-
 
     from typing import Any
     def get(self, tag: ConfigEnum) -> Any:

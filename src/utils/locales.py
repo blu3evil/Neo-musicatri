@@ -36,13 +36,13 @@ class ResourceUtils:
 locales_dir = ResourceUtils.get_resource("locales")  # 本地化资源目录
 DEFAULT_DOMAIN = "flask_app"  # flaks应用文本域
 DEFAULT_LANG = 'en-US'  # 默认采用英文  # todo: 修改默认语言采用配置
-default_locale = None
+locale = None
 
 try:
     # flask app文本域本地化方法
-    default_locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [DEFAULT_LANG]).gettext
+    locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [DEFAULT_LANG]).gettext
 except FileNotFoundError as error:
-    default_locale = gettext.gettext
+    locale = gettext.gettext
 
 
 class LocaleFactory:
@@ -67,14 +67,14 @@ class LocaleFactory:
         """
         if lang is None:
             # 如果没有给定语言类型那么使用默认
-            return default_locale
+            return locale
         else:
             # 若给定语言不支持回退到默认
             optional_locale = self.locales.get(lang)
-            return optional_locale if optional_locale is not None else default_locale
+            return optional_locale if optional_locale is not None else locale
 
 # 本地化工厂
-locales = LocaleFactory()
+locale_factory = LocaleFactory()
 class I18nUtils:
     """
     本地化资源构建工具类，通过调用本地化脚本生成.po以及.mo本地化文件
@@ -195,7 +195,7 @@ class LocaleFacade:
     @staticmethod
     def generate_flask_app_domain_po(lang: str):
         """ 生成flask_app_domain域使用的翻译.po文件 """
-        # excludes = ("discord_bot", )
+        # excludes = ("bot", )
         I18nUtils.generate_po_v2(lang=lang, domain=DEFAULT_DOMAIN)
 
     @staticmethod
