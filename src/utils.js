@@ -29,31 +29,3 @@ export {
   StateContext,
 }
 
-// 服务端响应类
-export class MusicatriResult {
-  constructor(code, message=null, data=null) {
-    this.code = code
-    this.message = message
-    this.data = data
-  }
-
-  // 是否成功
-  isSuccess() {
-    return this.code === 200
-  }
-
-  // 是否为客户端错误
-  isClientError() {
-    return this.code >= 400 && this.code < 500
-  }
-
-  // 是否为服务端错误
-  isServerError() {
-    return this.code >= 500 && this.code < 600
-  }
-
-  // 是否为连接错误
-  isConnectionError() {
-    return this.code === 601 || this.code === 602
-  }
-}

@@ -1,6 +1,6 @@
 /* 主题可用css定义 */
 :root {
-    --bg-color: #e0e0e0;
+    --bg-color: #e0e0e0;  /* 神色 */
     --bg-color-2: #e0e0e0;
     --divider-color: #e0e0e0;  /* 分割线 */
 
@@ -193,17 +193,37 @@ body {
 
 /* 消息弹窗消息提示 */
 .el-message-box__content {
-    color: var(--error-color) !important;
-    font-size: var(--text-medium) !important;
-    pointer-events: none;
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none;    /* Firefox */
-    -ms-user-select: none;     /* Internet Explorer/Edge */
+
 }
 
 /* 主要按钮 */
 .el-button-primary {
 
+}
+
+/* 吐司弹窗消息提示 */
+.el-notification {
+    --el-notification-width: 450px !important;  /* 宽度 */
+    --el-notification-border-color: var(--redirect-card-bg-color) !important;
+    color: var(--text-color) !important;
+    background-color: var(--redirect-card-bg-color) !important;
+    border: 1px solid var(--redirect-card-bg-color) !important;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+    box-shadow: var(--box-shadow) !important;
+}
+
+/* 弹出框标题 */
+.el-notification__title {
+    color: var(--text-color) !important;
+    font-size: var(--text-medium) !important;
+}
+
+/* 弹出框消息 */
+.el-notification__content {
+    color: var(--text-color) !important;
+    font-size: var(--text-small) !important;
 }
 
 

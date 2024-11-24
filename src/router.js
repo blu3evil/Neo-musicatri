@@ -1,10 +1,7 @@
 // noinspection JSUnresolvedReference
 
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthService } from '@/services'
-
-const authService = useAuthService()
-
+import { authService } from '@/services/auth-service.js'
 
 // vue路由定义
 const router = createRouter({
@@ -118,14 +115,9 @@ const router = createRouter({
 router.beforeEach((
   to, from, next) => {
   if (to.meta.loginRequired) {
-    // 直接通过SocketIO状态来判断登录状态
-    authService.verifyLoginStatus().then(result => {
-      if (result.isSuccess()) next()  // 放行
-      else next('/user/login')  // 拒行
-    })
-  } else {
-    next()  // 放行
-  }
+    if (authService.verifyUserLoginStatus()) next()
+    else next('/user/login')
+  } else next()  // 放行
 })
 
 // 跳转助手，封装跳转逻辑
@@ -145,22 +137,20 @@ class NavigateHelper {
     await router.push('/user/home')
   }
 
-  // 前往用户主页，基于后端接口判断用户登陆状态后选择性跳转
+  // 自动定向到用户主页
   async toUserIndex() {
-    const result = await authService.verifyLoginStatus()
-    if (result.isSuccess()) await this.toUserHome()
+    if (authService.verifyUserLoginStatus()) {
+      console.log('his exist socket connection')
+      await this.toUserHome()
+    }
     else await this.toUserLogin()
   }
 }
 
 const navigateHelper = new NavigateHelper()
 
-const useNavigateHelper = () => {
-  return navigateHelper
-}
-
 export {
-  useNavigateHelper,
+  navigateHelper,
   router
 }
 

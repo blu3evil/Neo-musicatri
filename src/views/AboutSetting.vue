@@ -4,7 +4,7 @@ import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { onMounted, ref } from 'vue'
 import { computed } from 'vue'
-import { useSystemService } from '@/services'
+import { systemService } from '@/services/system-service.js'
 
 export default {
   setup() {
@@ -13,7 +13,6 @@ export default {
     const config = store.getters.config
     const popperStyle = ref() // 弹出框统一样式
     const loadingSystemInfo = ref(true)
-    const systemService = useSystemService()
 
     const onGithubIconClick = () => window.open(config['GITHUB_LINK'], '_blank')
     const activeTheme = computed(() => store.getters.activeTheme)

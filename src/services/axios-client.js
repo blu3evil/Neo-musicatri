@@ -1,10 +1,11 @@
 /* 通用客户端 */
 import { getActiveLanguage } from '@/locale/index.js'
-import store from '@/storage/index.js'
 import axios from 'axios'
-import { MusicatriResult } from '@/utils.js'
 
-await store.dispatch('loadConfig')  // 等待加载完成
+
+import { store } from '@/storage/index.js'
+import { Result } from '@/common.js'
+await store.dispatch('loadConfig')  // 加载配置
 const config = store.getters.config
 
 const client = axios.create({
@@ -26,7 +27,7 @@ client.interceptors.response.use(
   response => {
     // 服务端异常处理，统一响应形式
     return Promise.resolve(
-      new MusicatriResult(
+      new Result(
         response.status, response.data.message, response.data.data
       )
     )
@@ -40,7 +41,7 @@ client.interceptors.response.use(
     else if (error.code === 'ECONNABORTED') code = 602  // 连接错误
 
     // 避免抛出异常
-    return Promise.resolve(new MusicatriResult(code, message, error))
+    return Promise.resolve(new Result(code, message, error))
   }
 )
 

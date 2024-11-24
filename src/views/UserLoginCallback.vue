@@ -6,8 +6,9 @@ import CommonPanel from '@/components/common-panel.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/utils.js'
-import { useAuthService } from '@/services/auth-service.js'
-import { useNavigateHelper } from '@/router.js'
+import { authService } from '@/services/auth-service.js'
+import { navigateHelper } from '@/router.js'
+import { initUserSocket } from '@/sockets/socket-client.js'
 import CommonBackground from '@/components/common-background.vue'
 
 export default {
@@ -19,12 +20,10 @@ export default {
 
   setup() {
     const { t } = useI18n() // 本地化
-    const navigateHelper = useNavigateHelper()
     let context = null
 
     const bgRef = useTemplateRef('bg-ref')
     const panelRef = useTemplateRef('panel-ref') // 面板引用
-    const authService = useAuthService()
 
     // 初始状态，等待授权响应
     class AwaitingAuthResponseState extends AbstractState {
@@ -39,7 +38,7 @@ export default {
             t('component.pending-panel.waiting_response'),
             true,
           )
-          const result = await authService.authorize(code) // 执行用户登入
+          const result = await authService.userAuthorize(code) // 执行用户登入
           if (result.isSuccess()) {
             // 认证成功，切换到认证成功状态
             // await bgRef.value.loadAsync('/src/assets/user-login-callback/ev005cl.png')
@@ -65,7 +64,7 @@ export default {
       async enter(context) {
         // console.log('checking login status')
         panelRef.value.setTitle(t('view.UserLoginCallback.user_login'), true)
-        const result = await authService.login()
+        const result = await authService.userLogin()
         if (result.isSuccess()) {
           // 认证成功，尝试建立socketio连接后跳转到用户主页
           context.setState(new BuildSocketConnectionState())
@@ -84,11 +83,12 @@ export default {
       async enter(context) {
         panelRef.value.setTitle(
           t('view.UserLogin.build_socket_connection'), true)
-        // 尝试建立socketio连接
-        const result = await authService.verifyLoginStatus()
+
+        const result = await initUserSocket()  // 尝试建立socketio连接
+
         if (result.isSuccess()) {
           // 连接建立成功，将用户引导到主页
-          await navigateHelper.toUserIndex()
+          await navigateHelper.toUserHome()
         } else {
           // 其他返回码使用分类处理器
           ErrorState.handleErrorResult(result)
@@ -218,12 +218,20 @@ export default {
 
       enter(context) {
         super.enter(context)
-        super.addReturnLink()
-        super.addRetryLink()
+        this.addRetryConnectLink()  // 添加重试连接
       }
 
       fadeout(context) {
         super.fadeout(context)
+      }
+
+      // 重试连接
+      addRetryConnectLink() {
+        panelRef.value.addLink({
+          desc: t('view.UserLogin.retry_connect'),
+          click: () => context.setState(new BuildSocketConnectionState()), // 从最初开始检查,
+          href: '/',
+        })
       }
     }
 

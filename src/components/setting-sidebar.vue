@@ -110,7 +110,7 @@ export default {
   font-size: var(--text-medium);
   user-select: none;
   border-radius: 8px;
-  margin: 0 10px 0 10px;
+  margin: 0px 10px 0 10px;
 }
 
 /* 设置菜单选项被激活时的样式 */

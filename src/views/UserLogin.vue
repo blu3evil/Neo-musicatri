@@ -5,10 +5,13 @@ import CommonPanel from '@/components/common-panel.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/utils.js'
-import { useSystemHealthCheck, useSystemService, useAuthService } from '@/services'
-import { useNavigateHelper } from '@/router.js'
+// import { useSystemHealthCheck } from '@/services'
+import { navigateHelper } from '@/router.js'
 import CommonBackground from '@/components/common-background.vue'
 import { useStore } from 'vuex'
+import { authService } from '@/services/auth-service.js'
+import { systemService } from '@/services/system-service.js'
+import { initUserSocket } from '@/sockets/socket-client.js'
 
 export default {
   name: 'UserLogin',
@@ -21,9 +24,6 @@ export default {
     const { t } = useI18n() // 本地化
     const panelRef = useTemplateRef('panel-ref') // 面板
     const bgRef = useTemplateRef('bg-ref')
-    const navigateHelper = useNavigateHelper()
-    const systemService = useSystemService()
-    const authService = useAuthService()
     const store = useStore()
     const config = store.getters.config
 
@@ -31,7 +31,7 @@ export default {
     let maxReconnectTimes = config['MAX_RECONNECT_TIMES'] // 默认最大允许重连次数
     let context = null // 登录状态上下文
 
-    const healthcheck = useSystemHealthCheck() // 健康检查
+    // const healthcheck = useSystemHealthCheck() // 健康检查
 
     // 检查亚托莉服务状态
     class CheckMusicatriServerState extends AbstractState {
@@ -45,9 +45,6 @@ export default {
         if (result.isSuccess()) {
           // 状态健康，进入校验自身登陆情况状态
           context.setState(new CheckUserLoginState())
-        } else if (result.isConnectionError()) {
-          // 对于连接超时，本地连接超时，进入轮询等待状态，等待服务器响应正常
-          context.setState(new ReconnectMusicatriServerState(result.message))
         } else {
           // 将异常归类为client server unknown 3类进行分类处理
           ErrorState.handleErrorResult(result)
@@ -122,13 +119,10 @@ export default {
       async enter(context) {
         // console.log('checking login status')
         panelRef.value.setTitle(t('view.UserLogin.checking_login_status'), true)
-        const result = await authService.login()
+        const result = await authService.userLogin()
         if (result.isSuccess()) {
           // 认证成功，尝试建立socketio连接后跳转到用户主页
           context.setState(new BuildSocketConnectionState())
-        } else if (result.isConnectionError()) {
-          // 连接异常，需要切换到重连状态
-          context.setState(new ReconnectMusicatriServerState(result.message))
         } else if (result.code === 401) {
           // 单独处理401错误，此状态码表示用户没有登入，从后端拉取授权链接
           context.setState(new AwaitingRedirectDiscordOauthState())
@@ -146,12 +140,16 @@ export default {
     class BuildSocketConnectionState extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(
-          t('view.UserLogin.build_socket_connection'), true)
-        // 尝试建立socketio连接
-        const result = await authService.verifyLoginStatus()
+          t('view.UserLogin.build_socket_connection'),
+          true,
+        )
+
+        const result = await initUserSocket()  // 初始化socketio连接
+        console.log(result)
+
         if (result.isSuccess()) {
           // 连接建立成功，将用户引导到主页
-          await navigateHelper.toUserIndex()
+          await navigateHelper.toUserHome()
         } else {
           // 其他返回码使用分类处理器
           ErrorState.handleErrorResult(result)
@@ -169,9 +167,9 @@ export default {
         panelRef.value.setTitle(t('view.UserLogin.not_login_yet'), false)
         this.addAuthorizeLink()
         // 开启健康检查
-        healthcheck.begin(result =>
-          context.setState(new ReconnectMusicatriServerState(result.message)),
-        )
+        // healthcheck.begin(result =>
+        //   context.setState(new ReconnectMusicatriServerState(result.message)),
+        // )
       }
 
       addAuthorizeLink() {
@@ -185,7 +183,7 @@ export default {
       fadeout(context) {
         panelRef.value.clearTitle()
         panelRef.value.clearLinks()
-        healthcheck.stop() // 停止健康检查
+        // healthcheck.stop() // 停止健康检查
       }
     }
 
@@ -200,9 +198,6 @@ export default {
         if (result.isSuccess()) {
           // 成功拉取授权链接，切换到等待用户登录状态
           window.location.href = result.data.authorize_url // 跳转到授权链接
-        } else if (result.isConnectionError()) {
-          // 连接异常
-          context.setState(new ReconnectMusicatriServerState(result.message))
         } else {
           // 分类处理一般异常错误
           ErrorState.handleErrorResult(result)
@@ -252,7 +247,9 @@ export default {
         if (errorResult.isClientError()) {
           context.setState(ErrorState.clientErrorState(message))
         } else if (errorResult.isServerError()) {
-          context.setState(ErrorState.unknownErrorState(message))
+          context.setState(ErrorState.serverErrorState(message))
+        } else if (errorResult.isConnectionError()) {  // 连接错误
+          context.setState(ErrorState.connectionErrorState(message))
         } else {
           context.setState(ErrorState.unknownErrorState(message))
         }
@@ -273,12 +270,16 @@ export default {
         return new UnknownErrorState(message)
       }
 
+      static connectionErrorState(message) {
+        return new ConnectionErrorState(message)
+      }
+
       enter(context) {
         panelRef.value.setTitle(this.title)
         panelRef.value.setMessage(this.message, true)
-        healthcheck.begin(result =>
-          context.setState(new ReconnectMusicatriServerState(result.message)),
-        ) // 开启健康检查
+        // healthcheck.begin(result =>
+        //   context.setState(new ReconnectMusicatriServerState(result.message)),
+        // ) // 开启健康检查
       }
 
       // 添加issue链接
@@ -299,7 +300,7 @@ export default {
         panelRef.value.clearTitle()
         panelRef.value.clearMessage()
         panelRef.value.clearLinks()
-        healthcheck.stop() // 停止健康检查
+        // healthcheck.stop() // 停止健康检查
       }
     }
 
@@ -311,6 +312,27 @@ export default {
       enter(context) {
         super.enter(context)
         super.addReturnLink()
+      }
+    }
+
+    // 连接错误状态
+    class ConnectionErrorState extends ErrorState {
+      constructor(message) {
+        super(t('view.UserLogin.error_occur_title'), message)
+      }
+
+      enter(context) {
+        super.enter(context)
+        this.addRetryConnectLink()
+      }
+
+      // 重试连接
+      addRetryConnectLink() {
+        panelRef.value.addLink({
+          desc: t('view.UserLogin.retry_connect'),
+          click: () => context.setState(new CheckMusicatriServerState()), // 从最初开始检查,
+          href: '/',
+        })
       }
     }
 
@@ -351,7 +373,7 @@ export default {
     })
 
     onUnmounted(() => {
-      healthcheck.stop() // 清理健康检查
+      // healthcheck.stop() // 清理健康检查
     })
   },
 }

@@ -25,13 +25,8 @@ const store = createStore({
     setPathBeforeIntoSettingPage(state, pathBeforeIntoSettingPage) {
       state.pathBeforeIntoSettingPage = pathBeforeIntoSettingPage
     },
-
     setConfig(state, config) {
       state.config = config
-    },
-
-    setDeviceId(state, deviceId) {
-      state.deviceId = deviceId
     },
   },
   actions: {
@@ -77,4 +72,4 @@ store.dispatch('loadActiveSettingPage') // 加载activeSettingPage
 store.dispatch('loadConfig')  // 加载config
 store.dispatch('loadActiveTheme')
 
-export default store
+export { store }

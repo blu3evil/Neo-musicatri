@@ -6,7 +6,8 @@ import App from './App.vue'
 const app = createApp(App);
 
 // vuex配置
-import store from './storage'
+import { store } from './storage'
+await store.dispatch('loadConfig')  // 加载配置文件
 app.use(store)
 
 import { i18n } from '@/locale/index.js'

@@ -2,29 +2,31 @@
 export default {
   namespace: true,
   state: () => ({
-    socket: null,  // socketio对象
-    isConnected: false,  // 连接状态
+    userSocket: null,
+    adminSocket: null,  // 管理员socket连接
     user: null,  // 当前用户
   }),
   mutations: {
-    // 设置socket
-    setSocket: (state, socket) => {
-      state.socket = socket
-    },
-    // 设置当前连接状态
-    setConnectionStatus(state, status) {
-      state.isConnected = status
+    // 设置userSocket
+    setUserSocket: (state, userSocket) => {
+      state.userSocket = userSocket
     },
     // 设置当前用户
     setUser: (state, user) => {
       state.user = user
+    },
+    setAdminSocket: (state, socket) => {
+      state.adminSocket = socket
     }
   },
   actions: {
+    setUserSocket({ commit, dispatch }, socket) {
+      commit('setUserSocket', socket)
+    }
   },
   getters: {
-    isConnected: state => state.isConnected,
+    adminSocket: state => state.adminSocket,
+    userSocket: state => state.userSocket,
     user: state => state.user,
-    socket: state => state.socket,
   },
 }

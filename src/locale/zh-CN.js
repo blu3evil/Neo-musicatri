@@ -78,6 +78,7 @@ export default {
       'error_occur_title': '连接状态异常',
       'connection_error': '连接状态异常',
       'retry_login': '返回重新登陆',
+      'retry_connect': '重新尝试连接',
       'checking_login_status': '正在校验登录状态',
       'not_login_yet': '还没有登陆喵',
       'unknown_error': '未知异常',
@@ -102,6 +103,17 @@ export default {
       'login_status_expired_confirm': '返回主页',
       'login_status_expired_title': '登录状态过期',
       'login_status_expired_message': '过期的登录状态会自动中断您的长连接，请返回主页重新登录...'
+    },
+  },
+  'sockets': {
+    'socket-client': {
+      'socket_success_title': '长连接成功',
+      'socket_connect_message': '成功建立socketio连接',
+      'socket_error_title': '长连接错误',
+      'socket_disconnect_message': '神秘的力量中断了连接',
+      'socket_connect_error_message': '建立长连接时发生错误',
+      'socket_connect_already_exists': '长连接已经存在',
+      'socket_connect_timeout': '长连接建立超时'
     }
   }
 }

@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 import { availableLanguages, getActiveLanguage, getLanguageDisplayName } from '@/locale/index.js'
 import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
-import { useNavigateHelper } from '@/router.js'
+import { navigateHelper } from '@/router.js'
+import { authService } from '@/services/auth-service.js'
 
 export default {
   setup() {
@@ -15,7 +16,6 @@ export default {
 
     const router = useRouter()  // 路由
     const store = useStore()  // 存储
-    const navigateHelper = useNavigateHelper()
 
     const config = store.getters.config  // 配置
     const activeSettingPage = computed(() => store.getters.activeSettingPage)
@@ -75,8 +75,8 @@ export default {
     }
 
     // logo链接，跳转到登录页/user/login
-    const onNavbarLogoClick = () => {
-      navigateHelper.toUserIndex()
+    const onNavbarLogoClick = async () => {
+      await navigateHelper.toUserIndex()
     }
 
     return {

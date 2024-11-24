@@ -2,7 +2,7 @@
 // noinspection JSUnresolvedReference
 
 import { useClient } from '@/services/axios-client.js'
-import store from '@/storage/index.js'
+import { store } from '@/storage/index.js'
 
 const client = useClient()  // 客户端
 
@@ -22,8 +22,7 @@ class SystemService {
   }
 }
 
-const systemService = new SystemService()
-export const useSystemService = () => systemService
+export const systemService = new SystemService()
 
 const config = store.getters.config
 const SYSTEM_HEALTH_CHECK_INTERVAL = config['SYSTEM_HEALTH_CHECK_INTERVAL']
