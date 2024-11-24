@@ -26,10 +26,11 @@ def init_socketio(app: Flask):
     """ 初始化socketio，注册项目socketio相关的命名空间 """
     log.debug(f'initialize socketio...')
     origins = config.get(ConfigEnum.APP_NETWORK_CORS_ALLOW_ORIGINS)  # 配置跨域
+    log.debug(f'socketio origins: {origins}')
     socketio.init_app(app, cors_allowed_origins=origins)
 
-    from sockets.user_socketio import UserSocketIO
-    socketio.on_namespace(UserSocketIO('/socket/user'))
+    from sockets import user_socketio
+    user_socketio.init(socketio)
     log.debug(f"socketio using server: {socketio.async_mode}")
 
 

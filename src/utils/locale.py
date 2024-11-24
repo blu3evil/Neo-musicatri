@@ -36,13 +36,13 @@ class ResourceUtils:
 locales_dir = ResourceUtils.get_resource("locales")  # 本地化资源目录
 DEFAULT_DOMAIN = "flask_app"  # flaks应用文本域
 DEFAULT_LANG = 'en-US'  # 默认采用英文  # todo: 修改默认语言采用配置
-locale = None
+default_locale = None
 
 try:
     # flask app文本域本地化方法
-    locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [DEFAULT_LANG]).gettext
+    default_locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [DEFAULT_LANG]).gettext
 except FileNotFoundError as error:
-    locale = gettext.gettext
+    default_locale = gettext.gettext
 
 
 class LocaleFactory:
@@ -52,29 +52,37 @@ class LocaleFactory:
     """ 本地化工厂，获取本地化对象 """
     def __init__(self):
         """ 工厂初始化 """
-        self.locales = {}
+        self.available_locales = {}
         for country in self.AVAILABLE_LOCALES:
             try:
                 # 尝试加载资源文件
-                self.locales[country] = gettext.translation(DEFAULT_DOMAIN, locales_dir, [country, ]).gettext
+                self.available_locales[country] = gettext.translation(DEFAULT_DOMAIN, locales_dir, [country, ]).gettext
             except FileNotFoundError:
-                self.locales[country] = gettext.gettext
+                self.available_locales[country] = gettext.gettext
 
-    def get(self, lang):
+    def get(self):
         """
         本地化的增强方法，对路由方法可以依靠Accept-Language请求头参数自定义相应语言类型
         对于一般方法则使用默认语言
         """
-        if lang is None:
-            # 如果没有给定语言类型那么使用默认
-            return locale
-        else:
-            # 若给定语言不支持回退到默认
-            optional_locale = self.locales.get(lang)
-            return optional_locale if optional_locale is not None else locale
+        from flask import request
+        request_locale = None
+        user_language = request.headers.get('Accept-Language')
+        if user_language:  # Http请求
+            request_locale = self.available_locales.get(user_language)
 
-# 本地化工厂
-locale_factory = LocaleFactory()
+        user_langauge = request.args.get('Accept-Language')
+
+        if hasattr(request, 'sid') and user_langauge:  # socketio请求
+            request_locale = self.available_locales.get(user_language)
+
+        if request_locale: return request_locale
+        return default_locale
+
+
+locales = LocaleFactory()  # 本地化工厂
+
+
 class I18nUtils:
     """
     本地化资源构建工具类，通过调用本地化脚本生成.po以及.mo本地化文件
@@ -252,5 +260,10 @@ if __name__ == '__main__':
 
     # LocaleFacade.generate_flask_app_domain_po(lang="zh-CN")
     # LocalesFacade.generate_flask_app_domain_mo(lang="zh-CN")
+
+    # todo: 生成对应本地化文件之前应该先清空资源目录防止错误
+    # todo: 令中文默认使用utf-8字符集
+    # todo: 更好的命令行
+
     LocaleCommandLineInterface().cmdloop()
 

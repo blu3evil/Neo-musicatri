@@ -9,7 +9,7 @@ from aiohttp import ClientConnectorError
 from discord import Intents, LoginFailure, HTTPException
 from discord.ext import commands
 
-from utils import log, config, ConfigEnum, locale as _
+from utils import log, config, ConfigEnum, default_locale as _
 
 
 class Atri(commands.AutoShardedBot):

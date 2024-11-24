@@ -1,19 +1,19 @@
 """
 权限校验蓝图
 """
-from clients import discord_oauth
-from services.user_service import current_user
-from flask import Blueprint, jsonify, request, g, abort
+from flask import Blueprint, jsonify, request
 
-from utils import config, ConfigEnum
+from clients import discord_oauth
 from core import cache
+from services.auth_service import auth_service
+from utils import config, ConfigEnum, locales
 
 auth_bp_v1 = Blueprint('auth_bp_v1', __name__, url_prefix='/api/v1/auth')
-
 redirect_uri = config.get(ConfigEnum.DISCORD_OAUTH_REDIRECT_URI)
 
 # 登入接口，检测用户是否登入，如果已经登入那么返回用户数据，否则返回重定向url指引用户登入
 @auth_bp_v1.route('/login', methods=['GET'])
+@auth_service.require_login  # 校验用户登录权限
 def login():
     """
     用户登录接口
@@ -51,15 +51,13 @@ def login():
                 example: 'Forbidden'
                 description: 用户不具备登入的权限
     """
-    _ = g.t
-    if not current_user.is_login(): abort(401)  # 用户未登录
-    if not current_user.is_active(): abort(403)  # 账号未激活
+    _ = locales.get()
     return jsonify({ 'message': _('Login success') })  # 登录成功
 
 
 # 提供前端请求获取认证url
 @auth_bp_v1.route('/authorize-url', methods=['GET'])
-@cache.cached(timeout=60)
+@cache.cached(timeout=3600)
 def authorize_url():
     """
     授权链接接口
@@ -104,17 +102,18 @@ def authorize():
       400:
         description: 参数错误
     """
-    _ = g.t
+    _ = locales.get()
     code = request.get_json().get('code')
-    if not code: abort(400)  # 参数错误
-    current_user.login(code)  # 执行登入
-    return jsonify({ 'message': _('Authorize success') })  # 认证成功
+    if not code: return jsonify({ 'message': _('invalid argument') }), 403  # 参数错误
+
+    result = auth_service.user_login(code)  # 执行登入
+    return result.as_response()
 
 
 # 会话检查接口，用于前端检查当前登入状态
 @auth_bp_v1.route('/status', methods=['GET'])
-@current_user.login_required
-@current_user.role_required('user')
+@auth_service.require_login
+@auth_service.require_role('user')
 def status():
     """
     用户登录状态检查接口
@@ -131,11 +130,10 @@ def status():
             message:
               type: string
               example: 'Logged in'
-
       401:
         description: 用户未登录
       403:
         description: 用户权限不足
     """
-    _ = g.t
+    _ = locales.get()
     return jsonify({ 'message': _('Logged in') })  # 认证通过

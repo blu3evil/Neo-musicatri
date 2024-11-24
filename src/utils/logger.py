@@ -6,7 +6,7 @@ import sys
 
 import colorlog
 from colorlog import ColoredFormatter
-from utils.configs import config, ConfigEnum
+from utils.config import config, ConfigEnum
 
 # flask风格的控制台输出
 FLASK_STYLE_CONSOLE_FORMATTER = ColoredFormatter(

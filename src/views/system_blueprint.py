@@ -3,7 +3,7 @@
 """
 from datetime import time, datetime
 
-from services.user_service import current_user
+from services.auth_service import auth_service
 from flask import Blueprint, jsonify
 from utils import config, ConfigEnum
 import time, math
@@ -51,8 +51,8 @@ def health():
 
 @status_bp_v1.route('/info', methods=['GET'])
 @cache.cached(timeout=60)
-@current_user.login_required
-@current_user.role_required('user')
+@auth_service.require_login
+@auth_service.require_role('user')
 def info():
     """
     服务器描述接口

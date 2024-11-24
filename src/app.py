@@ -3,8 +3,9 @@ Musicatri启动入口模块
 """
 import os
 
-from flask import Flask, request, g, jsonify, Response
-from utils import config, ConfigEnum, locale_factory, log
+from flask import Flask, jsonify, Response
+
+from utils import config, ConfigEnum, log, locales
 
 dev_mode = False                                                        # dev mode
 debug_mode = False                                                      # debug mode
@@ -66,7 +67,12 @@ def init_cors():
     CORS(app, resources={
         # 支持前端调用后端RESTFUL api
         # 如果手动携带Authorization请求头，需要明确来源，而非'*'，浏览器可能对'*'来源的响应不作答复
-        r"/api/*": {
+        r"/api/*": {  # 支持restful api
+            "origins": origins,
+            "allow_headers": headers,
+            "allow_methods": methods,
+        },
+        r"/socket.io/*": {  # 支持socketio
             "origins": origins,
             "allow_headers": headers,
             "allow_methods": methods,
@@ -107,7 +113,7 @@ def init_handlers():
     def register_errorhandler(status, error_consumer):
         @app.errorhandler(status)
         def handler(e):
-            _ = g.t
+            _ = locales.get()
             log.error(e)  # 记录日志
             response = error_consumer(e, _)
             response.status_code = status
@@ -122,7 +128,7 @@ def init_handlers():
     if dev_mode: return  # 兜底用的异常处理器，开发者模式下并不会注册这一项
     @app.errorhandler(Exception)
     def handle_uncaught(e: Exception) -> Response:
-        _ = g.t
+        _ = locales.get()
         # todo: 此处向开发者提交未知异常消息，记录错误日志信息
         log.error(_("unknown: %s") % e)
         response = jsonify({'message': str(e)})
@@ -133,10 +139,7 @@ def init_handlers():
 def init_app_event():
     """ 初始化flask app生命周期 """
     log.debug(f'initialize event binding...')
-    @app.before_request
-    def before_request():
-        accept_language = request.headers.get('Accept-Language')  # zh-CN
-        g.t = locale_factory.get(accept_language)  # 请求到达前挂载本地化
+
 
 
 def init_views():

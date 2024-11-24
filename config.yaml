@@ -52,17 +52,9 @@ application:
     port: 5000
     public-url: http://localhost:5000
     cors:
-      allow-origins:
-        - http://localhost:5173
-      allow-headers:
-        - Content-Type
-        - Accept-Language
-      allow-methods:
-        - GET
-        - POST
-        - PUT
-        - DELETE
-        - TRACE
+      allow-origins: [http://localhost:5173]
+      allow-headers: [Content-Type, Accept-Language]
+      allow-methods: [GET, POST, PUT, DELETE, TRACE]
       supports-credentials: true
   database:
     driver: mysql
