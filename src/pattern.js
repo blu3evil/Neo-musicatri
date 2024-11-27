@@ -1,6 +1,5 @@
 // 状态模式
-// 健康检查
-class AbstractState {
+export class AbstractState {
   // 切入状态时被调用
   enter(context) {
     // 状态执行逻辑
@@ -12,7 +11,7 @@ class AbstractState {
   }
 }
 
-class StateContext {
+export class StateContext {
   constructor () {
     this.state = null
   }
@@ -22,10 +21,5 @@ class StateContext {
     this.state = state  // 切换状态
     if (this.state !== null) this.state.enter(this)  // 切入状态
   }
-}
-
-export {
-  AbstractState,
-  StateContext,
 }
 

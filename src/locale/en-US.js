@@ -28,7 +28,8 @@ export default {
     },
     'setting-sidebar': {
       'appearance_setting': 'Appearance',
-      'profile_setting': 'Profile'
+      'profile_setting': 'Profile',
+      'about_setting': 'About'
     }
   },
   'view': {
@@ -36,11 +37,24 @@ export default {
       'title': 'Appearance Setting',
       'language_setting': 'Language Setting',
       'language_setting_description': 'You can choose your own application language to improve your experience, which might make your exploration become easier',
-      'language_select_label': 'select language',
-      'language_select_placeholder': 'no language selected'
+      'language_select_label': 'select a language',
+      'language_select_placeholder': 'no language selected',
+      'theme_setting': 'Theme Setting',
+      'theme_select_label': 'select a theme',
+      'theme_select_placeholder': 'no theme selected',
     },
     'ProfileSetting': {
       'title': 'Profile Setting',
+    },
+    'AboutSetting': {
+      'title': 'About Musicatri',
+      'musicatri_audio1': `"Yeah, I'm high-performance, hmm!"`,
+      'musicatri_audio2': '"being delicious is happiness!"',
+      'musicatri_audio3': `"Does the 'Earth' also include me?"`,
+      'system_info': 'Server Information',
+      'system_name': 'name',
+      'system_version': 'version',
+      'system_description': 'description',
     },
     'UserLoginPending': {
       'invalid_auth_code': 'Invalid auth code',

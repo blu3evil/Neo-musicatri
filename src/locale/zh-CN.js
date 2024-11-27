@@ -38,7 +38,7 @@ export default {
       'language_select_placeholder': '没有选择语言',
       'theme_setting': '主题设定',
       'theme_select_label': '选择偏好主题',
-      'theme_select_placeholder': '选择一种主题'
+      'theme_select_placeholder': '没有选择主题'
     },
     'ProfileSetting': {
       'title': '账号设定',
@@ -52,7 +52,6 @@ export default {
       'system_name': '名称',
       'system_version': '版本',
       'system_description': '描述',
-
     },
     'UserLoginPending': {
       'invalid_auth_code': '非法的认证code参数'

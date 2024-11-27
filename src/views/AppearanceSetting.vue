@@ -2,61 +2,35 @@
 <script>
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
-import { computed, onMounted, ref, watch } from 'vue'
-import { availableThemes } from '@/theme/index.js' // 可用主题
-import {
-  availableLanguages,
-  getLanguageDisplayName,
-  getActiveLanguage,
-  localstorageTag,
-} from '@/locale/index.js'
+import { computed } from 'vue'
+import { availableThemes } from '@/theme/index.js'
+import { availableLanguages } from '@/locale/index.js'
 
 export default {
-  // 计算属性
-
   setup() {
     const { t, locale } = useI18n() // 本地化
-    const activeLanguage = ref('')
     const store = useStore() // 存储
 
-    const activeTheme = computed({
+    const activeTheme = computed({  // 监听主题变化
       get() { return store.getters.activeTheme },
+      set(value) { store.dispatch('setActiveTheme', value) }
+    })
+
+    // 语言修改需要在vue组件中进行
+    const activeLanguage = computed({  // 监听语言变化
+      get() { return store.getters.activeLanguage },
       set(value) {
-        store.dispatch('setActiveTheme', value)
-      },
-    })
-
-    /**
-     * 监听activeLanguage变化，并且在变化之后更新语言
-     */
-    watch(activeLanguage, (newVal, oldVal) => {
-      if (newVal !== oldVal) {
-        if (availableLanguages.indexOf(newVal) !== -1) {
-          localStorage.setItem(localstorageTag, newVal) // 在localstorage设置语言
-          activeLanguage.value = newVal // 当前语言
-          locale.value = newVal // 切换语言，更新响应式
-        }
+        store.dispatch('setActiveLanguage', value).then(() =>
+          locale.value = store.getters.activeLanguage)
       }
-    })
-
-    /**
-     * 加载当前激活语言
-     */
-    const loadActiveLanguage = () => {
-      activeLanguage.value = getActiveLanguage()
-    }
-
-    onMounted(() => {
-      loadActiveLanguage()
     })
 
     return {
       t, // 本地化
-      activeLanguage,
-      availableLanguages, // 可用语言列表
-      getLanguageDisplayName,
-      availableThemes, // 可用主题
       activeTheme, // 当前激活主题
+      availableThemes, // 可用主题
+      activeLanguage,  // 当前激活语言
+      availableLanguages,  // 可用语言
     }
   },
 }
@@ -99,10 +73,10 @@ export default {
             style="width: 240px"
           >
             <el-option
-              v-for="lang in availableLanguages"
+              v-for="(lang, key) in availableLanguages"
               :key="lang"
-              :label="getLanguageDisplayName(lang)"
-              :value="lang"
+              :label="lang['name']"
+              :value="key"
             />
           </el-select>
         </span>

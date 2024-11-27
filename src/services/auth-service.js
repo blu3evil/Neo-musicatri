@@ -29,7 +29,7 @@ class AuthService {
   }
 
   verifyUserLoginStatus() {
-    return store.getters.userSocket !== null && store.getters.userSocket.isConnected !== null
+    return store.getters.userSocket !== null && store.getters.userSocket.isConnected
   }
 }
 

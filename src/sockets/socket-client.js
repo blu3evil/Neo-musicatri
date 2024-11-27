@@ -1,21 +1,26 @@
 import { io } from 'socket.io-client'
 import { ElNotification } from 'element-plus'
-import { i18n } from '@/locale/index.js'
 import { store } from '@/storage'
 import { Events } from '@/sockets/events.js'
 import { Result } from '@/common.js'
 
 const config = store.getters.config
+const i18n = store.getters.i18n
 
 // 初始化用户socket
 export const initUserSocket = async () => {
-  if (store.getters.userSocket !== null) {
-    return new Result(200, i18n.global.t('sockets.socket-client.socket_connect_already_exists')) // 连接已经存在
+  let userSocket = store.getters.userSocket
+  if (userSocket !== null) {
+    // 优先中断先前的连接
+    userSocket.disconnect()
+    userSocket.isConnected = false
   }
 
   // 连接不存在初始化连接
-  const connectURL = `${config['SOCKET_ENDPOINT']}/user`
-  const socket = new SocketClient(connectURL)
+  const url = `${config['SOCKET_ENDPOINT']}/user`
+  const lang = store.getters.activeLanguage
+  const socket = new SocketClient(url, lang)
+
   const result = await socket.connect()
 
   if (result.isSuccess()) {  // 连接建立成功
@@ -26,11 +31,15 @@ export const initUserSocket = async () => {
 
 // socket客户端，基于路径创建不同的socket连接，例如客户socket，管理员socket
 export class SocketClient {
-  constructor(url) {
+  constructor(url, lang='en-US') {
     this.socket = io(url, {
       autoConnect: false, // 取消自动连接
       reconnection: false,  // 禁用重连，手动操作重连逻辑
       transports: ['websocket', 'polling'],  // 使用websocket而不是轮询
+      extraHeaders: {
+        // 自定义请求头，指定携带语言实现前后端联调下的本地化
+        'Accept-Language': 'en-US',
+      },
     })
     this.isConnected = false
   }
@@ -73,6 +82,7 @@ export class SocketClient {
             message: i18n.global.t('sockets.socket-client.socket_disconnect_message'),
             position: 'bottom-right',
           })
+          this.socket.disconnect()
         })
 
         resolve(Result.fromJSON(response))
@@ -88,6 +98,7 @@ export class SocketClient {
 
       // 超时处理
       timeoutId = setTimeout(() => {
+        this.isConnected = false
         this.socket.off(Events.CONNECT_ERROR)  // 移除事件监听
         this.socket.off(Events.CONNECT_SUCCESS)
         resolve(new Result(

@@ -1,4 +1,5 @@
 // todo: 补齐主题定义
+// todo: 添加scp主题
 import baseStyle from '@/theme/base-theme.js'
 import darkTheme from '@/theme/dark-theme.js'
 

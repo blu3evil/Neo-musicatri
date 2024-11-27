@@ -7,11 +7,10 @@ const app = createApp(App);
 
 // vuex配置
 import { store } from './storage'
-await store.dispatch('loadConfig')  // 加载配置文件
 app.use(store)
 
-import { i18n } from '@/locale/index.js'
-app.use(i18n)  // 本地化
+// i18n初始化
+app.use(store.getters.i18n)
 
 // 路由初始化
 import { router } from './router.js'

@@ -44,24 +44,23 @@ export default {
         name: 'appearance',
         path: '/settings/appearance',
         icon: h(ElIcon, null, { default: () => h(IconMenu) }),
-        span: t('component.setting-sidebar.appearance_setting')
+        span: computed(() => t('component.setting-sidebar.appearance_setting'))
       },
       {
         name: 'profile',
         path: '/settings/profile',
         icon: h(ElIcon, null, { default: () => h(UserFilled) }),
-        span: t('component.setting-sidebar.profile_setting')
+        span: computed(() => t('component.setting-sidebar.profile_setting'))
       },
       {
         name: 'about',
         path: '/settings/about',
         icon: h(ElIcon, null, { default: () => h(InfoFilled) }),
-        span: t('component.setting-sidebar.about_setting')
+        span: computed(() => t('component.setting-sidebar.about_setting'))
       }
     ]
 
     onMounted(() => {})
-
     return {
       handleMenuSelect,
       activeSettingPage,

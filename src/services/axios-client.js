@@ -1,7 +1,5 @@
 /* 通用客户端 */
-import { getActiveLanguage } from '@/locale/index.js'
 import axios from 'axios'
-
 
 import { store } from '@/storage/index.js'
 import { Result } from '@/common.js'
@@ -16,7 +14,7 @@ const client = axios.create({
 
 client.interceptors.request.use((config) => {
   config.withCredentials = true  // 允许携带关键凭证
-  config.headers['Accept-Language'] = getActiveLanguage()  // 携带语言头响应本地化
+  config.headers['Accept-Language'] = store.getters.activeLanguage  // 携带语言头响应本地化
   return config
 }, (error) => {
   return Promise.reject(error);

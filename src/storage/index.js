@@ -3,6 +3,7 @@
 import { createStore } from 'vuex'
 import theme from '@/storage/theme-module.js'  // 主题模块
 import socket from '@/storage/socket-module.js'  // socketio模块
+import locale from '@/storage/locale-module.js'
 
 import axios from 'axios'
 const availableSettingPages = ['appearance', 'profile']  // 可用设置页面列表
@@ -10,7 +11,8 @@ const availableSettingPages = ['appearance', 'profile']  // 可用设置页面�
 const store = createStore({
   modules: {
     theme  /* 主题模块 */,
-    socket  /* socketio模块 */
+    socket  /* socketio模块 */,
+    locale  /* 本地化模块 */,
   },
   state: {
     activeSettingPage: 'appearance',    // 当前激活的设置页面
@@ -65,11 +67,15 @@ store.subscribe((mutation, state) => {
   } else if (mutation.type === 'setActiveTheme') {
     // 同步主题，此处应当使用模块引用
     localStorage.setItem('activeTheme', state.theme.activeTheme)
+  } else if (mutation.type === 'setActiveLanguage') {
+    // 同步语言
+    localStorage.setItem('activeLanguage', state.locale.activeLanguage)
   }
 })
 
 store.dispatch('loadActiveSettingPage') // 加载activeSettingPage
 store.dispatch('loadConfig')  // 加载config
 store.dispatch('loadActiveTheme')
-
+// store.dispatch('loadActiveLanguage')  // 加载默认主题
+store.dispatch('initI18n')
 export { store }
