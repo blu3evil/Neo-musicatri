@@ -1,21 +1,22 @@
 <!-- discord认证页面 -->
 <!--suppress JSUnresolvedReference -->
 <script>
-import CommonNavbar from '@/components/common-navbar.vue'
+import MusicatriNavbar from '@/components/musicatri-navbar.vue'
 import CommonPanel from '@/components/common-panel.vue'
+import CommonBackground from '@/components/common-background.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
 import { authService } from '@/services/auth-service.js'
-import { navigateHelper } from '@/router.js'
-import { initUserSocket } from '@/sockets/socket-client.js'
-import CommonBackground from '@/components/common-background.vue'
+import { navigator } from '@/router.js'
+import { userSocketClient } from '@/sockets/user-socket.js'
+import { config } from '@/config.js'
 
 export default {
   components: {
     CommonBackground,
     CommonPanel,
-    CommonNavbar,
+    MusicatriNavbar,
   },
 
   setup() {
@@ -23,7 +24,7 @@ export default {
     let context = null
 
     const bgRef = useTemplateRef('bg-ref')
-    const panelRef = useTemplateRef('panel-ref') // 面板引用
+    const panelRef = useTemplateRef('panel-ref')  // 面板引用
 
     // 初始状态，等待授权响应
     class AwaitingAuthResponseState extends AbstractState {
@@ -39,12 +40,9 @@ export default {
             true,
           )
           const result = await authService.userAuthorize(code) // 执行用户登入
-          if (result.isSuccess()) {
-            // 认证成功，切换到认证成功状态
-            // await bgRef.value.loadAsync('/src/assets/user-login-callback/ev005cl.png')
+          if (result.isSuccess()) {  // 认证成功
             context.setState(new UserLoginStatus())
-          } else {
-            // 分4类处理异常
+          } else {  // 分4类处理异常
             ErrorState.handleErrorResult(result)
           }
         } else {
@@ -62,11 +60,10 @@ export default {
     // 执行用户登入逻辑
     class UserLoginStatus extends AbstractState {
       async enter(context) {
-        // console.log('checking login status')
         panelRef.value.setTitle(t('view.UserLoginCallback.user_login'), true)
         const result = await authService.userLogin()
         if (result.isSuccess()) {
-          // 认证成功，尝试建立socketio连接后跳转到用户主页
+          // 登陆成功后建立socketio连接
           context.setState(new BuildSocketConnectionState())
         } else {
           ErrorState.handleErrorResult(result)
@@ -84,11 +81,11 @@ export default {
         panelRef.value.setTitle(
           t('view.UserLogin.build_socket_connection'), true)
 
-        const result = await initUserSocket()  // 尝试建立socketio连接
+        const result = await userSocketClient.connect()  // 尝试建立socketio连接
 
         if (result.isSuccess()) {
           // 连接建立成功，将用户引导到主页
-          await navigateHelper.toUserHome()
+          await navigator.toWorkspace()
         } else {
           // 其他返回码使用分类处理器
           ErrorState.handleErrorResult(result)
@@ -102,61 +99,46 @@ export default {
 
     // 错误状态，可用于辅助渲染错误
     class ErrorState extends AbstractState {
-      constructor(_title, _message) {
+      constructor(title, message) {
         super()
-        this.message = _message
-        this.title = _title
+        this.message = message
+        this.title = title
       }
 
       static handleErrorResult(errorResult) {
         const message = errorResult.message
-        if (errorResult.isClientError()) {
-          context.setState(ErrorState.clientErrorState(message))
-        } else if (errorResult.isServerError()) {
-          context.setState(ErrorState.serverErrorState(message))
-        } else if (errorResult.isConnectionError) {
-          context.setState(ErrorState.connectionErrorState(message))
-        } else {
-          context.setState(ErrorState.unknownErrorState(message))
+        if (errorResult.isClientError()) {  // 客户端异常
+          context.setState(new ClientErrorState(message))
+        } else if (errorResult.isServerError()) {  // 服务端异常
+          context.setState(new ServerErrorState(message))
+        } else if (errorResult.isConnectionError) {  // 连接异常
+          context.setState(new ConnectionErrorState(message))
+        } else {  // 未知异常
+          context.setState(new UnknownErrorState(message))
         }
       }
 
-      // 客户端异常
-      static clientErrorState(message) {
-        return new ClientErrorState(message)
-      }
-
-      // 服务端异常
-      static serverErrorState(message) {
-        return new ServerErrorState(message)
-      }
-
-      // 未知异常
-      static unknownErrorState(message) {
-        return new UnknownErrorState(message)
-      }
-
-      // 连接状态异常
-      static connectionErrorState(message) {
-        return new ConnectionErrorState(message)
-      }
-
       // 增加重新登录链接
-      addReturnLink() {
-        panelRef.value.addLink({
-          desc: t('view.UserLoginCallback.return_login'),
-          click: () => navigateHelper.toUserLogin(),
-          href: '/',
-        })
+      appendReturnToLoginLink() {
+        panelRef.value.appendEventLink(
+          t('view.UserLoginCallback.return_login'),
+          async () => await navigator.toLogin()
+        )
       }
 
       // 增加重新授权链接
-      async addRetryLink() {
-        panelRef.value.addLink({
-          desc: t('view.UserLoginCallback.retry_authorize'),
-          href: '/',
-          click: () => context.setState(new TryingAuthorizeState()),
-        })
+      appendRetryAuthorizeLink() {
+        panelRef.value.appendEventLink(
+          t('view.UserLoginCallback.retry_authorize'),
+          () => context.setState(new TryingAuthorizeState())
+        )
+      }
+
+      appendSendIssueLink() {
+        panelRef.value.appendHrefLink(
+          t('view.UserLogin.sending_issue'),
+          config['ISSUE_LINK']
+        )
       }
 
       enter(context) {
@@ -179,8 +161,8 @@ export default {
 
       enter(context) {
         super.enter(context)
-        super.addReturnLink()
-        super.addRetryLink()
+        super.appendReturnToLoginLink()
+        super.appendRetryAuthorizeLink()
       }
 
       fadeout(context) {
@@ -197,8 +179,8 @@ export default {
         )
         const result = await authService.getAuthorizeUrl()
         if (result.isSuccess()) {
-          // 成功拉取授权链接，切换到等待用户登录状态
-          window.location.href = result.data.authorize_url // 跳转到授权链接
+          // 成功拉取授权链接，执行跳转
+          window.location.href = result.data.authorize_url
         } else {
           // 分类处理一般异常错误
           ErrorState.handleErrorResult(result)
@@ -227,11 +209,10 @@ export default {
 
       // 重试连接
       addRetryConnectLink() {
-        panelRef.value.addLink({
-          desc: t('view.UserLogin.retry_connect'),
-          click: () => context.setState(new BuildSocketConnectionState()), // 从最初开始检查,
-          href: '/',
-        })
+        panelRef.value.appendEventLink(
+          t('view.UserLogin.retry_connect'),
+          () => context.setState(new BuildSocketConnectionState())
+          )
       }
     }
 
@@ -241,9 +222,9 @@ export default {
       }
       enter(context) {
         super.enter(context)
-        super.addReturnLink()
-        panelRef.value.addIssueLink()
-        super.addRetryLink()
+        super.appendReturnToLoginLink()
+        super.appendRetryAuthorizeLink()
+        super.appendSendIssueLink()
       }
 
       fadeout(context) {
@@ -258,8 +239,8 @@ export default {
 
       enter(context) {
         super.enter(context)
-        panelRef.value.addIssueLink()
-        super.addReturnLink()
+        super.appendReturnToLoginLink()
+        super.appendSendIssueLink()
       }
 
       fadeout(context) {
@@ -283,6 +264,6 @@ export default {
 
 <template>
   <CommonBackground ref="bg-ref" />
-  <CommonNavbar />
+  <MusicatriNavbar />
   <CommonPanel ref="panel-ref" />
 </template>

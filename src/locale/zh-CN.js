@@ -1,10 +1,6 @@
 export default {
   'component': {
-    'common-navbar': {
-      'discord_logo': '🥳加入我们的Discord频道!',
-      'github_logo': '🧐参与Musicatri的开发!',
-      'setting_logo': '⚙️偏好设置'
-    },
+    'common-navbar': {},
     'pending-panel': {
       'footer': '版权所有© 2072 株式会社山崎制造',
       'client_error': '客户端异常',
@@ -27,9 +23,30 @@ export default {
       'appearance_setting': '外观',
       'profile_setting': '账号',
       'about_setting': '关于',
+      'atri_setting': '亚托莉设定'
     },
+    'workspace-sidebar': {
+      'dashboard': '仪表盘'
+    },
+    'user-panel': {
+      'more_settings': '应用设置',
+      'account_logout': '账户登出'
+    }
   },
   'view': {
+    'workspace': {
+      'Dashboard': {
+        'overview': '应用总览',
+        'user_management': '用户管理',
+        'log_monitoring': '日志监控',
+      },
+      'Workspace': {
+        'dashboard': '仪表盘',
+        'portal': '传送门',
+        'quick_start': '快速开始',
+        'admin_function': '管理员功能'
+      }
+    },
     'AppearanceSetting': {
       'title': '外观设定',
       'language_setting': '语言设定',
@@ -41,7 +58,7 @@ export default {
       'theme_select_placeholder': '没有选择主题'
     },
     'ProfileSetting': {
-      'title': '账号设定',
+      'title': '账号信息',
     },
     'AboutSetting': {
       'title': '关于音乐亚托莉',
@@ -52,6 +69,10 @@ export default {
       'system_name': '名称',
       'system_version': '版本',
       'system_description': '描述',
+      'dashboard_connection': '仪表盘',
+      'connect_dashboard': '连接仪表盘',
+      'unconnected': '未连接',
+      'connected': '已连接'
     },
     'UserLoginPending': {
       'invalid_auth_code': '非法的认证code参数'
@@ -105,14 +126,23 @@ export default {
     },
   },
   'sockets': {
-    'socket-client': {
-      'socket_success_title': '长连接成功',
-      'socket_connect_message': '成功建立socketio连接',
-      'socket_error_title': '长连接错误',
-      'socket_disconnect_message': '神秘的力量中断了连接',
-      'socket_connect_error_message': '建立长连接时发生错误',
-      'socket_connect_already_exists': '长连接已经存在',
-      'socket_connect_timeout': '长连接建立超时'
+    'user-socket-client': {
+      'fetch_user_error': '拉取用户信息失败',
+      'fetch_user_timeout': '拉取用户信息超时',
+    }
+  },
+  'utils': {
+    'ui-helper': {
+      'toast_message_error_title': '有些事情不对劲!',
+      'toast_message_success_title': '请求成功',
+      'toast_message_warning_title': '严重警告',
+      'toast_message_info_title': '友善提示',
+    }
+  },
+  'storage': {
+    'user-module': {
+      'fetch_user_avatar_failed': '网络错误，获取用户头像失败',
+      'empty_avatar_url': '无法获取用户头像，路径不存在'
     }
   }
 }

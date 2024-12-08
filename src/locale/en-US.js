@@ -29,7 +29,12 @@ export default {
     'setting-sidebar': {
       'appearance_setting': 'Appearance',
       'profile_setting': 'Profile',
-      'about_setting': 'About'
+      'about_setting': 'About',
+      'atri_setting': 'Atri Settings'
+    },
+    'user-panel': {
+      'more_settings': 'Application Settings',
+      'account_logout': 'Account Logout',
     }
   },
   'view': {

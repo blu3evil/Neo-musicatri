@@ -1,30 +1,23 @@
 // 系统服务
 // noinspection JSUnresolvedReference
-
-import { useClient } from '@/services/axios-client.js'
-import { store } from '@/storage/index.js'
-
-const client = useClient()  // 客户端
+import { musicatriClient } from '@/services/axios-client.js'
+import { config } from '@/config.js'
 
 const urlPrefix = '/system'
-
-
 
 class SystemService {
   // 获取服务器当前健康状态
   getSystemHealth() {
-    return client.get(`${urlPrefix}/health`)
+    return musicatriClient.get(`${urlPrefix}/health`)
   }
 
   // 获取服务信息
   getSystemInfo() {
-    return client.get(`${urlPrefix}/info`)
+    return musicatriClient.get(`${urlPrefix}/info`)
   }
 }
 
 export const systemService = new SystemService()
-
-const config = store.getters.config
 const SYSTEM_HEALTH_CHECK_INTERVAL = config['SYSTEM_HEALTH_CHECK_INTERVAL']
 
 class SystemHealthCheck {
@@ -46,12 +39,4 @@ class SystemHealthCheck {
   stop() {
     clearInterval(this.healthcheckIntervalId)
   }
-}
-
-const useSystemHealthCheck = () => {
-  return new SystemHealthCheck()
-}
-
-export {
-  useSystemHealthCheck
 }

@@ -5,17 +5,36 @@ import { useI18n } from 'vue-i18n'
 import { onMounted, ref } from 'vue'
 import { computed } from 'vue'
 import { systemService } from '@/services/system-service.js'
+import { authService } from '@/services/auth-service.js'
+import { adminSocketClient } from '@/sockets/admin-socket.js'
+import { config } from '@/config.js'
 
 export default {
   setup() {
     const store = useStore() // 存储
     const { t } = useI18n()
-    const config = store.getters.config
     const popperStyle = ref() // 弹出框统一样式
     const loadingSystemInfo = ref(true)
 
     const onGithubIconClick = () => window.open(config['GITHUB_LINK'], '_blank')
-    const activeTheme = computed(() => store.getters.activeTheme)
+    const activeTheme = computed(() => store.getters.activeTheme)  // 当前主题
+
+    // 管理员socketio是否正处于连接状态
+    const isAdminSocketConnecting = computed(() => store.getters.isAdminSocketConnecting)
+    // 管理员socket是否连接
+    const adminSocketConnected = computed(() => store.getters.adminSocketConnected)
+
+    const dashboardConnectStatusStr = computed(() => {
+      return adminSocketConnected.value ?
+        t('view.AboutSetting.connected')
+        : t('view.AboutSetting.unconnected')
+    })
+
+    // 建立到admin socketio的连接
+    const onDashboardConnect = async () => {
+      const result = await adminSocketClient.connect()
+      console.log(result)
+    }
 
     const onDiscordIconClick = () =>
       window.open(config['DISCORD_LINK'], '_blank')
@@ -78,13 +97,17 @@ export default {
       config,
       popperStyle,
       activeTheme,  // 当前主题
-      onGithubIconClick,
-      onDiscordIconClick,
       systemInfo,
       loadingSystemInfo,
-      playAudio,
       highPerformanceWAVs,
-      playAudioRandomly
+      dashboardConnectStatusStr,
+      isAdminSocketConnecting,
+      playAudio,
+      onGithubIconClick,
+      onDiscordIconClick,
+      onDashboardConnect,
+      playAudioRandomly,
+      authService
     }
   },
 }
@@ -134,7 +157,22 @@ export default {
         {{ t('view.AboutSetting.system_description') }}: {{ systemInfo['description'] }}
       </span>
     </el-row>
+    <el-row v-if="authService.verifyRole('admin')">
+      <el-col :span="24">
+        <span class="text-small unselectable">
+        {{ t('view.AboutSetting.dashboard_connection') }}: {{ dashboardConnectStatusStr }}
+        </span>
+        <el-button type="primary"
+                   class="text-small"
+                   style="margin-left: 50px"
+                   @click="onDashboardConnect"
+                   :loading="isAdminSocketConnecting">
+          {{ t('view.AboutSetting.connect_dashboard') }}
+        </el-button>
+      </el-col>
+    </el-row>
 
+    <!-- discord链接 -->
     <el-row style="margin-top: 60px">
       <span class="unselectable">
         <el-popover
@@ -157,6 +195,7 @@ export default {
         </el-popover>
       </span>
 
+      <!-- github链接 -->
       <span class="unselectable">
         <el-popover
           placement="top-start"

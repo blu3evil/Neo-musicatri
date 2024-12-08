@@ -1,17 +1,16 @@
 <script>
 
-import CommonNavbar from '@/components/common-navbar.vue'
+import MusicatriNavbar from '@/components/musicatri-navbar.vue'
 import CommonPanel from '@/components/common-panel.vue'
 import CommonBackground from '@/components/common-background.vue'
 import { useI18n } from 'vue-i18n'
 import { onMounted, useTemplateRef } from 'vue'
-import { store } from '@/storage'
-import { navigateHelper } from '@/router.js'
+import { navigator } from '@/router.js'
 
 export default {
   name: 'NotFound',
   components: {
-    CommonNavbar /* 导航栏 */,
+    MusicatriNavbar /* 导航栏 */,
     CommonPanel /* 面板 */,
     CommonBackground /* 背景 */
   },
@@ -28,11 +27,10 @@ export default {
     }
 
     const addReturnMainLink = () => {
-      panelRef.value.addLink({
-        desc: t('view.NotFound.return_index'),
-        click: async () => await navigateHelper.toUserIndex(),
-        href: '/'
-      })
+      panelRef.value.appendEventLink(
+        t('view.NotFound.return_index'),
+        async () => await navigator.toWorkspace()
+        )
     }
 
     onMounted(() => {
@@ -44,7 +42,7 @@ export default {
 </script>
 <template>
   <CommonBackground ref="bg-ref" />
-  <CommonNavbar />
+  <MusicatriNavbar />
   <CommonPanel ref="panel-ref" />
 </template>
 <style scoped>

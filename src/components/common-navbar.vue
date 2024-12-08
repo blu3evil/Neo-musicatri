@@ -1,190 +1,79 @@
 <script>
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { useStore } from 'vuex'
-import { navigateHelper } from '@/router.js'
-
+import { onMounted, ref } from 'vue'
 export default {
-  setup() {
-    const activeIndex = ref('1')  // 菜单栏当前激活
-    const handleSelect = (key, keyPath) => {
-      // console.log(key, keyPath)
-    }
-
-    const router = useRouter()  // 路由
-    const store = useStore()  // 存储
-
-    const activeSettingPage = computed(() => store.getters.activeSettingPage)
-
-    const { t } = useI18n()  // 本地化
-    const popperStyle = ref('top: 70px')  // 弹出框统一样式
-
-    /**
-     * 进入项目设置页面
-     */
-    const onAppSettingClick = () => {
-      let currentPath = router.currentRoute.value.path
-      if (!currentPath.startsWith('/settings')) {
-        // 当前路径不以/settings开头，记录下这个路径，并在将来回溯
-        store.commit('setPathBeforeIntoSettingPage', currentPath)
-        router.push(`/settings/${activeSettingPage.value}`)
-      } else {
-        // 当前路径以/settings开头，那么回到原来进入设置页面之前的路径
-        let before = store.getters.pathBeforeIntoSettingPage
-        if (before != null && before !== '') {
-          router.push(before)  // 如果before路径存在
-        } else {
-          navigateHelper.toIndex()  // 否则跳转到主页
-        }
-      }
-    }
-
-    // logo链接，跳转到登录页/user/login
-    const onNavbarLogoClick = async () => {
-      await navigateHelper.toUserIndex()
-    }
-
-    return {
-      activeIndex,
-      handleSelect, //
-      onNavbarLogoClick, // logo被点击
-      onAppSettingClick, // 项目设置页面
-      popperStyle,  // 弹出框统一样式1
-      t  // 本地化
+  props: {
+    activeMenuItem: {
+      type: String,
+      required: true,
+    },
+    menuItems: {
+      type: Array,
+      required: true,
+    },
+    onMenuItemSelected: {
+      type: Function,
+      required: true,
     }
   },
+  setup(props) {
+    // 通过vuex获取当前激活页面
+    const items = ref([])
+    onMounted(() => {
+      props.menuItems.forEach(item => {
+        items.value.push({
+          name: item.name,
+          span: item.span
+        })
+      })
+    })
+    return { items }
+  }
 }
 </script>
-
 <template>
-  <el-menu
-    :default-active="activeIndex"
-    class="user-navbar"
-    mode="horizontal"
-    :ellipsis="false"
-    @select="handleSelect"
-  >
-    <!-- logo -->
-    <el-menu-item index="0" @click="onNavbarLogoClick">
-      <img
-        style="width: 150px; margin-bottom: 2px"
-        src="/src/assets/common-navbar/navbar-logo.png"
-        alt="Element logo"
-      />
-      <h1 id="navbar-title" style="margin-top: 6px">Musicatri</h1>
+  <el-menu class="workspace-navbar unselectable"
+           mode="horizontal" :ellipsis="false">
+    <el-menu-item
+      v-for="(item) in items"
+      :index="item['name']"
+      :class="['menu-item', activeMenuItem === item['name']? 'is-active': '' ]"
+      @click="onMenuItemSelected(item['name'])">
+      <span>{{item['span']}}</span>
     </el-menu-item>
-
-    <!-- 项目设置 -->
-    <el-menu-item index="2">
-      <el-popover
-        placement="top-start"
-        :width="240"
-        trigger="hover"
-        popper-class="navbar-popper"
-        :popper-style="popperStyle"
-        :content="t('component.common-navbar.setting_logo')"
-      >
-        <template #reference>
-          <img src="/src/assets/common-navbar/icon-setting.png"
-               style="height: 39px"
-               @click="onAppSettingClick"
-               alt="setting logo"/>
-        </template>
-      </el-popover>
-    </el-menu-item>
-
-    <!-- 用户头像 -->
-    <el-menu-item index="2">
-      <el-popover
-        placement="top-start"
-        :width="240"
-        trigger="hover"
-        popper-class="navbar-popper"
-        :popper-style="popperStyle"
-        :content="t('component.common-navbar.setting_logo')"
-      >
-        <template #reference>
-          <img src="/src/assets/common-navbar/icon-setting.png"
-               style="height: 39px"
-               @click="onAppSettingClick"
-               alt="setting logo"/>
-        </template>
-      </el-popover>
-    </el-menu-item>
-
   </el-menu>
 </template>
-
 <style scoped>
-/* 菜单栏按钮右对齐 */
-.el-menu--horizontal > .el-menu-item:nth-child(1) {
-  margin-right: auto;
+/* 导航栏本身 */
+.el-menu {
+  background-color: var(--navbar-bg-color);
+  border-radius: 8px;
+  margin-top: 10px;
+  height: 50px;
 }
 
-/* 菜单栏按钮悬停 */
+/* 导航栏被激活的选项 */
+.el-menu--horizontal>.el-menu-item.is-active {
+  background-color: transparent;
+  color: var(--text-active-color) !important;
+}
+
+.el-menu--horizontal>.el-menu-item:hover {
+  color: transparent;
+}
+
+.el-menu--horizontal>.el-menu-item {
+  border-bottom: none;
+  color: var(--text-color) !important;
+  font-size: var(--text-small);
+}
+
+/* 导航栏底部 */
+.el-menu--horizontal.el-menu {
+  border-bottom: none;
+}
+
 .el-menu--horizontal .el-menu-item:not(.is-disabled):focus,
 .el-menu--horizontal .el-menu-item:not(.is-disabled):hover {
-  background-color: transparent; /* 隐藏按钮悬停背景色 */
-  color: var(--el-menu-hover-text-color);
-  outline: none;
-}
-
-/* 菜单栏按钮激活时 */
-.el-menu--horizontal > .el-menu-item.is-active {
-  border-bottom: none;
-  border-bottom: transparent; /* 隐藏底边色 */
-  color: #4b5c6e !important;
-}
-
-/* 导航栏 */
-.el-menu {
-  /*background-color: transparent;*/ /* 隐藏导航栏背景色 */
-  background: var(--navbar-bg-color);
-  /*backdrop-filter: blur(10px);*/ /* 添加模糊效果 */
-  border: none; /* 隐藏导航栏底边 */
-  height: 75px;
-}
-
-/* 菜单栏按钮取消底栏 */
-.el-menu--horizontal > .el-menu-item {
-  border: none;
-  height: 100%;
-  margin: 0;
-}
-
-/* 图标 */
-.el-avatar {
-  --el-avatar-bg-color: transparent; /* 设置github图标背景色 */
-}
-
-/* 导航栏标题 */
-#navbar-title {
-  font-size: var(--text-large);
-  font-weight: bold;
-}
-
-/* 导航栏标题字色 */
-.el-menu--horizontal > .el-menu-item {
-  color: var(--navbar-color);
-}
-
-/* 导航栏标题激活时字色 */
-.el-menu--horizontal > .el-menu-item.is-active {
-  border-bottom: transparent;
-  color: var(--navbar-color) !important;
-}
-
-/* 阻止默认hover效果 */
-.el-menu-item:hover {
-  background-color: transparent !important; /* 设置为透明或您想要的颜色 */
-  color: inherit !important; /* 保持文本颜色 */
-}
-
-.el-menu-item {
-  user-select: none;
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none;    /* Firefox */
-  -ms-user-select: none;     /* Internet Explorer/Edge */
+  background-color: transparent;
 }
 </style>

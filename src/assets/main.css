@@ -1,10 +1,16 @@
 /* 主题可用css定义 */
 :root {
-    --bg-color: #e0e0e0;  /* 神色 */
-    --bg-color-2: #e0e0e0;
+    --bg-color: #e0e0e0;  /* 深色 */
+    --bg-color-2: #e0e0e0;  /* 浅色 */
     --divider-color: #e0e0e0;  /* 分割线 */
+    --divider-text-color: #e0e0e0;  /* 分割字体颜色 */
 
-    --text-color: #b98787;  /* 普通文本颜色 */
+
+    --text-color: #ffffff;  /* 普通文本颜色 */
+    --text-color-2: #e0e0e0;  /* 更暗淡的文本颜色 */
+    --text-active-color: #e0e0e0;  /* 被激活时的颜色 */
+
+    --text-mini: 19px;  /* 最小号字 */
     --text-small: 23px;     /* 小号字 */
     --text-medium: 27px;    /* 中号字 */
     --text-large: 3.3em;     /* 大号字 */
@@ -22,11 +28,41 @@
     --navbar-bg-color: #e0e0e0;
     /* 用户登录页 */
     --redirect-card-bg-color: #e0e0e0;
-    --box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.7)  /* 默认阴影 */
+    --box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.7);  /* 默认阴影 */
+
+    --button-bg-color: #e0e0e0;  /* 按钮背景色 */
+    --button-border-color: #e0e0e0;  /* 按钮边框颜色 */
+    --button-text-color: #e0e0e0;  /* 按钮字体颜色 */
 }
 
+/* 超链接字色设定 */
 a {
     color: var(--a-color);
+}
+
+/* 链接样式，去除下划线并添加动画 */
+.slide-animation-a {
+    text-decoration: none; /* 去掉默认的下划线 */
+    position: relative; /* 设置为相对定位以便定位伪元素 */
+    display: inline-block; /* 让元素像块级元素一样行为，方便控制大小 */
+}
+
+.slide-animation-a:after {
+    content: ''; /* 伪元素不需要文本内容 */
+    position: absolute; /* 定位到父元素的底部 */
+    bottom: 6px; /* 让线条位于超链接的底部 */
+    left: 0; /* 从左边开始 */
+    width: 100%; /* 初始宽度为 0 */
+    height: 2px; /* 设置线条的高度 */
+    background-color: var(--a-color); /* 设置线条颜色 */
+    transform: scaleX(0); /* 初始状态为缩放为0 */
+    transform-origin: bottom left; /* 动画从右侧开始 */
+    transition: transform 0.3s ease-in-out;
+}
+
+.slide-animation-a:hover::after {
+    transform: scaleX(1); /* 鼠标悬停时扩展宽度至 100% */
+    transform-origin: bottom left; /* 动画从左侧开始 */
 }
 
 *,
@@ -57,19 +93,24 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* 最小号字 */
+.text-mini {
+    font-size: var(--text-mini) !important;
+}
+
 /* 小号字 */
 .text-small {
-    font-size: var(--text-small);
+    font-size: var(--text-small) !important;
 }
 
 /* 中耗子 */
 .text-medium {
-    font-size: var(--text-medium);
+    font-size: var(--text-medium) !important;
 }
 
 /* 大号字 */
 .text-large {
-    font-size: var(--text-large);
+    font-size: var(--text-large) !important;
 }
 
 /* 失败消息字体颜色 */
@@ -85,6 +126,17 @@ body {
 /* 不可被选中的组件 */
 .unselectable {
     user-select: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+}
+
+.sidebar-divider-text {
+    margin-left: 10px;
+    font-size: var(--text-small);
+    color: var(--divider-text-color);
+    user-select: none;
+    pointer-events: none;
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none;    /* Firefox */
     -ms-user-select: none;     /* Internet Explorer/Edge */
@@ -168,6 +220,13 @@ body {
     /*transition: background-image 1s ease-in-out;*/ /* 平滑过渡 */
 }
 
+/* 侧边栏统一样式 */
+.sidebar {
+    margin-top: 30px;
+    width: 220px;
+    margin-right: 40px;
+}
+
 /* 消息弹窗 */
 .el-message-box {
     background-color: var(--redirect-card-bg-color) !important;
@@ -224,6 +283,42 @@ body {
 .el-notification__content {
     color: var(--text-color) !important;
     font-size: var(--text-small) !important;
+}
+
+.el-button {
+    font-family: 'FZMiShaoTi', sans-serif !important;
+}
+
+/* 按钮颜色 */
+.el-button--primary {
+    --el-button-bg-color: var(--button-bg-color) !important;
+    --el-button-border-color: var(--button-border-color) !important;
+    --el-button-text-color: var(--button-text-color) !important;
+    /* 悬停 */
+    --el-button-hover-text-color: var(--button-text-color) !important;
+    --el-button-hover-link-text-color: var(--button-text-color) !important;
+    --el-button-hover-bg-color: var(--button-bg-color) !important;
+    --el-button-hover-border-color: var(--button-border-color) !important;
+    /* 点按激活 */
+    --el-button-active-color: var(--button-text-color) !important;
+    --el-button-active-bg-color: var(--button-bg-color) !important;
+    --el-button-active-border-color: var(--button-border-color) !important;
+}
+
+/* 按钮加载状态 */
+.el-button.is-loading {
+    border-color: var(--button-border-color);
+    background-color: var(--button-bg-color);
+    color: var(--button-text-color);
+}
+
+
+/* 侧向菜单栏分隔线 */
+.sidebar-desc {
+    color: var(--text-color-2);
+    font-size: var(--text-small);
+    margin-left: 10px;
+    margin-bottom: 5px;
 }
 
 
