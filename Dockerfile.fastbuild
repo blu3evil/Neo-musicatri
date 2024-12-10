@@ -12,7 +12,7 @@ COPY resources /musicatri/resources
 #COPY config.json /musicatri/config.json
 #COPY requirements.txt /musicatri/requirements.txt
 # 启动入口点文件
-#COPY docker-compose/basic-service/musicatri-entrypoint.sh /musicatri/entrypoint.sh
+#COPY deploy/basic-services/musicatri-entrypoint.sh /musicatri/entrypoint.sh
 
 # 安装python第三方依赖
 #RUN ["pip", "install", "--upgrade", "pip"]

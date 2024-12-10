@@ -1,0 +1,189 @@
+active-environment: dev
+application:
+  information:
+    name: 'musicatri'
+    version: '1.0.1'
+    description: 'neo-musicatri'
+  logging:
+    # 打印musicatri旗帜
+    print-banner: true
+    # 默认日志等级，控制台日志等级和文件日志等级将基于此等级，如果后两者的详细等级超过
+    # 默认日志等级，那么超过的部分不会被记录
+    default-logging:
+      enable: true
+      level: 'DEBUG'
+    console-logging:
+      enable: true
+      level: 'DEBUG'
+    logfile-logging:
+      enable: false
+      level: 'DEBUG'
+      extname: 'qqa'
+    flask-logging:
+      enable: true
+services:
+  discord:
+    api-endpoint: https://discord.com/api/v10
+    bot:
+      token: token
+    oauth:
+      client-id: 1295653634234650624
+      client-secret: UI1Q-7G5H-eU1dPW-quqP05dGg6xGQtd
+      redirect-uri: "http://localhost:5173/authorized"
+      scope: 'identify guilds guilds.join'  # 权限范围
+---
+# 测试环境配置
+environment: dev
+application:
+  information:
+    name: 'qqa'
+    version: '2.2.2'
+  # 开发者模式下，项目的健壮性会显著下降，同时启用开发文档
+  dev-mode: true
+  # 在debug模式下，flask开启热加载，即更新代码之后会立即重新启动flask服务
+  debug-mode: false
+  # 默认语言，如果用户的请求（包括RESTFULAPI以及WEBSOCKET）没有通过Accept-Language指定使用的语言
+  # 那么此默认语言会被使用，默认语言同时还会影响后端控制台的显式语言
+  default-language: zh-CN
+  security:
+    secret-key: 'musicatri'
+    oauth:
+      insecure-transport: true
+      relax-token-scope: false
+  network:
+    host: 127.0.0.1
+    port: 5000
+    public-url: http://localhost:5000
+    cors:
+      allow-origins: [http://localhost:5173]
+      allow-headers: [Content-Type, Accept-Language]
+      allow-methods: [GET, POST, PUT, DELETE, TRACE]
+      supports-credentials: true
+  database:
+    driver: mysql
+    host: localhost
+    port: 3306
+    username: 'root'
+    password: '1234'
+    database: 'musicatri'
+    track-modification: false
+  session:
+    type: redis
+    cookie-samesite: Lax
+    cookie-httponly: true
+    # cookie-secure开启后会话仅仅允许在HTTPS协议下传输
+    # 项目基于session cookie授权，如果开启此项那么在HTTP环境下将不能正常工作
+    cookie-secure: false
+    # 开启时浏览器关闭不会导致session清除，此时session-permanent-lifetime被启用
+    # 关闭时session-lifetime被启用
+    # 缓存将使用与session一样的有效期，并且在session被关闭后，缓存同样失效
+    permanent: true
+    # session-permanent有效期，仅仅在session-permanent开启时有效，单位为秒
+    # 使用discord oauth refresh token的有效期，时长为一个月
+    permanent-lifetime: 2678400
+    # session有效期，仅仅在session-permanent关闭时有效，单位为秒
+    # 如果此项设置为0，那么session将会在用户关闭浏览器之后清除
+    lifetime: 3600
+    use-signer: true
+    # 会话前缀，用于区分项目缓存和其他缓存
+    key-prefix: 'session:'
+    filesystem:
+      # 最大会话文件数，如果超过这个数量那么flask会自动清理旧的会话
+      file-threshold: 5000
+      # 使用文件系统缓存时缓存文件的生成位置，从项目根路径neo-musicatri开始
+      # 例如配置为sessions时缓存路径为neo-musicatri/sessions
+      file-directory: runtime/session
+    redis:
+      host: 127.0.0.1
+      port: 6379
+#      username: 'root'
+#      password: '1234'
+  cache:
+    type: redis
+    timeout: 3600
+    key-prefix: 'cache:'
+    # 忽略缓存错误，这一项决定缓存操作出现错误时是否继续执行逻辑
+    # 因为缓存常常是非核心功能，通过忽略缓存错误在一定程度上也能提高程序稳定性
+    # 在开发阶段可考虑关闭此项来排除缓存错误
+    ignore-errors: false
+    filesystem:
+      file-threshold: 5000
+      file-directory: runtime/cache
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  yt-dlp:
+    name: you
+  neteasecloudmusic-api:
+    url: http://localhost:3000
+
+---
+# docker环境配置
+environment: docker
+application:
+  dev-mode: true
+  debug-mode: false
+  security:
+    secret-key: 'musicatri'
+    oauth:
+      insecure-transport: true
+      relax-token-scope: false
+  network:
+    host: 0.0.0.0
+    port: 5000
+    public-url: http://localhost:5000
+  database:
+    driver: mysql
+    host: mysql
+    port: 3306
+    username: 'root'
+    password: '1234'
+    database: 'musicatri'
+    track-modification: false
+  session:
+    type: filesystem
+    cookie-samesite: Lax
+    cookie-httponly: true
+    # cookie-secure开启后会话仅仅允许在HTTPS协议下传输
+    # 项目基于session cookie授权，如果开启此项那么在HTTP环境下将不能正常工作
+    cookie-secure: false
+    # 开启时浏览器关闭不会导致session清除，此时session-permanent-lifetime被启用
+    # 关闭时session-lifetime被启用
+    # 缓存将使用与session一样的有效期，并且在session被关闭后，缓存同样失效
+    permanent: true
+    # session-permanent有效期，仅仅在session-permanent开启时有效，单位为秒
+    # 使用discord oauth refresh token的有效期，时长为一个月
+    permanent-lifetime: 2678400
+    # session有效期，仅仅在session-permanent关闭时有效，单位为秒
+    # 如果此项设置为0，那么session将会在用户关闭浏览器之后清除
+    lifetime: 3600
+    use-signer: true
+    # 会话前缀，用于区分项目缓存和其他缓存
+    key-prefix: 'session:'
+    filesystem:
+      # 最大会话文件数，如果超过这个数量那么flask会自动清理旧的会话
+      file-threshold: 5000
+      # 使用文件系统缓存时缓存文件的生成位置，从项目根路径neo-musicatri开始
+      # 例如配置为sessions时缓存路径为neo-musicatri/sessions
+      file-directory: runtime/session
+    redis:
+      host: redis
+      port: 6379
+#      username: 'root'
+#      password: '1234'
+  cache:
+    type: redis
+    timeout: 3600
+    key-prefix: 'cache:'
+    filesystem:
+      file-threshold: 5000
+      file-directory: runtime/cache
+    redis:
+      host: redis
+      port: 6379
+  yt-dlp:
+    name: you
+  neteasecloudmusic-api:
+    url: http://localhost:3000
+
+

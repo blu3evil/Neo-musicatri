@@ -1,6 +1,0 @@
-from .cors_configuration import cors_configure
-from .exception_configuration import exception_handler_configure
-from .socketio_configuration import socketio_configure
-from .swagger_configuration import swagger_docs_configure
-
-__all__ = [cors_configure, exception_handler_configure, swagger_docs_configure, socketio_configure]

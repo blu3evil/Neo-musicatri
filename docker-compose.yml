@@ -1,0 +1,49 @@
+version: '3.8'
+name: neo-musicatri
+services:
+  musicatri:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: /bin/bash
+    tty: true
+    stdin_open: true
+    ports:
+      - '5000:5000'
+    volumes:
+      - ./config.yaml:/musicatri/config.yaml
+    depends_on:
+      redis:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+  # 缓存
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+  # 数据库
+  mysql:
+    image: mysql:9.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+    ports:
+      - '3306:3306'
+#    volumes:
+#      - ./data:/var/lib/mysql  # 数据
+#      - ./conf:/etc/mysql/mysql.conf.d  # 配置
+#      - ./logs:/logs  # 日志
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+

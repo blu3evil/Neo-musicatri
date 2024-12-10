@@ -17,8 +17,8 @@ Discord开源音乐机器人，此仓库该项目为二次开发版本
 
 ```bash
 musicatri1  # 项目根目录
-├── config.json  # 项目运行参数配置文件
-├── docker-compose  # docker相关文件目录, 详情参考[项目部署]-[docker部署]
+├── config.yaml  # 项目运行参数配置文件
+├── deploy  # docker相关文件目录, 详情参考[项目部署]-[docker部署]
 ├── langfiles  # 本地化目录
 ├── atri.py  # 项目程序启动python文件
 └── website  # 项目前端页面文件
@@ -83,15 +83,15 @@ sudo apt install gnupg curl wget -y
 wget -qO - https://www.mongodb.org/static/pgp/server-5.0.asc | sudo apt-key add -
 
 # 为Ubuntu 20.04(Focal)创建列表文件(其他版本参考上面的安装指南链接)
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongo-org-5.0.list
 
 # 更新apt源
 sudo apt update
 
 # 安装最新稳定版本mongodb
-sudo apt install mongodb-org -y
-# apt安装mongodb的默认数据目录: /var/lib/mongodb
-# apt安装mongodb的默认日志目录: /var/log/mongodb
+sudo apt install mongo-org -y
+# apt安装mongodb的默认数据目录: /var/lib/mongo
+# apt安装mongodb的默认日志目录: /var/log/mongo
 # 配置文件: /etc/mongod.conf
 
 # 启动mongodb服务
@@ -143,7 +143,7 @@ pip install -r requirements.txt  # 安装项目所需依赖
 ```json
 {
   "NETEASECLOUDMUSICAPI_URL": "http://localhost:3000",  // neteasecloudmusicapi地址
-  "MONGODB_URL": "mongodb://localhost:27017",  // mongodb地址
+  "MONGODB_URL": "mongo://localhost:27017",  // mongodb地址
   "SERVER_PORT": 5000,  // 服务器监听端口
   "PUBLIC_URL": "http://localhost:5000",  // 公开路径，如果服务部署在公网上，那么修改它
   "APP_SECRET_KEY": "musicatri",  // 服务器密匙，修改它别让他这么好被猜到
@@ -181,16 +181,16 @@ python atri.py
 
 ```bash
 # 从dockerhub拉取
-docker-compose pull pineclone/musicatri:latest
+deploy pull pineclone/musicatri:latest
 
 # 从阿里云镜像仓库拉取
-docker-compose pull registry.cn-hangzhou.aliyuncs.com/pineclone/musicatri:latest
+deploy pull registry.cn-hangzhou.aliyuncs.com/pineclone/musicatri:latest
 ```
 
 通过命令来运行容器：
 
 ```bash
-docker-compose run --name musicatri -p 5000:5000 -it \
+deploy run --name musicatri -p 5000:5000 -it \
   -e NETEASECLOUDMUSICAPI_URL="http://localhost:3000" \
   -e NETEASECLOUDMUSICAPI_URL="http://localhost:3000" \
   -e MONGODB_URL="mongodb://localhost:27017" \
@@ -230,7 +230,7 @@ vim .env
 ```
 
 ```bash
-docker-compose run --name musicatri -p 5000:5000 -it --rm --env-file ./.env pineclone/musicatri:1.0.0-alpha
+deploy run --name musicatri -p 5000:5000 -it --rm --env-file ./.env pineclone/musicatri:1.0.0-alpha
 ```
 
 更推荐使用docker compose来部署，在compose.yml中编写服务的配置信息：
@@ -269,7 +269,7 @@ services:
 ```
 
 ```bash
-docker-compose compose up -d  # 启动容器
+deploy compose up -d  # 启动容器
 ```
 
 #### 2. 全栈部署
@@ -293,7 +293,7 @@ curl https://raw.githubusercontent.com/blu3evil/musicatri1/refs/heads/main/docke
 vim .env
 
 # 启动musicatri
-docker-compose compose up -d
+deploy compose up -d
 ```
 
 查看你的discord服务器就可以看到机器人上线了~
