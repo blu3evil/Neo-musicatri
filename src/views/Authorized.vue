@@ -9,8 +9,8 @@ import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
 import { authService } from '@/services/auth-service.js'
 import { navigator } from '@/router.js'
-import { userSocketClient } from '@/sockets/user-socket.js'
 import { config } from '@/config.js'
+import { userSocketContext } from '@/sockets/user-socket.js'
 
 export default {
   components: {
@@ -81,7 +81,7 @@ export default {
         panelRef.value.setTitle(
           t('view.UserLogin.build_socket_connection'), true)
 
-        const result = await userSocketClient.connect()  // 尝试建立socketio连接
+        const result = await userSocketContext.connect()  // 尝试建立socketio连接
 
         if (result.isSuccess()) {
           // 连接建立成功，将用户引导到主页

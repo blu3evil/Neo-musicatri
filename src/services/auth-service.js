@@ -20,9 +20,18 @@ class AuthService {
     return musicatriClient.get(`${urlPrefix}/login`)
   }
 
+  userLogout() {
+    return musicatriClient.delete(`${urlPrefix}/logout`)
+  }
+
   // 校验用户登入状态接口
   verifyLogin() {
-    return store.getters.userSocketConnected
+    // 通过socket连接状态判断登录
+    return store.getters.userSocketStatus === 'connected'
+  }
+
+  verifyAdmin() {
+    return store.getters.adminSocketStatus === 'connected'
   }
 
   // 校验用户是否包含目标权限

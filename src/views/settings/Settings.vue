@@ -29,8 +29,7 @@ export default {
       () => store.getters.activeSettingMenuItem)
 
     const onSettingMenuItemSelected = (name) => {
-      store.dispatch('setActiveSettingMenuItem', name)
-      navigator.toSetting()
+      navigator.toSetting(name)
     }
 
     const settingMenuItems = [

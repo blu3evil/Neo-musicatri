@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
 import { navigator } from '@/router.js'
 import { Tools, Loading } from '@element-plus/icons-vue'
+import { authService } from '@/services/auth-service.js'
 
 export default {
   components: {
@@ -19,16 +20,13 @@ export default {
     const { t } = useI18n()  // 本地化
     const store = useStore()  // 存储
     const isAvatarActive = ref(false)
-    const currentUserAvatarURL = computed(() => store.getters.currentUserAvatarURL)
-    const isCurrentUserAvatarLoading = computed(() => store.getters.isCurrentUserAvatarLoading)
-
-    const userSocketConnected = computed(() => store.getters.userSocketConnected)  // 用户是否登入
+    const userSocketStatus = computed(() => store.getters.userSocketStatus)
+    const userLoginStatus = computed(() => authService.verifyLogin())
 
     return {
-      userSocketConnected,
+      userLoginStatus,
+      userSocketStatus,
       isAvatarActive,
-      currentUserAvatarURL,
-      isCurrentUserAvatarLoading,
       navigator,
       t, // 本地化
     }
@@ -53,7 +51,7 @@ export default {
     </el-menu-item>
 
     <!-- 用户头像 -->
-    <el-menu-item index="1" v-if="userSocketConnected">
+    <el-menu-item index="1" v-if="userLoginStatus">
       <el-popover
         placement="bottom-start"
         :width="340"
@@ -63,15 +61,10 @@ export default {
       >
         <template #reference>
           <UserAvatar :class="{ active: isAvatarActive, 'user-avatar': true }"
-                      @click="isAvatarActive = !isAvatarActive">
-            <div v-if="!isCurrentUserAvatarLoading && currentUserAvatarURL === null">
-              '_>'
-            </div>
-            <el-icon v-if="isCurrentUserAvatarLoading && currentUserAvatarURL === null"
-                     class="is-loading" style="margin-left: 5px">
-              <Loading/>
-            </el-icon>
-          </UserAvatar>
+                      @click="isAvatarActive = !isAvatarActive"
+                      :allow-refresh="false"
+                      text-style="margin-top: 4px"
+                      icon-style="margin-left: 5px; margin-bottom: 1px"/>
         </template>
         <UserPanel />
       </el-popover>

@@ -4,7 +4,7 @@
     --bg-color-2: #e0e0e0;  /* 浅色 */
     --divider-color: #e0e0e0;  /* 分割线 */
     --divider-text-color: #e0e0e0;  /* 分割字体颜色 */
-
+    --border-radius: 8px;
 
     --text-color: #ffffff;  /* 普通文本颜色 */
     --text-color-2: #e0e0e0;  /* 更暗淡的文本颜色 */
@@ -159,6 +159,7 @@ body {
 .el-popper {
     color: var(--text-color) !important;
     font-size: var(--text-medium) !important;
+    border-radius: var(--border-radius) !important;
     background-color: var(--popper-bg-color) !important;
     border: 1px solid var(--popper-border-color) !important;
     box-shadow: var(--box-shadow) !important;
@@ -176,20 +177,21 @@ body {
     border: none !important;  /* 将箭头的边框取消 */
 }
 
-/* 选择框样式 */
+/* 多选框样式 */
 .el-select__wrapper {
+    border-radius: var(--border-radius) !important;
     background-color: var(--popper-bg-color) !important;
     box-shadow: none !important;
     border: 2px solid var(--popper-border-color) !important;
 }
 
-/* 选择框下拉选单选项样式 */
+/* 多选择框下拉选单选项样式 */
 .el-select-dropdown__item {
     font-size: var(--text-small) !important;
     color: var(--text-color) !important;
 }
 
-    /* 选择框占位 */
+/* 选择框占位 */
 .el-select__placeholder {
     color: var(--text-color) !important;
     font-size: var(--text-small) !important;
@@ -232,9 +234,8 @@ body {
     background-color: var(--redirect-card-bg-color) !important;
     border: 1px solid var(--redirect-card-bg-color) !important;
     box-shadow: var(--box-shadow) !important;
-    --el-messagebox-width: 700px !important;
-    border-radius: 13px !important;
-    pointer-events: none;
+    --el-messagebox-width: 500px !important;
+    border-radius: var(--border-radius) !important;
     -webkit-user-select: none; /* Safari */
     -moz-user-select: none;    /* Firefox */
     -ms-user-select: none;     /* Internet Explorer/Edge */
@@ -252,19 +253,18 @@ body {
 
 /* 消息弹窗消息提示 */
 .el-message-box__content {
-
-}
-
-/* 主要按钮 */
-.el-button-primary {
-
+    font-size: var(--text-small) !important;
+    color: var(--text-color-2) !important;
+    pointer-events: none;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
 }
 
 /* 吐司弹窗消息提示 */
 .el-notification {
     --el-notification-width: 450px !important;  /* 宽度 */
     --el-notification-border-color: var(--redirect-card-bg-color) !important;
-    color: var(--text-color) !important;
     background-color: var(--redirect-card-bg-color) !important;
     border: 1px solid var(--redirect-card-bg-color) !important;
     -webkit-user-select: none; /* Safari */
@@ -281,16 +281,24 @@ body {
 
 /* 弹出框消息 */
 .el-notification__content {
-    color: var(--text-color) !important;
+    color: var(--text-color-2) !important;
     font-size: var(--text-small) !important;
 }
 
-.el-button {
-    font-family: 'FZMiShaoTi', sans-serif !important;
+/* 弹出框按钮 */
+.popup-message .el-button--primary, .popup-message .el-button {
+    font-size: var(--text-mini) !important;
+}
+
+/* 弹出框消息开头图标 */
+.popup-message .el-message-box__status.el-message-box-icon--warning {
+    color: var(--text-color);
 }
 
 /* 按钮颜色 */
-.el-button--primary {
+.el-button--primary, .el-button {
+    font-family: 'FZMiShaoTi', sans-serif !important;
+    border-radius: var(--border-radius) !important;
     --el-button-bg-color: var(--button-bg-color) !important;
     --el-button-border-color: var(--button-border-color) !important;
     --el-button-text-color: var(--button-text-color) !important;
@@ -311,7 +319,6 @@ body {
     background-color: var(--button-bg-color);
     color: var(--button-text-color);
 }
-
 
 /* 侧向菜单栏分隔线 */
 .sidebar-desc {

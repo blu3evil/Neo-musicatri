@@ -16,8 +16,7 @@ export default {
       () => store.getters.activeDashboardMenuItem)
 
     const onDashboardMenuItemSelected = (name) => {
-      store.dispatch('setActiveDashboardMenuItem', name)
-      navigator.toDashboardHistory()
+      navigator.toDashboard(name)
     }
 
     const dashboardMenuItems = [
@@ -38,8 +37,9 @@ export default {
       }
     ]
 
-    onMounted(async () => {
-      await navigator.toDashboardHistory()
+    onMounted(() => {
+      store.dispatch('setActiveWorkspaceMenuItem', 'dashboard')
+      navigator.toDashboardHistory()
     })
 
     return {

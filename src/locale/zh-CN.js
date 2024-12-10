@@ -30,7 +30,11 @@ export default {
     },
     'user-panel': {
       'more_settings': '应用设置',
-      'account_logout': '账户登出'
+      'account_logout': '账户登出',
+      'confirm_logout': '真的要退出嘛？',
+    },
+    'user-avatar': {
+      'fetch_avatar_failed': '获取用户头像失败',
     }
   },
   'view': {
@@ -71,8 +75,10 @@ export default {
       'system_description': '描述',
       'dashboard_connection': '仪表盘',
       'connect_dashboard': '连接仪表盘',
-      'unconnected': '未连接',
-      'connected': '已连接'
+      'disconnect_dashboard': '断开仪表盘',
+      'connected': '已连接',
+      'connecting': '连接中',
+      'unconnected': '未连接'
     },
     'UserLoginPending': {
       'invalid_auth_code': '非法的认证code参数'
@@ -98,7 +104,7 @@ export default {
       'error_occur_title': '连接状态异常',
       'connection_error': '连接状态异常',
       'retry_login': '返回重新登陆',
-      'retry_connect': '重新尝试连接',
+      'retry_connect': '尝试重新连接',
       'checking_login_status': '正在校验登录状态',
       'not_login_yet': '还没有登陆喵',
       'unknown_error': '未知异常',
@@ -126,23 +132,25 @@ export default {
     },
   },
   'sockets': {
-    'user-socket-client': {
-      'fetch_user_error': '拉取用户信息失败',
-      'fetch_user_timeout': '拉取用户信息超时',
+    'admin-socket': {
+      'connect_success': '仪表盘连接成功，请多指教，夏生先生!',
+      'disconnect_success': '仪表盘连接中断，晚安，夏生先生~',
+      'connect_timeout': '仪表盘连接失败，连接超时',
+      'connect_shutdown': '管理员长连接被神秘力量中断了...'
+    },
+    'user-socket': {
+      'connect_shutdown': '用户长连接被神秘力量中断了...'
     }
   },
   'utils': {
     'ui-helper': {
       'toast_message_error_title': '有些事情不对劲!',
-      'toast_message_success_title': '请求成功',
+      'toast_message_success_title': '执行成功',
       'toast_message_warning_title': '严重警告',
       'toast_message_info_title': '友善提示',
+      'popup_message_warning_title': '这是一条警告',
+      'popup_message_warning_confirm': '确定',
+      'popup_message_warning_cancel': '取消'
     }
   },
-  'storage': {
-    'user-module': {
-      'fetch_user_avatar_failed': '网络错误，获取用户头像失败',
-      'empty_avatar_url': '无法获取用户头像，路径不存在'
-    }
-  }
 }

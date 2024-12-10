@@ -13,7 +13,7 @@ export const router = createRouter({
       path: '/settings',
       name: 'setting',
       component: () => import('./views/settings/Settings.vue'),  // 主设置页面
-      meta: { loginRequired: true },
+      meta: { requireLogin: true },
       children: [
         {
           path: 'appearance',
@@ -49,11 +49,12 @@ export const router = createRouter({
       path: '/workspace',
       name: 'user-home',
       component: () => import('./views/workspace/Workspace.vue'),
-      meta: { loginRequired: true },
+      meta: { requireLogin: true },
       children: [
         {
           path: 'dashboard',
           component: () => import('@/views/workspace/dashboard/Dashboard.vue'),
+          meta: { requireAdmin: true },
           children: [
             {
               path: 'overview',
@@ -89,12 +90,29 @@ export const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((
-  to, from, next) => {
-  if (to.meta.loginRequired) {
-    if (authService.verifyLogin()) next()
-    else next('/login')
-  } else next()  // 放行
+router.beforeEach(async (
+  to,
+  from,
+  next) => {
+
+  let requireLogin = to.meta.requireLogin
+  let requireAdmin = to.meta.requireAdmin
+
+  if (requireLogin) {  // 登录检查
+    if (!authService.verifyLogin()) {
+      next('/login')
+      return
+    }
+  }
+
+  if (requireAdmin) {
+    if (!authService.verifyAdmin()) {
+      next('/workspace/portal')  // 无管理员权限
+      return
+    }
+  }
+
+  next()  // 放行
 })
 
 // 跳转助手，封装跳转逻辑
@@ -104,12 +122,12 @@ class Navigator {
     return router.push('/login')
   }
 
-  toDashboard() {
-    return router.push('/workspace/dashboard')
-  }
-
   toPortal() {
     return router.push('/workspace/portal')
+  }
+
+  toDashboard(page) {
+    return router.push(`/workspace/dashboard/${page}`)
   }
 
   toDashboardHistory() {
@@ -127,8 +145,12 @@ class Navigator {
     return router.push(`/workspace/${activeWorkspaceMenuItem}`)
   }
 
+  toSetting(page) {
+    return router.push(`/settings/${page}`)
+  }
+
   // 转到设置页面
-  toSetting() {
+  toSettingHistory() {
     const activeSettingMenuItem = store.getters.activeSettingMenuItem
     return router.push(`/settings/${activeSettingMenuItem}`)
   }

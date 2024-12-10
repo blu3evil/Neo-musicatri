@@ -68,21 +68,21 @@ export default {
   color: var(--text-color);
   font-size: var(--text-medium);
   user-select: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius);
   margin: 0 10px 0 10px;
   height: 50px;
 }
 
 .menu-item.active {
   background-color: var(--bg-color-2) !important;
-  border-radius: 8px !important;
+  border-radius: var(--border-radius) !important;
 }
 
 /* 设置菜单选项被激活时的样式 */
 .menu-item.is-active,
 .menu-item.is-active:hover {
   background-color: transparent;
-  border-radius: 8px;
+  border-radius: var(--border-radius);
 }
 
 .menu-item:hover {

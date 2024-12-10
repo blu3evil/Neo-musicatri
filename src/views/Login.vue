@@ -9,7 +9,7 @@ import { AbstractState, StateContext } from '@/pattern.js'
 import { navigator } from '@/router.js'
 import { authService } from '@/services/auth-service.js'
 import { systemService } from '@/services/system-service.js'
-import { userSocketClient } from '@/sockets/user-socket.js'
+import { userSocketContext } from '@/sockets/user-socket.js'
 import { config } from '@/config.js'
 
 // todo: 优化登录逻辑，编写管理员登入，完成登出功能编写
@@ -76,14 +76,11 @@ export default {
           t('view.UserLogin.build_socket_connection'),
           true,
         )
-
-        const result = await userSocketClient.connect()  // 初始化socketio连接
+        const result = await userSocketContext.connect()
         if (result.isSuccess()) {
-          // 连接建立成功，将用户引导到主页
-          await navigator.toWorkspace()
+          await navigator.toWorkspace()  // 连接建立成功，引导用户到工作空间
         } else {
-          // 其他返回码使用分类处理器
-          ErrorState.handleErrorResult(result)
+          ErrorState.handleErrorResult(result)  // 处理异常
         }
       }
 

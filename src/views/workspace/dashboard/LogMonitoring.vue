@@ -1,5 +1,15 @@
 <script>
+import { onMounted } from 'vue'
+import { useStore } from 'vuex'
 
+export default {
+  setup() {
+    const store = useStore()
+    onMounted(() => {
+      store.dispatch('setActiveDashboardMenuItem', 'logs')
+    })
+  }
+}
 </script>
 
 <template>

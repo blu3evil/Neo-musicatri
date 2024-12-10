@@ -2,7 +2,7 @@
 <script>
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { availableThemes } from '@/theme/index.js'
 import { availableLanguages } from '@/locale/index.js'
 
@@ -23,6 +23,10 @@ export default {
         store.dispatch('setActiveLanguage', value).then(() =>
           locale.value = store.getters.activeLanguage)
       }
+    })
+
+    onMounted(() => {
+      store.dispatch('setActiveSettingMenuItem', 'appearance')
     })
 
     return {
@@ -54,9 +58,8 @@ export default {
     </el-row>
     <el-row>
       <el-col :span="14">
-        <span class="unselectable text-small">{{
-          t('view.AppearanceSetting.language_setting_description')
-        }}</span>
+        <span class="unselectable text-small" style="color: var(--text-color-2)">
+          {{ t('view.AppearanceSetting.language_setting_description') }}</span>
       </el-col>
     </el-row>
     <el-row>

@@ -46,7 +46,7 @@ export default {
 /* 导航栏本身 */
 .el-menu {
   background-color: var(--navbar-bg-color);
-  border-radius: 8px;
+  border-radius: var(--border-radius);
   margin-top: 10px;
   height: 50px;
 }

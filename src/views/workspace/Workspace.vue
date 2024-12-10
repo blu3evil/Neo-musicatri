@@ -8,6 +8,7 @@ import { useStore } from 'vuex'
 import { Stopwatch, Promotion } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { navigator } from '@/router.js'
+import { authService } from '@/services/auth-service.js'
 
 export default {
   components: {
@@ -23,7 +24,6 @@ export default {
       store.getters.activeWorkspaceMenuItem)
 
     const onWorkspaceMenuItemSelected = (name) => {
-      store.dispatch('setActiveWorkspaceMenuItem', name)
       if (name === 'dashboard') {
         navigator.toDashboardHistory()
       } else if (name === 'portal') {
@@ -55,6 +55,7 @@ export default {
 
     return {
       t,
+      authService,
       activeWorkspaceMenuItem,
       adminWorkspaceMenuItems,
       normalWorkspaceMenuItems,
@@ -78,11 +79,13 @@ export default {
         :active-menu-item="activeWorkspaceMenuItem"
         :on-menu-item-selected="onWorkspaceMenuItemSelected"
       />
-      <div style="margin-top: 10px"></div>
-      <div class="sidebar-divider-text unselectable">
+      <!-- 管理员面板 -->
+      <div class="sidebar-divider-text unselectable"
+           v-if="authService.verifyAdmin()">
         {{ t('view.workspace.Workspace.admin_function') }}
       </div>
       <CommonSidebar
+        v-if="authService.verifyAdmin()"
         :menu-items="adminWorkspaceMenuItems"
         :active-menu-item="activeWorkspaceMenuItem"
         :on-menu-item-selected="onWorkspaceMenuItemSelected"

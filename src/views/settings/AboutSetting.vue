@@ -1,15 +1,21 @@
 <!--suppress JSUnresolvedReference -->
 <script>
+import EllipsisString from '@/components/ellipsis-string.vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { onMounted, ref } from 'vue'
+import { audioPlayer } from '@/utils/media-helper.js'
 import { computed } from 'vue'
 import { systemService } from '@/services/system-service.js'
 import { authService } from '@/services/auth-service.js'
-import { adminSocketClient } from '@/sockets/admin-socket.js'
+import { adminSocketContext } from '@/sockets/admin-socket.js'
+import { ToastMessage } from '@/utils/ui-helper.js'
 import { config } from '@/config.js'
 
 export default {
+  components: {
+    EllipsisString,
+  },
   setup() {
     const store = useStore() // 存储
     const { t } = useI18n()
@@ -17,23 +23,42 @@ export default {
     const loadingSystemInfo = ref(true)
 
     const onGithubIconClick = () => window.open(config['GITHUB_LINK'], '_blank')
-    const activeTheme = computed(() => store.getters.activeTheme)  // 当前主题
-
-    // 管理员socketio是否正处于连接状态
-    const isAdminSocketConnecting = computed(() => store.getters.isAdminSocketConnecting)
-    // 管理员socket是否连接
-    const adminSocketConnected = computed(() => store.getters.adminSocketConnected)
+    const activeTheme = computed(() => store.getters.activeTheme) // 当前主题
+    const adminSocketStatus = computed(() => store.getters.adminSocketStatus)
 
     const dashboardConnectStatusStr = computed(() => {
-      return adminSocketConnected.value ?
-        t('view.AboutSetting.connected')
-        : t('view.AboutSetting.unconnected')
+      switch (adminSocketStatus.value) {
+        case 'connected': return t('view.AboutSetting.connected')
+        case 'connecting': return t('view.AboutSetting.connecting')
+        case 'unconnected': return t('view.AboutSetting.unconnected')
+      }
     })
 
     // 建立到admin socketio的连接
-    const onDashboardConnect = async () => {
-      const result = await adminSocketClient.connect()
-      console.log(result)
+    const onConnectDashboardClick = async () => {
+      const status = adminSocketStatus.value
+      if (status === 'unconnected') {
+        // 建立连接
+        const result = await adminSocketContext.connect()
+        if (result.isSuccess()) {
+          // 连接成功
+          audioPlayer.play('/src/assets/about-setting/dashboard-welcome.wav')
+          ToastMessage.success(t('sockets.admin-socket.connect_success'))
+        } else {
+          // 连接失败
+          ToastMessage.error(result.message)
+        }
+      } else if (status === 'connected') {
+        // 断开连接
+        const result = await adminSocketContext.disconnect()
+        if (result.isSuccess()) {
+          // 断开连接成功
+          ToastMessage.success(t('sockets.admin-socket.disconnect_success'))
+        } else {
+          // 断开连接失败
+          ToastMessage.error(result.message)
+        }
+      }
     }
 
     const onDiscordIconClick = () =>
@@ -48,35 +73,13 @@ export default {
       '/src/assets/about-setting/high-performance-6.WAV',
       '/src/assets/about-setting/high-performance-7.WAV',
       '/src/assets/about-setting/high-performance-8.WAV',
-      '/src/assets/about-setting/high-performance-9.WAV'
+      '/src/assets/about-setting/high-performance-9.WAV',
     ]
 
-    let audio = null
-    const playAudio = url => {
-      if (audio !== null) {  // 停止当前
-        audio.pause()
-        audio.currentTime = 0
-      }
-
-      audio = new Audio(url)
-      audio.play()  // 播放音频
-    }
-
-    const playAudioRandomly = urls => {
-      const url = getRandomElement(urls)
-      playAudio(url)
-    }
-
-    function getRandomElement(arr) {
-      if (!Array.isArray(arr) || arr.length === 0) return null
-      const randomIndex = Math.floor(Math.random() * arr.length);
-      return arr[randomIndex];
-    }
-
     const systemInfo = ref({
-      'name': '...',
-      'version': '...',
-      'description': '...'
+      name: '...',
+      version: '...',
+      description: '...',
     })
 
     const initSystemInfo = async () => {
@@ -85,10 +88,12 @@ export default {
         // 成功获取服务信息
         systemInfo.value = result.data
       } else {
+        // todo: 添加重试获取服务器信息逻辑
       }
     }
 
     onMounted(() => {
+      store.dispatch('setActiveSettingMenuItem', 'about')
       initSystemInfo()
     })
 
@@ -96,18 +101,17 @@ export default {
       t, // 本地化
       config,
       popperStyle,
-      activeTheme,  // 当前主题
+      activeTheme, // 当前主题
       systemInfo,
       loadingSystemInfo,
       highPerformanceWAVs,
       dashboardConnectStatusStr,
-      isAdminSocketConnecting,
-      playAudio,
+      adminSocketStatus,
       onGithubIconClick,
       onDiscordIconClick,
-      onDashboardConnect,
-      playAudioRandomly,
-      authService
+      onConnectDashboardClick,
+      authService,
+      audioPlayer,
     }
   },
 }
@@ -125,7 +129,7 @@ export default {
       <el-col :span="24">
         <h4 class="unselectable">
           {{ t('view.AboutSetting.musicatri_audio1') }}
-          <span @click="playAudioRandomly(highPerformanceWAVs)">🔊</span>
+          <span @click="audioPlayer.playRandomly(highPerformanceWAVs)">🔊</span>
         </h4>
         <h4 class="unselectable">
           {{ t('view.AboutSetting.musicatri_audio2') }}
@@ -154,20 +158,38 @@ export default {
     </el-row>
     <el-row>
       <span class="text-small unselectable">
-        {{ t('view.AboutSetting.system_description') }}: {{ systemInfo['description'] }}
+        {{ t('view.AboutSetting.system_description') }}:
+        {{ systemInfo['description'] }}
       </span>
     </el-row>
-    <el-row v-if="authService.verifyRole('admin')">
-      <el-col :span="24">
+
+    <el-row v-if="authService.verifyRole('admin')" style="margin-top: 40px">
+      <!-- 连接到仪表盘 -->
+      <el-col :span="5">
         <span class="text-small unselectable">
-        {{ t('view.AboutSetting.dashboard_connection') }}: {{ dashboardConnectStatusStr }}
+          {{ t('view.AboutSetting.dashboard_connection') }}:
         </span>
-        <el-button type="primary"
-                   class="text-small"
-                   style="margin-left: 50px"
-                   @click="onDashboardConnect"
-                   :loading="isAdminSocketConnecting">
-          {{ t('view.AboutSetting.connect_dashboard') }}
+        <span class="text-small unselectable">
+          <EllipsisString
+            :message="dashboardConnectStatusStr"
+            :ellipsis="adminSocketStatus === 'connecting'"
+          />
+        </span>
+      </el-col>
+      <el-col :span="19">
+        <el-button
+          type="primary"
+          class="text-small"
+          style="height: 30px; width: 180px"
+          @click="onConnectDashboardClick"
+          :loading="adminSocketStatus === 'connecting'"
+        >
+          <span v-if="adminSocketStatus !== 'connected'">
+            {{ t('view.AboutSetting.connect_dashboard') }}
+          </span>
+          <span v-else>
+            {{ t('view.AboutSetting.disconnect_dashboard') }}
+          </span>
         </el-button>
       </el-col>
     </el-row>
@@ -206,9 +228,11 @@ export default {
         >
           <template #reference>
             <img
-              :src="activeTheme === 'dark'?
-              '/src/assets/common-navbar/icon-github.png':
-              '/src/assets/about-setting/github-mark.png'"
+              :src="
+                activeTheme === 'dark'
+                  ? '/src/assets/common-navbar/icon-github.png'
+                  : '/src/assets/about-setting/github-mark.png'
+              "
               style="height: 39px; margin-left: 20px"
               @click="onGithubIconClick"
               alt="github logo"
@@ -217,12 +241,9 @@ export default {
         </el-popover>
       </span>
     </el-row>
-
   </div>
 </template>
 
 <style scoped>
-
-
 
 </style>

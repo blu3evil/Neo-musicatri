@@ -7,6 +7,10 @@ import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
 import { computed } from 'vue'
 import { navigator } from '@/router.js'
+import { PopupMessage, ToastMessage } from '@/utils/ui-helper.js'
+import { authService } from '@/services/auth-service.js'
+import { userSocketContext } from '@/sockets/user-socket.js'
+import { adminSocketContext } from '@/sockets/admin-socket.js'
 
 export default {
   components: {
@@ -20,23 +24,33 @@ export default {
     const { t } = useI18n()
     const store = useStore()
     const currentUser = computed(() => store.getters.currentUser)
-    const currentAvatarURL = computed(() => store.getters.currentUserAvatarURL)
-    const isCurrentUserAvatarLoading = computed(() => store.getters.isCurrentUserAvatarLoading)
 
-    const onRefreshUserAvatarClick = async () => {
-      if (currentAvatarURL.value !== null) return  // URL已经存在
-      if (isCurrentUserAvatarLoading.value) return  // 当前头像正在加载，防抖
-      // 重新初始化用户头像
-      await store.dispatch('initCurrentAvatar', currentUser.value)
+    const onLogoutClick = () => {
+      PopupMessage.warning(t('component.user-panel.confirm_logout'))
+        .then(async () => {
+          // 执行用户登出
+          const result = await authService.userLogout()
+          if (result.isSuccess()) {  // 登出成功
+            // 断开user socket连接
+            const result1 = await userSocketContext.disconnect()
+            if (!result1.isSuccess()) ToastMessage.error(result.message)
+            // 断开admin socket连接
+            const result2 = await adminSocketContext.disconnect()
+            if (!result2.isSuccess()) ToastMessage.error(result.message)
+            // 清除用户数据
+            await store.dispatch('clearCurrentUser')
+            await navigator.toLogin()  // 跳转到login页面
+          } else {
+            ToastMessage.error(result.message)  // 登出失败
+          }
+        }).catch(() => {})
     }
 
     return {
       t,
+      navigator,
       currentUser,
-      currentAvatarURL,
-      isCurrentUserAvatarLoading,
-      onRefreshUserAvatarClick,
-      navigator
+      onLogoutClick,
     }
   }
 }
@@ -44,15 +58,9 @@ export default {
 <template>
   <el-row>  <!-- 用户头像 -->
     <el-col :span="6"><div class="text-small" >
-      <UserAvatar class="user-avatar" @click="onRefreshUserAvatarClick">
-        <el-icon v-if="!isCurrentUserAvatarLoading && currentAvatarURL === null">
-          <Refresh/>
-        </el-icon>
-        <el-icon v-if="isCurrentUserAvatarLoading && currentAvatarURL === null"
-                 class="is-loading">
-          <Loading/>
-        </el-icon>
-      </UserAvatar>
+      <UserAvatar class="user-avatar"
+                  :allow-refresh="true"
+                  icon-style="margin-top: 9px" />
     </div></el-col>
     <el-col :span="18"><div class="text-small" style="margin-top: 6px" >
       <el-row>{{currentUser.username}}</el-row>
@@ -62,7 +70,7 @@ export default {
 
   <el-row style="margin-top: 15px">  <!-- 更多设置 -->
     <el-col :span="24"><div class="text-mini" >
-      <a href="/" class="slide-animation-a" @click.prevent="navigator.toSetting()">
+      <a href="/" class="slide-animation-a" @click.prevent="navigator.toSettingHistory()">
         <el-icon class="optional-icon"><Tools /></el-icon>
         <span class="optional-label">{{t('component.user-panel.more_settings')}}</span>
       </a>
@@ -71,7 +79,7 @@ export default {
 
   <el-row>  <!-- 登出 -->
     <el-col :span="24"><div class="text-mini" >
-      <a href="/" class="slide-animation-a">
+      <a href="/" class="slide-animation-a" @click.prevent="onLogoutClick">
         <el-icon class="optional-icon"><CloseBold /></el-icon>
         <span class="optional-label">{{t('component.user-panel.account_logout')}}</span>
       </a>

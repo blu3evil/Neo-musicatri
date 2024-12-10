@@ -1,11 +1,16 @@
 <script>
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
+import { onMounted } from 'vue'
 
 export default {
   setup() {
     const store = useStore()  // 存储
     const { t } = useI18n()
+
+    onMounted(() => {
+      store.dispatch('setActiveSettingMenuItem', 'profile')
+    })
 
     return {
       t,  // 本地化
