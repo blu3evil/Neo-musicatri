@@ -1,9 +1,14 @@
 {
-  "GITHUB_LINK": "https://github.com/blu3evil/musicatri1/",
-  "ISSUE_LINK": "https://github.com/blu3evil/musicatri1/",
-  "DISCORD_LINK": "https://discord.gg/9FwdKEGQXf",
-  "API_ENDPOINT": "http://localhost:5000",
   "PUBLIC_URL": "http://localhost:5173",
-  "DISCORD_CLIENT_ID": "1295653634234650624",
-  "DISCORD_OAUTH2_SCOPE": "identify guilds guilds.join"
+  "GITHUB_LINK": "https://github.com/blu3evil/musicatri1",
+  "ISSUE_LINK": "https://github.com/blu3evil/musicatri1",
+  "DISCORD_LINK": "https://discord.gg/9FwdKEGQXf",
+  "API_ENDPOINT": "http://localhost:5000/api/v1",
+  "SOCKET_ENDPOINT": "http://localhost:5000/socket",
+  "REQUEST_TIMEOUT": 10000,
+  "SOCKET_CONNECT_TIMEOUT": 5000,
+  "MAX_RECONNECT_TIMES": 5,
+  "SYSTEM_HEALTH_CHECK_INTERVAL": 5000,
+  "LOGIN_STATUS_HEALTH_CHECK_INTERVAL": 30000,
+  "DISCORD_IMAGE_BASE_URL": "https://cdn.discordapp.com"
 }
