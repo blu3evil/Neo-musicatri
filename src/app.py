@@ -21,7 +21,6 @@ def main():
 
     init_core()  # 初始化核心
     print_banner()  # 打印旗帜
-
     run_server()  # 运行服务
 
 def init_config():
@@ -30,14 +29,15 @@ def init_config():
     global debug_mode
     dev_mode = config.get(ConfigEnum.APP_DEV_MODE)
     debug_mode = config.get(ConfigEnum.APP_DEBUG_MODE)
+    _ = locales.get()
 
     if dev_mode: log.warning(
-        "dev mode is enabled, know more about development mode at README.md, this mode is only used for "
-        "development and testing, do not enable this mode in production environment")
+        _("dev mode is enabled, know more about development mode at README.md, this mode is only used for "
+        "development and testing, do not enable this mode in production environment"))
 
     if debug_mode: log.warning(
-        "debug mode is still on testing, which might cause unpredictable problems, this mode is only "
-        "used for development and testing, do not enable this mode in production environment")
+        _("debug mode is still on testing, which might cause unpredictable problems, this mode is only "
+        "used for development and testing, do not enable this mode in production environment"))
 
     app.config['SECRET_KEY'] = config.get(ConfigEnum.APP_SECURITY_SECRET_KEY)
     # ============================================== OAUTH =============================================================
@@ -144,14 +144,16 @@ def init_app_event():
 
 def init_views():
     log.debug(f'initialize views...')
-    """ 蓝图初始化，路由中绝大多数接口使用RESTFUL风格编写 """
+    """ 蓝图初始化 """
     from views.static_blueprint import static_bp
     from views.system_blueprint import status_bp_v1
     from views.auth_blueprint import auth_bp_v1
+    from views.user_blueprint import user_bp_v1
 
     app.register_blueprint(static_bp)
     app.register_blueprint(status_bp_v1)
     app.register_blueprint(auth_bp_v1)
+    app.register_blueprint(user_bp_v1)
 
 
 def print_banner():
@@ -178,6 +180,7 @@ def run_server():
     # 使用生产级别的WSGI服务器来支持socketio
     from core import socketio
     flask_logging_enable = config.get(ConfigEnum.APP_LOG_FLASK_LOGGING_ENABLE)  # 是否打印flask日志
+
     socketio.run(app=app, host=host, port=port, debug=debug_mode, log_output=flask_logging_enable)
     log.info("musicatri teardown")
 

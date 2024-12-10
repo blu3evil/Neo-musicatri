@@ -29,7 +29,7 @@ services:
     oauth:
       client-id: 1295653634234650624
       client-secret: UI1Q-7G5H-eU1dPW-quqP05dGg6xGQtd
-      redirect-uri: "http://localhost:5173/api/v1/auth/discord/authorized"
+      redirect-uri: "http://localhost:5173/authorized"
       scope: 'identify guilds guilds.join'  # 权限范围
 ---
 # 测试环境配置
@@ -42,6 +42,9 @@ application:
   dev-mode: true
   # 在debug模式下，flask开启热加载，即更新代码之后会立即重新启动flask服务
   debug-mode: false
+  # 默认语言，如果用户的请求（包括RESTFULAPI以及WEBSOCKET）没有通过Accept-Language指定使用的语言
+  # 那么此默认语言会被使用，默认语言同时还会影响后端控制台的显式语言
+  default-language: zh-CN
   security:
     secret-key: 'musicatri'
     oauth:
@@ -99,6 +102,10 @@ application:
     type: redis
     timeout: 3600
     key-prefix: 'cache:'
+    # 忽略缓存错误，这一项决定缓存操作出现错误时是否继续执行逻辑
+    # 因为缓存常常是非核心功能，通过忽略缓存错误在一定程度上也能提高程序稳定性
+    # 在开发阶段可考虑关闭此项来排除缓存错误
+    ignore-errors: false
     filesystem:
       file-threshold: 5000
       file-directory: runtime/cache

@@ -1,6 +1,8 @@
 from datetime import datetime
 from functools import wraps
 
+from oauthlib.oauth2 import InvalidGrantError
+
 from clients import discord_oauth
 from clients.discord_oauth import fetch_token
 from common.result import Result
@@ -28,6 +30,8 @@ class AuthService:
             user_token = fetch_token(code)      # 拉取用户授权凭证
             access_token = user_token.get('access_token')
             user_data = discord_oauth.fetch_user(access_token)      # 拉取用户信息
+        except InvalidGrantError:  # code异常
+            return Result(400, _('Invalid code'))
         except RuntimeError:
             return Result(500, _('Cannot fetch user access token'))
 
@@ -46,40 +50,50 @@ class AuthService:
         else:
             # 用户已经存在，更新数据
             copy_properties(user_data, user)
+
         # 提交数据库
         db.session.commit()
-
         # 将用户关键字段id记入session
         session['discord_oauth_token'] = user_token
         session['user_id'] = user_data['id']  # 存储user_id到session
         # 将用户数据写入缓存
         cache.set(f'{users_prefix}:{user.id}:{info_prefix}', to_dict(user))
         # 将权限写入缓存
-        cache.set(f'{users_prefix}:{user.id}:{roles_prefix}', user.roles)
+        role_names = [role.name for role in user.roles]
+        cache.set(f'{users_prefix}:{user.id}:{roles_prefix}', role_names)
         return Result(200)
 
     @staticmethod
-    def verify_role(role) -> Result:
+    def user_logout(user_id) -> Result:
+        """ 登出当前用户 """
+        _ = locales.get()
+        session.clear()  # 清理session
+        user_service.clear_cache(user_id)  # 清理缓存
+        return Result(200, _('User logged out'))  # 用户登出成功
+
+
+    @staticmethod
+    def verify_role(user_id, role: str) -> Result:
         """
         当前用户是否拥有权限
         :param role: 权限名称
+        :param user_id: 用户id
         """
         if role == 'anonymous':
             return Result(200)  # 允许匿名
-
         _ = locales.get()
         role = db.session.query(Role).filter_by(name=role).first()
         if not role: return Result(500, _('role not found'))
 
-        result = user_service.get_roles()
+        result = user_service.get_roles(user_id)
         if result.code != 200: return result  # 向上层传递result
 
-        if role not in result.data:
+        if role.name not in result.data:
             return Result(403, _('permission denied'))
         return Result(200, _("access granted"))
 
     @staticmethod
-    def verify_login() -> Result:
+    def verify_login(user_id) -> Result:
         """ 当前用户是否登入 """
         _ = locales.get()
         session_token = session.get('discord_oauth_token', {})
@@ -87,8 +101,8 @@ class AuthService:
             return Result(401, _('login status expired'))  # 无状态视为过期
 
         # 检查账号激活状态
-        result = user_service.get_info()
-        if not result.code == 200:  return result  # 向上传递result
+        result = user_service.get_info(user_id)
+        if not result.code == 200: return result  # 向上传递result
 
         if not result.data.get('is_active'):
             return Result(403, _('account is not active'))
@@ -113,18 +127,18 @@ class AuthService:
         """ 基于session的登陆状态检查 """
         @wraps(func)
         def decorated(*args, **kwargs):
-            result = auth_service.verify_login()  # 检查登录状态
+            result = auth_service.verify_login(session.get('user_id'))  # 检查登录状态
             if result.code == 200: return func(*args, **kwargs)  # 会话有效，正常执行
             else: return result.as_response()
         return decorated
 
     @staticmethod
-    def require_role(role):
+    def require_role(role: str):
         """ 基于session兼数据库的权限校验 """
         def decorator(func):
             @wraps(func)
             def decorated(*args, **kwargs):
-                result = auth_service.verify_role(role)  # 校验用户权限
+                result = auth_service.verify_role(session.get('user_id'), role)  # 校验用户权限
                 if result.code == 200: return func(*args, **kwargs)
                 else: return result.as_response()
             return decorated

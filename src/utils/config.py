@@ -15,6 +15,7 @@ schema = {
             # 是否开启dev模式
             'dev-mode': {'type': 'boolean', 'default': False},
             'debug-mode': {'type': 'boolean', 'default': False},
+            'default-language': {'type': 'string', 'default': 'en-US'},
             'information': {
                 'type': 'dict',
                 'schema': {
@@ -208,6 +209,7 @@ class ConfigEnum(Enum):
     # 应用配置
     APP_DEV_MODE = 'application.dev-mode'
     APP_DEBUG_MODE = 'application.debug-mode'
+    APP_DEFAULT_LANGUAGE = 'application.default-language'
     APP_INFO_NAME = 'application.information.name'
     APP_INFO_VERSION = 'application.information.version'
     APP_INFO_DESCRIPTION = 'application.information.description'
@@ -405,7 +407,6 @@ class ApplicationConfig:
 
         # 使用校验器补齐缺失参数
         v = Validator(schema, purge_unknown=True)
-
         if len(global_config) == 1:
             # 仅存在global一套配置，直接使用全局配置
             self.configurations = v.normalized(global_config)

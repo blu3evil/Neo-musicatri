@@ -35,25 +35,31 @@ class ResourceUtils:
 
 locales_dir = ResourceUtils.get_resource("locales")  # 本地化资源目录
 DEFAULT_DOMAIN = "flask_app"  # flaks应用文本域
-DEFAULT_LANG = 'en-US'  # 默认采用英文  # todo: 修改默认语言采用配置
-default_locale = None
 
+from utils.config import config, ConfigEnum
+from utils.logger import log
+default_language = config.get(ConfigEnum.APP_DEFAULT_LANGUAGE)  # 默认语言
+log.debug(f'musicatri using default locale: {default_language}')
+
+default_locale = None
 try:
     # flask app文本域本地化方法
-    default_locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [DEFAULT_LANG]).gettext
+    default_locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [default_language]).gettext
 except FileNotFoundError as error:
+    # 缺少文件则使用空白本地化
     default_locale = gettext.gettext
 
 
 class LocaleFactory:
     """ 本地化工厂，提供本地化的策略 """
-    AVAILABLE_LOCALES = ['en-US', 'zh-CN']
+    # todo: 优化可用语言列表加载
+    available_languages = ['en-US', 'zh-CN']
 
     """ 本地化工厂，获取本地化对象 """
     def __init__(self):
         """ 工厂初始化 """
         self.available_locales = {}
-        for country in self.AVAILABLE_LOCALES:
+        for country in self.available_languages:
             try:
                 # 尝试加载资源文件
                 self.available_locales[country] = gettext.translation(DEFAULT_DOMAIN, locales_dir, [country, ]).gettext
@@ -65,19 +71,16 @@ class LocaleFactory:
         本地化的增强方法，对路由方法可以依靠Accept-Language请求头参数自定义相应语言类型
         对于一般方法则使用默认语言
         """
-        from flask import request
-        request_locale = None
-        user_language = request.headers.get('Accept-Language')
-        if user_language:  # Http请求
-            request_locale = self.available_locales.get(user_language)
+        from flask import request, has_request_context
+        from utils import log
+        accept_locale = None
+        if has_request_context():
+            # 在api或者socketio上下文环境中通过请求头参数传递本地化语言
+            accept_language = request.headers.get('Accept-Language')
+            log.debug(f"local focusing: {request.method} {request.path} {accept_language}")
+            accept_locale = self.available_locales.get(accept_language)
 
-        user_langauge = request.args.get('Accept-Language')
-
-        if hasattr(request, 'sid') and user_langauge:  # socketio请求
-            request_locale = self.available_locales.get(user_language)
-
-        if request_locale: return request_locale
-        return default_locale
+        return accept_locale or default_locale
 
 
 locales = LocaleFactory()  # 本地化工厂

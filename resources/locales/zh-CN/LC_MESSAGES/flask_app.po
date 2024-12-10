@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2024-11-24 11:32+0800\n"
+"POT-Creation-Date: 2024-11-27 16:56+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,6 +14,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\app.py:35
+msgid "dev mode is enabled, know more about development mode at README.md, this mode is only used for development and testing, do not enable this mode in production environment"
+msgstr "开发者模式已启用，参看README.md来获取更多关于开发者模式的介绍，此模式应当仅仅在开发和测试阶段启用，请不要在生产环境中启用此模式"
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\app.py:39
+msgid "debug mode is still on testing, which might cause unpredictable problems, this mode is only used for development and testing, do not enable this mode in production environment"
+msgstr ""
 
 #: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\app.py:122
 msgid "Bad Request"
@@ -29,7 +37,7 @@ msgstr ""
 
 #: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\app.py:125
 msgid "NotFound"
-msgstr ""
+msgstr "未找到"
 
 #: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\app.py:126
 msgid "Internal Server Error"
@@ -112,60 +120,65 @@ msgid "role not found"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:76
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:78
 msgid "permission denied"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:85
-msgid "login status expired"
-msgstr "登陆状态过期"
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:79
+msgid "access granted"
+msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:92
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:87
+msgid "login status expired"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:94
 msgid "account is not active"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:105
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\auth_service.py:107
 msgid "refresh token failed"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:16
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:32
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:17
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:33
 msgid "hit cache"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:23
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:40
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:24
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:41
 msgid "miss hit cache"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:24
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:36
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:25
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:37
 msgid "no such user"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:39
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\services\user_service.py:40
 msgid "user has no roles"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\sockets\user_socketio.py:23
-msgid "socket connect success"
-msgstr ""
-
-#:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\views\auth_blueprint.py:55
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\views\auth_blueprint.py:52
 msgid "Login success"
 msgstr ""
 
 #:
-#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\views\auth_blueprint.py:141
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\views\auth_blueprint.py:104
+msgid "invalid argument"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\views\auth_blueprint.py:136
 msgid "Logged in"
 msgstr ""
 

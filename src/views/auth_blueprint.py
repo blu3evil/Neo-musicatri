@@ -1,10 +1,8 @@
-"""
-权限校验蓝图
-"""
+""" 权限校验蓝图 """
 from flask import Blueprint, jsonify, request
 
 from clients import discord_oauth
-from core import cache
+from core import cache, session
 from services.auth_service import auth_service
 from utils import config, ConfigEnum, locales
 
@@ -35,21 +33,20 @@ def login():
         schema:
           type: object
           properties:
-            properties:
-              authorize_url:
-                type: string
-                example: 'https://discord.com/api/oauth2/authorize'
-                description: 前端使用此url为用户执行跳转，获取discord授权码
+            authorize_url:
+              type: string
+              example: 'https://discord.com/api/oauth2/authorize'
+              description: 前端使用此url为用户执行跳转，获取discord授权码
+
       403:
         description: 用户登入请求被拒绝
         schema:
           type: object
           properties:
-            properties:
-              message:
-                type: string
-                example: 'Forbidden'
-                description: 用户不具备登入的权限
+            message:
+              type: string
+              example: 'Forbidden'
+              description: 用户不具备登入的权限
     """
     _ = locales.get()
     return jsonify({ 'message': _('Login success') })  # 登录成功
@@ -114,7 +111,7 @@ def authorize():
 @auth_bp_v1.route('/status', methods=['GET'])
 @auth_service.require_login
 @auth_service.require_role('user')
-def status():
+def verify_login():
     """
     用户登录状态检查接口
     ---
@@ -133,7 +130,63 @@ def status():
       401:
         description: 用户未登录
       403:
-        description: 用户权限不足
+        description: 用户权限不足（至少需要用户级别权限）
     """
     _ = locales.get()
     return jsonify({ 'message': _('Logged in') })  # 认证通过
+
+
+# 权限校验接口，校验用户权限是否符合要求
+@auth_bp_v1.route('/role/<role>', methods=['GET'])
+@auth_service.require_login
+def verify_role(role):
+    """
+    用户权限等级校验接口
+    ---
+    tags:
+      - 认证接口
+    description: 用于前端查询用户当前是否满足某一权限等级要求
+    responses:
+      200:
+        description: 用户权限等级符合要求
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: 'Access granted'
+      401:
+        description: 用户未登录
+      403:
+        description: 用户权限不足
+    """
+    _ = locales.get()
+    user_id = session.get('user_id')
+    result = auth_service.verify_role(user_id, role)  # 校验用户权限
+    return result.as_response()
+
+
+@auth_bp_v1.route('/logout', methods=['DELETE'])
+@auth_service.require_login
+def logout():
+    """
+    用户登出接口
+    ---
+    tags:
+      - 认证接口
+    description: 前端执行退出逻辑时调用接口，清除用户缓存信息和session
+    responses:
+      200:
+        description: 用户登出成功，前端可以断开socketio连接
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: 'User logged out'
+      401:
+        description: 用户未登录
+    """
+    user_id = session.get('user_id')
+    result = auth_service.user_logout(user_id)
+    return result.as_response()

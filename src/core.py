@@ -13,7 +13,9 @@ root_path = path.dirname(path.dirname(path.abspath(__file__)))          # root p
 session = session       # 会话
 cache = Cache()         # 缓存
 db = SQLAlchemy()       # 数据库
-socketio = SocketIO()   # 长连接
+
+# 长连接，同时禁用socketio本身的session管理，使RESTFUL_API和SOCKETIO共用session
+socketio = SocketIO(manage_session=False)
 
 def init(app: Flask):
     init_session(app)
@@ -29,8 +31,9 @@ def init_socketio(app: Flask):
     log.debug(f'socketio origins: {origins}')
     socketio.init_app(app, cors_allowed_origins=origins)
 
-    from sockets import user_socketio
-    user_socketio.init(socketio)
+    from sockets import user_socketio, admin_socketio
+    user_socketio.init(socketio)  # 初始化用户socketio服务器
+    admin_socketio.init(socketio)  # 初始化管理员socketio服务器
     log.debug(f"socketio using server: {socketio.async_mode}")
 
 
@@ -53,8 +56,10 @@ def init_session(app: Flask):
     else:
         # 会话将会在浏览器关闭之后清除
         session_lifetime = config.get(ConfigEnum.SESSION_LIFETIME)
+        app.config['SESSION_LIFETIME'] = timedelta(seconds=session_lifetime)
         log.debug(f'session lifetime : {session_lifetime}')
         log.debug(f'disable session permanent, session lifetime: {session_lifetime}')
+
 
     app.config['SESSION_USE_SIGNER'] = config.get(ConfigEnum.SESSION_USE_SIGNER)  # 会话防止篡改
     app.config['SESSION_COOKIE_SAMESITE'] = config.get(ConfigEnum.SESSION_COOKIE_SAMESITE)  # 会话同源策略
@@ -82,17 +87,21 @@ def init_session(app: Flask):
 
     Session(app)
 
-
 def init_cache(app: Flask):
     cache_type = config.get(ConfigEnum.CACHE_TYPE)
     cache_prefix = config.get(ConfigEnum.CACHE_KEY_PREFIX)
+    ignore_errors = config.get(ConfigEnum.CACHE_IGNORE_ERRORS)
 
     log.debug(f'using cache type : {cache_type}')
     log.debug(f'cache prefix : {cache_prefix}')
 
+
     app.config['CACHE_DEFAULT_TIMEOUT'] = config.get(ConfigEnum.CACHE_TIMEOUT)  # 缓存超时时间
     app.config['CACHE_KEY_PREFIX'] = cache_prefix
-    app.config['CACHE_IGNORE_ERRORS'] = config.get(ConfigEnum.CACHE_IGNORE_ERRORS)
+
+    if not ignore_errors:
+        log.debug('musicatri run while ignoring no cache errors')
+    app.config['CACHE_IGNORE_ERRORS'] = ignore_errors
 
     if cache_type == 'filesystem':
         # 使用文件系统进行缓存
