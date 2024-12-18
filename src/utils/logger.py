@@ -103,7 +103,7 @@ class SimpleLoggerFacade:
         current_dir = os.path.dirname(current_file_path)  # 获取当前文件所在目录
         root_dir = os.path.dirname(os.path.dirname(current_dir))
 
-        logs_dir = os.path.join(root_dir, config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
+        logs_dir = os.path.join(root_dir, 'tmp', config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
 
         if not os.path.exists(logs_dir):  # 创建日志目录
             os.makedirs(logs_dir)
@@ -157,10 +157,10 @@ facade = SimpleLoggerFacade()
 if config.get(ConfigEnum.APP_LOG_DEFAULT_LOGGING_ENABLE):
     facade.set_default(config.get(ConfigEnum.APP_LOG_DEFAULT_LOGGING_LEVEL))
 
-    if config.get(ConfigEnum.APP_LOG_CONSOLE_LOGGING_ENABLE):
+    if config.get(ConfigEnum.APP_LOG_CONSOLE_LOGGING_ENABLE):  # 控制台日志
         facade.set_console(config.get(ConfigEnum.APP_LOG_CONSOLE_LOGGING_LEVEL))
 
-    if config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_ENABLE):
+    if config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_ENABLE):  # 文件日志
         extname = config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_EXTNAME)
         facade.set_filelog(config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_LEVEL), extname)
 

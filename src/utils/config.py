@@ -36,6 +36,15 @@ schema = {
                             'relax-token-scope': {'type': 'boolean', 'default': False},  # 允许动态调整oauth申请权限
                         }
                     },
+                    'cors': {
+                        'type': 'dict',
+                        'schema': {
+                            'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
+                            'allow-headers': {'type': 'list', 'default': ['Content-Type', 'Authorization', 'Accept-Language']},
+                            'allow-methods': {'type': 'list', 'default': ['GET', 'POST', 'PUT', 'DELETE', 'TRACE']},
+                            'supports-credentials': {'type': 'boolean', 'default': True},
+                        }
+                    }
                 }
             },
             # 日志配置
@@ -63,7 +72,7 @@ schema = {
                             'enable': {'type': 'boolean', 'default': False},
                             'level': {'type': 'string', 'default': 'DEBUG'},
                             'extname': {'type': 'string', 'default': ''},
-                            'file-directory': {'type': 'string', 'default': 'runtime/logs'},
+                            'file-directory': {'type': 'string', 'default': 'logs'},  # /tmp/logs
                         }
                     },
                     'flask-logging': {
@@ -74,20 +83,31 @@ schema = {
                     }
                 }
             },
-            # 网络配置
-            'network': {
+            'wsgi-server': {
                 'type': 'dict',
                 'schema': {
                     'host': {'type': 'string', 'default': '127.0.0.1'},
                     'port': {'type': 'integer', 'default': 5000},
-                    'public-url': {'type': 'string', 'default': 'http://127.0.0.1:5000'},
-                    'cors': {
+                    'werkzeug': {
                         'type': 'dict',
                         'schema': {
-                            'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
-                            'allow-headers': {'type': 'list', 'default': ['Content-Type', 'Authorization', 'Accept-Language']},
-                            'allow-methods': {'type': 'list', 'default': ['GET', 'POST', 'PUT', 'DELETE', 'TRACE']},
-                            'supports-credentials': {'type': 'boolean', 'default': True},
+                            'debug-mode': {'type': 'boolean', 'default': False},
+                            'log-output': {'type': 'boolean', 'default': False},
+                            'use-reloader': {'type': 'boolean', 'default': False},
+                        }
+                    },
+                    'gunicorn': {
+                        'type': 'dict',
+                        'schema': {
+                            'workers': {'type': 'integer', 'default': 1},
+                            'threads': {'type': 'integer', 'default': 4},
+                            'daemon': {'type': 'boolean', 'default': False},
+                            'worker-class': {'type': 'string', 'default': 'gthread'},
+                            'worker-connections': {'type': 'integer', 'default': 2000},  # 仅对eventlet gevent生效
+                            'pidfile': {'type': 'string', 'default': 'gunicorn/gunicorn.pid'},
+                            'accesslog': {'type': 'string', 'default': 'gunicorn/gunicorn_access.log'},
+                            'errorlog': {'type': 'string', 'default': 'gunicorn/gunicorn_error.log'},
+                            'loglevel': {'type': 'string', 'default': 'warning'},
                         }
                     }
                 }
@@ -130,7 +150,7 @@ schema = {
                         'type': 'dict',
                         'schema': {
                             'file-threshold': {'type': 'integer', 'default': 5000},
-                            'file-directory': {'type': 'string', 'default': 'runtime/session'},
+                            'file-directory': {'type': 'string', 'default': 'session'},  # /tmp/session
                         }
                     }
                 }
@@ -146,7 +166,7 @@ schema = {
                         'type': 'dict',
                         'schema': {
                             'file-threshold': {'type': 'integer', 'default': 5000},
-                            'file-directory': {'type': 'string', 'default': 'runtime/cache'},
+                            'file-directory': {'type': 'string', 'default': 'cache'},  # /tmp/cache
                         }
                     },
                     'redis': {
@@ -175,7 +195,7 @@ schema = {
             'discord': {
                 'type': 'dict',
                 'schema': {
-                    'api-endpoint': {'type': 'string', 'default': 'https://discord.com/api/v10'},
+                    'api_server-endpoint': {'type': 'string', 'default': 'https://discord.com/api/v10'},
                     'bot': {
                         'type': 'dict',
                         'schema': {
@@ -193,7 +213,7 @@ schema = {
                     }
                 }
             },
-            'neteasecloudmusic-api': {
+            'neteasecloudmusic-api_server': {
                 'type': 'dict',
                 'schema': {
                     'url': {'type': 'string', 'default': 'http://127.0.0.1:3000'},
@@ -208,14 +228,21 @@ from enum import Enum
 class ConfigEnum(Enum):
     # 应用配置
     APP_DEV_MODE = 'application.dev-mode'
-    APP_DEBUG_MODE = 'application.debug-mode'
     APP_DEFAULT_LANGUAGE = 'application.default-language'
     APP_INFO_NAME = 'application.information.name'
     APP_INFO_VERSION = 'application.information.version'
     APP_INFO_DESCRIPTION = 'application.information.description'
+
+    # 安全配置
     APP_SECURITY_SECRET_KEY = 'application.security.secret-key'
     APP_SECURITY_OAUTH_INSECURE_TRANSPORT = 'application.security.oauth.insecure-transport'
     APP_SECURITY_OAUTH_RELAX_TOKEN_SCOPE = 'application.security.oauth.insecure-transport'
+    APP_SECURITY_CORS_ALLOW_ORIGINS = 'application.security.cors.allow-origins'
+    APP_SECURITY_CORS_ALLOW_HEADERS = 'application.security.cors.allow-headers'
+    APP_SECURITY_CORS_ALLOW_METHODS = 'application.security.cors.allow-methods'
+    APP_SECURITY_CORS_SUPPORTS_CREDENTIALS = 'application.security.cors.supports-credentials'
+
+    # 日志配置
     APP_LOG_PRINT_BANNER = 'application.logging.print-banner'
     APP_LOG_DEFAULT_LOGGING_ENABLE = 'application.logging.default-logging.enable'
     APP_LOG_DEFAULT_LOGGING_LEVEL = 'application.logging.default-logging.level'
@@ -225,14 +252,22 @@ class ConfigEnum(Enum):
     APP_LOG_LOGFILE_LOGGING_LEVEL = 'application.logging.logfile-logging.level'
     APP_LOG_LOGFILE_LOGGING_EXTNAME = 'application.logging.logfile-logging.extname'
     APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY = 'application.logging.logfile-logging.file-directory'
-    APP_LOG_FLASK_LOGGING_ENABLE = 'application.logging.flask-logging.enable'
-    APP_NETWORK_HOST = 'application.network.host'
-    APP_NETWORK_PORT = 'application.network.port'
-    APP_NETWORK_PUBLIC_URL = 'application.network.public-url'
-    APP_NETWORK_CORS_ALLOW_ORIGINS = 'application.network.cors.allow-origins'
-    APP_NETWORK_CORS_ALLOW_HEADERS = 'application.network.cors.allow-headers'
-    APP_NETWORK_CORS_ALLOW_METHODS = 'application.network.cors.allow-methods'
-    APP_NETWORK_CORS_SUPPORTS_CREDENTIALS = 'application.network.cors.supports-credentials'
+
+    # WSGI服务器配置
+    APP_WSGI_HOST = 'application.wsgi-server.host'
+    APP_WSGI_PORT = 'application.wsgi-server.port'
+    APP_WSGI_WERKZEUG_DEBUG_MODE = 'application.wsgi-server.werkzeug.debug-mode'
+    APP_WSGI_WERKZEUG_LOG_OUTPUT = 'application.wsgi-server.werkzeug.log-output'
+    APP_WSGI_WERKZEUG_USE_RELOADER = 'application.wsgi-server.werkzeug.use-reloader'
+    APP_WSGI_GUNICORN_WORKERS = 'application.wsgi-server.gunicorn.workers'
+    APP_WSGI_GUNICORN_THREADS = 'application.wsgi-server.gunicorn.threads'
+    APP_WSGI_GUNICORN_DAEMON = 'application.wsgi-server.gunicorn.daemon'
+    APP_WSGI_GUNICORN_WORKER_CLASS = 'application.wsgi-server.gunicorn.worker-class'
+    APP_WSGI_GUNICORN_WORKER_CONNECTIONS = 'application.wsgi-server.gunicorn.worker-connections'
+    APP_WSGI_GUNICORN_PIDFILE = 'application.wsgi-server.gunicorn.pidfile'
+    APP_WSGI_GUNICORN_ACCESSLOG = 'application.wsgi-server.gunicorn.accesslog'
+    APP_WSGI_GUNICORN_ERRORLOG = 'application.wsgi-server.gunicorn.errorlog'
+    APP_WSGI_GUNICORN_LOGLEVEL = 'application.wsgi-server.gunicorn.loglevel'
 
     # 数据库配置
     DATABASE_DRIVER = 'application.database.driver'
@@ -277,7 +312,7 @@ class ConfigEnum(Enum):
     YT_DLP_NAME = 'application.yt-dlp.name'
 
     # discord配置
-    DISCORD_API_ENDPOINT = 'services.discord.api-endpoint'
+    DISCORD_API_ENDPOINT = 'services.discord.api_server-endpoint'
     DISCORD_BOT_TOKEN = 'services.discord.bot.token'
     DISCORD_OAUTH_CLIENT_ID = 'services.discord.oauth.client-id'
     DISCORD_OAUTH_CLIENT_SECRET = 'services.discord.oauth.client-secret'

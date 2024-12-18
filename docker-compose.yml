@@ -2,9 +2,10 @@ version: '3.8'
 name: neo-musicatri
 services:
   musicatri:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: pineclone/musicatri:dev-base-v2.1.0
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
     entrypoint: /bin/bash
     tty: true
     stdin_open: true

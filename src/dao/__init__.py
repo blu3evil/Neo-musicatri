@@ -1,5 +1,5 @@
 from .models import DiscordUser, Role, UserRole
-from core import db
+from api_server.base_app import db
 
 def copy_properties(data, instance):
     """ 属性拷贝 """

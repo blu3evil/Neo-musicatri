@@ -1,6 +1,6 @@
 from flask import Flask
 
-from core import db
+from api_server.base_app import db
 from sqlalchemy.dialects.postgresql import JSON
 
 class DiscordUser(db.Model):
@@ -53,6 +53,7 @@ class UserRole(db.Model):
 
 def init(app: Flask):
     with app.app_context():
+        db.init_app(app)
         db.create_all()
         init_roles()
 

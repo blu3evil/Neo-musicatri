@@ -6,15 +6,11 @@ from oauthlib.oauth2 import InvalidGrantError
 from clients import discord_oauth
 from clients.discord_oauth import fetch_token
 from common.result import Result
-from core import session, cache, db
+from api_server.base_app import session, cache, db
 from dao import copy_properties, DiscordUser, to_dict, Role
 
 from services.user_service import user_service
 from utils import locales
-
-users_prefix = 'users'
-roles_prefix = 'roles'
-info_prefix = 'info'
 
 class AuthService:
     """ 认证服务 """
@@ -56,11 +52,10 @@ class AuthService:
         # 将用户关键字段id记入session
         session['discord_oauth_token'] = user_token
         session['user_id'] = user_data['id']  # 存储user_id到session
-        # 将用户数据写入缓存
-        cache.set(f'{users_prefix}:{user.id}:{info_prefix}', to_dict(user))
-        # 将权限写入缓存
-        role_names = [role.name for role in user.roles]
-        cache.set(f'{users_prefix}:{user.id}:{roles_prefix}', role_names)
+
+        cache.set(f'users:{user.id}:info', to_dict(user))  # 将用户数据写入缓存
+        role_names = [role.name for role in user.roles]  # 将权限写入缓存
+        cache.set(f'users:{user.id}:roles', role_names)
         return Result(200)
 
     @staticmethod

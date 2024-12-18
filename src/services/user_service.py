@@ -1,4 +1,4 @@
-from core import cache, db
+from api_server.base_app import cache, db
 from dao import DiscordUser, to_dict
 from utils import locales
 from common.result import Result

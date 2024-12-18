@@ -72,12 +72,12 @@ class LocaleFactory:
         对于一般方法则使用默认语言
         """
         from flask import request, has_request_context
-        from utils import log
+        # from utils import log
         accept_locale = None
         if has_request_context():
             # 在api或者socketio上下文环境中通过请求头参数传递本地化语言
             accept_language = request.headers.get('Accept-Language')
-            log.debug(f"local focusing: {request.method} {request.path} {accept_language}")
+            # log.debug(f"local focusing: {request.method} {request.path} {accept_language}")
             accept_locale = self.available_locales.get(accept_language)
 
         return accept_locale or default_locale

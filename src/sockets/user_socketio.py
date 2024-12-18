@@ -3,11 +3,11 @@
 """
 from flask_socketio import SocketIO, disconnect, emit
 
-from utils import log, locales
+from utils import log
 from flask import request
-from core import session
+from api_server.base_app import session
 from services.auth_service import auth_service
-from sockets.events import ServerEvent
+from events import SocketioEvent
 
 session_sid_name = 'user_sid'
 
@@ -20,18 +20,12 @@ def init(socketio: SocketIO):
         user_id = session.get('user_id')
         result = auth_service.verify_login(user_id)  # 校验用户当前登入状态
         if result.code != 200:
-            emit(ServerEvent.CONNECT_REJECT, result.as_dict())
+            emit(SocketioEvent.CONNECT_REJECT, result.as_dict())
             disconnect()  # 在用户没有权限的时候断开连接
         else:
             session[session_sid_name] = str(request.sid)  # 记录用户sid
             log.info(f'user socket connected, user sid: {session.get(session_sid_name)}')
-            emit(ServerEvent.CONNECT_ACCEPT, result.as_dict())
-
-    @socketio.on('message', namespace='/socket/user')
-    def receive_user_message(data):
-        """ 客户端发送消息 """
-        _ = locales.get()
-        print(f'received message: {data}')
+            emit(SocketioEvent.CONNECT_ACCEPT, result.as_dict())
 
     @socketio.on('disconnect', namespace='/socket/user')
     def user_disconnect():

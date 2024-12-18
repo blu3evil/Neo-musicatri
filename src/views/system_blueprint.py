@@ -7,9 +7,9 @@ from services.auth_service import auth_service
 from flask import Blueprint, jsonify
 from utils import config, ConfigEnum
 import time, math
-from core import cache
+from api_server.base_app import cache
 
-status_bp_v1 = Blueprint('status_bp_v1', __name__, url_prefix='/api/v1/system')
+status_bp_v1 = Blueprint('status_bp_v1', __name__, url_prefix='/api_server/v1/system')
 start_time = time.time()
 created_at = int(datetime.now().timestamp())
 

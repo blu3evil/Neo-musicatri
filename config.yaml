@@ -6,7 +6,7 @@ application:
     description: 'neo-musicatri'
   logging:
     # 打印musicatri旗帜
-    print-banner: true
+    print-banner: false
     # 默认日志等级，控制台日志等级和文件日志等级将基于此等级，如果后两者的详细等级超过
     # 默认日志等级，那么超过的部分不会被记录
     default-logging:
@@ -19,17 +19,16 @@ application:
       enable: false
       level: 'DEBUG'
       extname: 'qqa'
-    flask-logging:
-      enable: true
+      file-directory: 'logs'
 services:
   discord:
     api-endpoint: https://discord.com/api/v10
     bot:
-      token: token
+      token: MTI5NTY1MzYzNDIzNDY1MDYyNA.GmGg_l.tEzWXy8CpcNMhPXNlkE8kJxyj5-xkL74sN3jBY
     oauth:
       client-id: 1295653634234650624
       client-secret: UI1Q-7G5H-eU1dPW-quqP05dGg6xGQtd
-      redirect-uri: "http://localhost:5173/authorized"
+      redirect-uri: "http://localhost:5174/authorized"
       scope: 'identify guilds guilds.join'  # 权限范围
 ---
 # 测试环境配置
@@ -40,8 +39,6 @@ application:
     version: '2.2.2'
   # 开发者模式下，项目的健壮性会显著下降，同时启用开发文档
   dev-mode: true
-  # 在debug模式下，flask开启热加载，即更新代码之后会立即重新启动flask服务
-  debug-mode: false
   # 默认语言，如果用户的请求（包括RESTFULAPI以及WEBSOCKET）没有通过Accept-Language指定使用的语言
   # 那么此默认语言会被使用，默认语言同时还会影响后端控制台的显式语言
   default-language: zh-CN
@@ -50,18 +47,17 @@ application:
     oauth:
       insecure-transport: true
       relax-token-scope: false
-  network:
-    host: 127.0.0.1
-    port: 5000
-    public-url: http://localhost:5000
     cors:
-      allow-origins: [http://localhost:5173]
-      allow-headers: [Content-Type, Accept-Language]
-      allow-methods: [GET, POST, PUT, DELETE, TRACE]
+      allow-origins: [http://localhost:5173, http://localhost:5174]
+      allow-headers: [ Content-Type, Accept-Language ]
+      allow-methods: [ GET, POST, PUT, DELETE, TRACE ]
       supports-credentials: true
+  wsgi-server:
+    host: 0.0.0.0
+    port: 5001
   database:
     driver: mysql
-    host: localhost
+    host: 127.0.0.1
     port: 3306
     username: 'root'
     password: '1234'
@@ -92,9 +88,9 @@ application:
       file-threshold: 5000
       # 使用文件系统缓存时缓存文件的生成位置，从项目根路径neo-musicatri开始
       # 例如配置为sessions时缓存路径为neo-musicatri/sessions
-      file-directory: runtime/session
+      file-directory: session
     redis:
-      host: 127.0.0.1
+      host: 172.26.96.1
       port: 6379
 #      username: 'root'
 #      password: '1234'
@@ -108,9 +104,11 @@ application:
     ignore-errors: false
     filesystem:
       file-threshold: 5000
-      file-directory: runtime/cache
+      # file-directory基于/tmp目录下自动拼接
+      # cache实际映射到的目录为/tmp/cache
+      file-directory: cache
     redis:
-      host: 127.0.0.1
+      host: 172.26.96.1
       port: 6379
   yt-dlp:
     name: you
@@ -132,6 +130,11 @@ application:
     host: 0.0.0.0
     port: 5000
     public-url: http://localhost:5000
+    cors:
+      allow-origins: [
+        http://localhost:5173,
+        http://localhost:5174
+      ]
   database:
     driver: mysql
     host: mysql
@@ -165,7 +168,7 @@ application:
       file-threshold: 5000
       # 使用文件系统缓存时缓存文件的生成位置，从项目根路径neo-musicatri开始
       # 例如配置为sessions时缓存路径为neo-musicatri/sessions
-      file-directory: runtime/session
+      file-directory: session
     redis:
       host: redis
       port: 6379
@@ -177,7 +180,7 @@ application:
     key-prefix: 'cache:'
     filesystem:
       file-threshold: 5000
-      file-directory: runtime/cache
+      file-directory: cache
     redis:
       host: redis
       port: 6379
