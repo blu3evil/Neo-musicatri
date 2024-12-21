@@ -1,5 +1,5 @@
-from bot.atri import atri_context
-from common.result import Result
+from bot_server.bot.atri import atri_context
+from common import Result
 
 class AtriService:
     @staticmethod

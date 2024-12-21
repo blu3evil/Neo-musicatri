@@ -1,21 +1,16 @@
-from utils import config, ConfigEnum
+from api_server.app_context import config, ConfigKey
+from utils import root_path
+from os import path
 
-# 并行工作进程数
-workers = 4
-# 指定每个工作者的线程数
-threads = 2
-# 监听内网端口5000
-bind = '127.0.0.1:5000'
-# 设置守护进程,将进程交给supervisor管理
-daemon = 'false'
-# 工作模式协程
-worker_class = 'gevent'
-# 设置最大并发量
-worker_connections = 2000
-# 设置进程文件目录
-pidfile = '/var/run/gunicorn.pid'
-# 设置访问日志和错误信息日志路径
-accesslog = '/var/log/gunicorn_access.log'
-errorlog = '/var/log/gunicorn_error.log'
-# 设置日志记录水平
-loglevel = 'warning'
+workers = config.get(ConfigKey.APP_WSGI_GUNICORN_WORKERS)  # 进程数
+threads = config.get(ConfigKey.APP_WSGI_GUNICORN_THREADS)  # 线程数
+bind = f'{config.get(ConfigKey.APP_WSGI_HOST)}:{config.get(ConfigKey.APP_WSGI_PORT)}'  # 端口ip
+daemon = config.get(ConfigKey.APP_WSGI_GUNICORN_DAEMON)  # 是否后台运行
+worker_class = config.get(ConfigKey.APP_WSGI_GUNICORN_WORKER_CLASS)  # 工作模式协程
+worker_connections = config.get(ConfigKey.APP_WSGI_GUNICORN_WORKER_CONNECTIONS)  # 最大连接数（并发量）
+
+pidfile = path.join(root_path, 'temp', config.get(ConfigKey.APP_WSGI_GUNICORN_PIDFILE))  # gunicorn进程文件'/var/run/gunicorn.pid'
+accesslog = path.join(root_path, 'temp', config.get(ConfigKey.APP_WSGI_GUNICORN_ACCESSLOG))  # 设置访问日志和错误信息日志路径'/var/log/gunicorn_access.log'
+errorlog = path.join(root_path, 'temp', config.get(ConfigKey.APP_WSGI_GUNICORN_ERRORLOG))  # '/var/log/gunicorn_error.log'
+
+loglevel = config.get(ConfigKey.APP_WSGI_GUNICORN_LOGLEVEL)  # 设置日志记录水平 warning

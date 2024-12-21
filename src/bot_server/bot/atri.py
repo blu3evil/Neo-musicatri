@@ -6,12 +6,14 @@ from asyncio import AbstractEventLoop
 from discord import Intents
 from discord.ext import commands
 
-from common.result import Result
+from common import Result
 from events import SocketioEvent, AtriEvent
 from pyee.executor import ExecutorEventEmitter
 from threading import Thread
 
-from utils import log, config, ConfigEnum, locales
+from bot_server.app_context import config, ConfigKey, log, locales
+
+bot_token = config.get(ConfigKey.BOT_TOKEN)  # 机器人认证token
 
 class Atri(commands.AutoShardedBot):
     """ 音乐机器人——音乐亚托莉(Music Atri) """
@@ -115,8 +117,7 @@ class BotStopped(AtriState):
 
         async def async_start():  # 异步启动亚托莉
             try:
-                token = config.get(ConfigEnum.DISCORD_BOT_TOKEN)
-                await ctx.bot_instance.start(token, reconnect=False)  # 尝试启动亚托莉
+                await ctx.bot_instance.start(bot_token, reconnect=False)  # 尝试启动亚托莉
             except Exception as e:  # 亚托莉登录失败
                 ctx.bot_eventbus.emit(AtriEvent.CONNECT_FAILED, str(e))  # 亚托莉启动失败
                 await ctx.bot_instance.close()  # 关闭实例
@@ -222,7 +223,7 @@ class AtriContext:
 
     def pre_initialize(self):  # 挂载事件
         def handle_atri_state_change(identify):
-            from sockets.dispatcher import admin_socket_dispatcher
+            from api_server.sockets.dispatcher import admin_socket_dispatcher
             # socketio.start_background_task(target=socketio.emit, event=SocketioEvent.ATRI_STATE_CHANGE, data=self.identify, namespace='/socket/admin')
             admin_socket_dispatcher.emit(SocketioEvent.ATRI_STATE_CHANGE, self.identify)
             log.debug(f'musicatri change status to {identify}')

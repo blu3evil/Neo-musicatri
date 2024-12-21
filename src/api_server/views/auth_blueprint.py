@@ -1,13 +1,12 @@
 """ 权限校验蓝图 """
 from flask import Blueprint, jsonify, request
 
-from clients import discord_oauth
-from api_server.base_app import cache, session
-from services.auth_service import auth_service
-from utils import config, ConfigEnum, locales
+from api_server.clients import discord_oauth
+from api_server.app_context import cache, session, config, ConfigKey
+from api_server.services.auth_service import auth_service
 
-auth_bp_v1 = Blueprint('auth_bp_v1', __name__, url_prefix='/api_server/v1/auth')
-redirect_uri = config.get(ConfigEnum.DISCORD_OAUTH_REDIRECT_URI)
+auth_bp_v1 = Blueprint('auth_bp_v1', __name__, url_prefix='/api/v1/auth')
+redirect_uri = config.get(ConfigKey.DISCORD_OAUTH_REDIRECT_URI)
 
 # 登入接口，检测用户是否登入，如果已经登入那么返回用户数据，否则返回重定向url指引用户登入
 @auth_bp_v1.route('/login', methods=['GET'])

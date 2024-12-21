@@ -54,14 +54,14 @@ application:
       supports-credentials: true
   wsgi-server:
     host: 0.0.0.0
-    port: 5001
+    port: 5000
   database:
     driver: mysql
     host: 127.0.0.1
     port: 3306
     username: 'root'
     password: '1234'
-    database: 'musicatri'
+    database: 'musicatri-api'
     track-modification: false
   session:
     type: redis
@@ -90,7 +90,7 @@ application:
       # 例如配置为sessions时缓存路径为neo-musicatri/sessions
       file-directory: session
     redis:
-      host: 172.26.96.1
+      host: 127.0.0.1
       port: 6379
 #      username: 'root'
 #      password: '1234'
@@ -108,7 +108,7 @@ application:
       # cache实际映射到的目录为/tmp/cache
       file-directory: cache
     redis:
-      host: 172.26.96.1
+      host: 127.0.0.1
       port: 6379
   yt-dlp:
     name: you

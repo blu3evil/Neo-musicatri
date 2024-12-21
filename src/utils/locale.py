@@ -4,8 +4,7 @@
 import gettext
 import subprocess
 from pathlib import Path
-import os
-import cmd
+import os, cmd
 
 class ResourceUtils:
     @staticmethod
@@ -33,36 +32,19 @@ class ResourceUtils:
         full_path = os.path.join(root_path, "resources", *path_segments)
         return str(full_path)
 
-locales_dir = ResourceUtils.get_resource("locales")  # 本地化资源目录
+locales_dir = ResourceUtils.get_resource("../../resources/api-server/locales")  # 本地化资源目录
 DEFAULT_DOMAIN = "flask_app"  # flaks应用文本域
 
-from utils.config import config, ConfigEnum
-from utils.logger import log
-default_language = config.get(ConfigEnum.APP_DEFAULT_LANGUAGE)  # 默认语言
-log.debug(f'musicatri using default locale: {default_language}')
-
-default_locale = None
-try:
-    # flask app文本域本地化方法
-    default_locale = gettext.translation(DEFAULT_DOMAIN, locales_dir, [default_language]).gettext
-except FileNotFoundError as error:
-    # 缺少文件则使用空白本地化
-    default_locale = gettext.gettext
-
-
 class LocaleFactory:
-    """ 本地化工厂，提供本地化的策略 """
-    # todo: 优化可用语言列表加载
-    available_languages = ['en-US', 'zh-CN']
+    default_language = 'en-US'
+    available_languages = ['en-US', 'zh-CN']  # todo: 优化可用语言列表加载
 
-    """ 本地化工厂，获取本地化对象 """
-    def __init__(self):
-        """ 工厂初始化 """
-        self.available_locales = {}
+    def __init__(self, locale_domain, locale_resource_directory_path):
+        self.available_locales = {}  # 加载可用语言
         for country in self.available_languages:
             try:
-                # 尝试加载资源文件
-                self.available_locales[country] = gettext.translation(DEFAULT_DOMAIN, locales_dir, [country, ]).gettext
+                self.available_locales[country] = gettext.translation(
+                    locale_domain, locale_resource_directory_path, [country, ]).gettext
             except FileNotFoundError:
                 self.available_locales[country] = gettext.gettext
 
@@ -72,7 +54,6 @@ class LocaleFactory:
         对于一般方法则使用默认语言
         """
         from flask import request, has_request_context
-        # from utils import log
         accept_locale = None
         if has_request_context():
             # 在api或者socketio上下文环境中通过请求头参数传递本地化语言
@@ -80,11 +61,7 @@ class LocaleFactory:
             # log.debug(f"local focusing: {request.method} {request.path} {accept_language}")
             accept_locale = self.available_locales.get(accept_language)
 
-        return accept_locale or default_locale
-
-
-locales = LocaleFactory()  # 本地化工厂
-
+        return accept_locale or self.available_locales.get(self.default_language)
 
 class I18nUtils:
     """
@@ -267,6 +244,5 @@ if __name__ == '__main__':
     # todo: 生成对应本地化文件之前应该先清空资源目录防止错误
     # todo: 令中文默认使用utf-8字符集
     # todo: 更好的命令行
-
     LocaleCommandLineInterface().cmdloop()
 

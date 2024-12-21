@@ -3,13 +3,12 @@
 """
 from datetime import time, datetime
 
-from services.auth_service import auth_service
+from api_server.services.auth_service import auth_service
 from flask import Blueprint, jsonify
-from utils import config, ConfigEnum
 import time, math
-from api_server.base_app import cache
+from api_server.app_context import cache, config, ConfigKey
 
-status_bp_v1 = Blueprint('status_bp_v1', __name__, url_prefix='/api_server/v1/system')
+status_bp_v1 = Blueprint('status_bp_v1', __name__, url_prefix='/api/v1/system')
 start_time = time.time()
 created_at = int(datetime.now().timestamp())
 
@@ -83,8 +82,8 @@ def info():
     """
     return jsonify({
         'data': {
-            'name': config.get(ConfigEnum.APP_INFO_NAME),
-            'version': config.get(ConfigEnum.APP_INFO_VERSION),
-            'description': config.get(ConfigEnum.APP_INFO_DESCRIPTION),
+            'name': config.get(ConfigKey.APP_INFO_NAME),
+            'version': config.get(ConfigKey.APP_INFO_VERSION),
+            'description': config.get(ConfigKey.APP_INFO_DESCRIPTION),
         }
     })  # 成功获取服务器数据

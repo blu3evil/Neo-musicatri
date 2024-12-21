@@ -3,14 +3,12 @@ from functools import wraps
 
 from oauthlib.oauth2 import InvalidGrantError
 
-from clients import discord_oauth
-from clients.discord_oauth import fetch_token
-from common.result import Result
-from api_server.base_app import session, cache, db
-from dao import copy_properties, DiscordUser, to_dict, Role
-
-from services.user_service import user_service
-from utils import locales
+from common import Result
+from api_server.clients import discord_oauth
+from api_server.clients.discord_oauth import fetch_token
+from api_server.app_context import session, cache, db, locales
+from api_server.services.user_service import user_service
+from api_server.domain.models import copy_properties, DiscordUser, to_dict, Role
 
 class AuthService:
     """ 认证服务 """

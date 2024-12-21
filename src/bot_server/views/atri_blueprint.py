@@ -1,6 +1,6 @@
 """ 亚托莉相关接口 """
 from flask import Blueprint
-from services.atri_service import atri_service
+from bot_server.services.atri_service import atri_service
 
 atri_bp_v1 = Blueprint('atri_bp_v1', __name__, url_prefix='/api_server/v1/atri')
 

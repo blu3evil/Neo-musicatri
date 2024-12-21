@@ -1,7 +1,6 @@
-from api_server.base_app import cache, db
-from dao import DiscordUser, to_dict
-from utils import locales
-from common.result import Result
+from api_server.app_context import cache, db, locales
+from api_server.domain.models import DiscordUser, to_dict
+from common import Result
 
 users_prefix = 'users'
 roles_prefix = 'roles'

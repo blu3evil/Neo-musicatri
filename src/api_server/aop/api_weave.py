@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import request
-from utils import log
+from api_server.app_context import log
+
 
 class AOP:
     # todo : 记录请求URL地址 记录请求方法

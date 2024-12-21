@@ -3,10 +3,9 @@
 """
 from flask_socketio import SocketIO, disconnect, emit
 
-from utils.logger import log
 from flask import request
-from api_server.base_app import session
-from services.auth_service import auth_service
+from api_server.app_context import session, log
+from api_server.services import auth_service
 from events import SocketioEvent
 
 session_sid_name = 'admin_sid'

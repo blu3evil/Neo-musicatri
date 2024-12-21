@@ -1,15 +1,11 @@
-"""
-静态资源蓝图
-"""
-
 import os
-
 from flask import Blueprint, send_from_directory
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-static_dir = os.path.join(root_dir, 'resources', 'static')
-static_bp = Blueprint('static_bp', __name__, static_folder=static_dir)  # 静态资源蓝图
+from utils import root_path
 
-@static_bp.route("/", methods=["GET"])
+static_dir = os.path.join(root_path, 'resources', 'api-server', 'static')
+static_bp_v1 = Blueprint('static_bp_v1', __name__, static_folder=static_dir)  # 静态资源蓝图
+
+@static_bp_v1.route("/", methods=["GET"])
 def index():
     """
     网站主页
@@ -22,9 +18,9 @@ def index():
       20000:
         description: 返回主页信息
     """
-    return send_from_directory(static_bp.static_folder, "index.html")
+    return send_from_directory(static_bp_v1.static_folder, "index.html")
 
-@static_bp.route('/favicon.ico', methods=["GET", "POST"])
+@static_bp_v1.route('/favicon.ico', methods=["GET", "POST"])
 def favicon():
     """
     网站图标接口
@@ -42,4 +38,4 @@ def favicon():
               type: string
               format: binary
     """
-    return send_from_directory(static_bp.static_folder, 'favicon.ico')
+    return send_from_directory(static_bp_v1.static_folder, 'favicon.ico')

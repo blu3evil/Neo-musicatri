@@ -6,7 +6,6 @@ import sys
 
 import colorlog
 from colorlog import ColoredFormatter
-from utils.config import config, ConfigEnum
 
 # flask风格的控制台输出
 FLASK_STYLE_CONSOLE_FORMATTER = ColoredFormatter(
@@ -97,35 +96,28 @@ class SimpleLoggerFacade:
     def __init__(self, name=__name__):
         self.logger = LoggerFactory.create_basic_logger(name, propagate=True, level=logging.DEBUG)
 
-    def __init_logfile(self, ext: str=None):
-        """ 初始化日志文件 """
-        current_file_path = os.path.abspath(__file__)  # 当前模块所在路径
-        current_dir = os.path.dirname(current_file_path)  # 获取当前文件所在目录
-        root_dir = os.path.dirname(os.path.dirname(current_dir))
-
-        logs_dir = os.path.join(root_dir, 'tmp', config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
-
-        if not os.path.exists(logs_dir):  # 创建日志目录
-            os.makedirs(logs_dir)
-
-        self.logfile_path = SimpleLoggerFacade.__generate_logfile_name(logs_dir, ext)
+    def set_default(self, level):
+        """ 设置日志默认等级 """
+        level = name_levels_mapping.get(level, logging.INFO)
+        self.logger.setLevel(level)
 
     # 主要用于在完成配置文件加载后再次配置日志
-    def set_console(self, level="INFO"):
+    def set_console(self, level):
         """ 设置控制台日志等级 """
         self.console_handler = LoggerFactory.create_console_handler(level=logging.DEBUG, formatter=FLASK_STYLE_CONSOLE_FORMATTER)
         level = name_levels_mapping.get(level, logging.INFO)
         self.console_handler.setLevel(level)
         self.logger.addHandler(self.console_handler)
 
-    def set_default(self, level="DEBUG"):
-        """ 设置日志默认等级 """
-        level = name_levels_mapping.get(level, logging.INFO)
-        self.logger.setLevel(level)
+    def __init_logfile(self, logs_dir, ext: str=None, ):
+        """ 初始化日志文件 """
+        if not os.path.exists(logs_dir):  # 创建日志目录
+            os.makedirs(logs_dir)
+        self.logfile_path = SimpleLoggerFacade.__generate_logfile_name(logs_dir, ext)
 
-    def set_filelog(self, level="DEBUG", ext: str=None):
+    def set_filelog(self, level, logs_dir, ext: str=None):
         """ 设置日志文件日志等级 """
-        self.__init_logfile(ext)  # 初始化日志文件
+        self.__init_logfile(logs_dir, ext)  # 初始化日志文件
         self.filelog_handler = LoggerFactory.create_logfile_handler(self.logfile_path, level=logging.DEBUG, formatter=FLASK_STYLE_FILELOG_FORMATTER)
         level = name_levels_mapping.get(level, logging.INFO)
         self.filelog_handler.setLevel(level)
@@ -133,9 +125,7 @@ class SimpleLoggerFacade:
 
     @staticmethod
     def __generate_logfile_name(logfile_dir_path, ext: str=None) -> str:
-        """
-        基于日志目录生成不会重复的日志文件名，外部使用这个方法来书写日志文件
-        """
+        """ 基于日志目录生成不会重复的日志文件名，外部使用这个方法来书写日志文件 """
         current_time = int(round(time.time() * 1000))
         logfile_index = 1
         while True:
@@ -152,17 +142,4 @@ class SimpleLoggerFacade:
     def get_logger(self):
         return self.logger
 
-# 日志配置
-facade = SimpleLoggerFacade()
-if config.get(ConfigEnum.APP_LOG_DEFAULT_LOGGING_ENABLE):
-    facade.set_default(config.get(ConfigEnum.APP_LOG_DEFAULT_LOGGING_LEVEL))
 
-    if config.get(ConfigEnum.APP_LOG_CONSOLE_LOGGING_ENABLE):  # 控制台日志
-        facade.set_console(config.get(ConfigEnum.APP_LOG_CONSOLE_LOGGING_LEVEL))
-
-    if config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_ENABLE):  # 文件日志
-        extname = config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_EXTNAME)
-        facade.set_filelog(config.get(ConfigEnum.APP_LOG_LOGFILE_LOGGING_LEVEL), extname)
-
-else: logging.disable()  # 禁用日志输出
-log = facade.get_logger()  # 默认日志
