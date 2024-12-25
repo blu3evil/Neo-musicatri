@@ -5,11 +5,12 @@ from os import path
 from flask import session
 from flask_caching import Cache
 from flask_session import Session
-from flask_sqlalchemy import SQLAlchemy
 
 import os
 from flask import Flask, jsonify, Response
 from flask_socketio import SocketIO
+from flask_sqlalchemy import SQLAlchemy
+
 from utils import root_path, LocaleFactory, Config, SimpleLoggerFacade
 
 dev_mode = False                # dev mode
@@ -17,11 +18,8 @@ dev_mode = False                # dev mode
 app = Flask(__name__)           # 应用
 session = session               # 会话
 cache = Cache()                 # 缓存
-db = SQLAlchemy()               # 数据库
 socketio = SocketIO()           # 连接
-
-locale_resource_directory_path = os.path.join(root_path, 'resources', 'api-server', 'locales')
-locales = LocaleFactory('api-server', locale_resource_directory_path)
+db = SQLAlchemy()
 
 schema = {
     # 应用信息配置
@@ -31,6 +29,7 @@ schema = {
         'type': 'dict',
         'schema': {
             # 是否开启dev模式
+            'namespace': {'type': 'string', 'default': 'undefined'},
             'dev-mode': {'type': 'boolean', 'default': False},
             'language': {'type': 'string', 'default': 'en-US'},
             'information': {
@@ -231,6 +230,7 @@ schema = {
 class ConfigKey:
     # 应用配置
     APP_DEV_MODE = 'application.dev-mode'
+    APP_NAMESPACE = 'application.namespace'
     APP_DEFAULT_LANGUAGE = 'application.language'
     APP_INFO_NAME = 'application.information.name'
     APP_INFO_VERSION = 'application.information.version'
@@ -324,7 +324,15 @@ class ConfigKey:
     # 网易云音乐api配置
     NETEASECLOUDMUSIC_API_URL = 'services.neteasecloudmusic.url'
 
-config = Config(path.join(root_path, 'api-server-config.yaml'), schema)  # 项目配置
+
+config_path = path.join(root_path, 'config', 'api-server.yaml')
+config = Config(config_path, schema)  # 项目配置
+
+namespace = config.get(ConfigKey.APP_NAMESPACE)
+default_language = config.get(ConfigKey.APP_DEFAULT_LANGUAGE) # 默认语言
+
+locale_resource_directory_path = os.path.join(root_path, 'resources', namespace, 'locales')
+locales = LocaleFactory(namespace, locale_resource_directory_path, default_language)
 
 
 def init_dispatcher():  # 初始化事件分发器
@@ -366,7 +374,7 @@ def init_socketio():
     from sockets import user_socketio, admin_socketio
     user_socketio.init(socketio)  # 初始化用户socketio服务器
     admin_socketio.init(socketio)  # 初始化管理员socketio服务器
-    log.debug(f"socketio using server: {socketio.async_mode}")
+    log.debug(f"socketio using server: {socketio.async_mode} ")
 
 
 def init_cors():
@@ -516,7 +524,7 @@ def init_session():
         app.config['SESSION_TYPE'] = session_type
 
         session_directory = config.get(ConfigKey.SESSION_FILESYSTEM_FILE_DIRECTORY)
-        session_directory_path = path.join(root_path, 'tmp', session_directory)
+        session_directory_path = path.join(root_path, namespace, 'temp', session_directory)
         log.debug(f'session file directory: {session_directory_path}')
 
         session_threshold = config.get(ConfigKey.SESSION_FILESYSTEM_FILE_THRESHOLD)
@@ -543,7 +551,7 @@ def init_cache():
     if cache_type == 'filesystem':
         # 使用文件系统进行缓存
         cache_directory = config.get(ConfigKey.CACHE_FILESYSTEM_FILE_DIRECTORY)
-        cache_directory_path = path.join(root_path, 'tmp', cache_directory)
+        cache_directory_path = path.join(root_path, namespace, 'temp', cache_directory)
         log.debug(f'cache file directory: {cache_directory_path}')
 
         app.config['CACHE_TYPE'] = cache_type
@@ -561,12 +569,12 @@ def init_cache():
 
 
 def init_database():
+    host = config.get(ConfigKey.DATABASE_HOST)
+    port = config.get(ConfigKey.DATABASE_PORT)
     driver = config.get(ConfigKey.DATABASE_DRIVER)
     username = config.get(ConfigKey.DATABASE_USERNAME)
     password = config.get(ConfigKey.DATABASE_PASSWORD)
     database = config.get(ConfigKey.DATABASE_DATABASE)
-    host = config.get(ConfigKey.DATABASE_HOST)
-    port = config.get(ConfigKey.DATABASE_PORT)
     track_modification = config.get(ConfigKey.DATABASE_TRACK_MODIFICATION)
 
     if driver == 'mysql':
@@ -578,10 +586,8 @@ def init_database():
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 
     db.init_app(app)
-    from domain.models import init_roles
-    with app.app_context():
-        db.create_all()
-        init_roles()
+    import api_server.domain.models as models
+    models.init(app)
 
 import logging
 facade = SimpleLoggerFacade()  # 日志配置
@@ -592,9 +598,9 @@ if config.get(ConfigKey.APP_LOG_DEFAULT_LOGGING_ENABLE):
         facade.set_console(config.get(ConfigKey.APP_LOG_CONSOLE_LOGGING_LEVEL))
 
     if config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_ENABLE):  # 文件日志
-        logs_directory_path = os.path.join(root_path, 'temp', config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
+        logs_directory_path = os.path.join(root_path, namespace, 'temp', config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
         extname = config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_EXTNAME)
-        facade.set_filelog(config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_LEVEL), extname)
+        facade.set_filelog(config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_LEVEL), logs_directory_path ,extname)
 
 else: logging.disable()  # 禁用日志输出
 log = facade.get_logger()  # 默认日志

@@ -2,7 +2,7 @@
 from flask import Blueprint, jsonify, request
 
 from api_server.clients import discord_oauth
-from api_server.app_context import cache, session, config, ConfigKey
+from api_server.app_context import cache, session, config, ConfigKey, locales
 from api_server.services.auth_service import auth_service
 
 auth_bp_v1 = Blueprint('auth_bp_v1', __name__, url_prefix='/api/v1/auth')

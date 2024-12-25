@@ -17,5 +17,13 @@ class AtriService:
     def stop_atri():
         return atri_context.stop()
 
+    @staticmethod
+    def initialize_atri():
+        return atri_context.initialize()
+
+    @staticmethod
+    def terminate_atri():
+        return atri_context.terminate()
+
 atri_service = AtriService()
 

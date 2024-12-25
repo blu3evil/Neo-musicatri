@@ -1,6 +1,10 @@
 from sqlalchemy.dialects.mysql import JSON
 from api_server.app_context import db
+from flask import Flask
 
+def init(app: Flask):
+    with app.app_context():
+        db.create_all()
 
 class DiscordUser(db.Model):
     __tablename__ = 'discord_users'

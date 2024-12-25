@@ -6,9 +6,9 @@ from oauthlib.oauth2 import InvalidGrantError
 from common import Result
 from api_server.clients import discord_oauth
 from api_server.clients.discord_oauth import fetch_token
-from api_server.app_context import session, cache, db, locales
+from api_server.app_context import session, cache, locales
 from api_server.services.user_service import user_service
-from api_server.domain.models import copy_properties, DiscordUser, to_dict, Role
+from api_server.domain.models import copy_properties, DiscordUser, to_dict, Role, db
 
 class AuthService:
     """ 认证服务 """

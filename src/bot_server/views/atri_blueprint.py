@@ -1,8 +1,44 @@
 """ 亚托莉相关接口 """
 from flask import Blueprint
+
 from bot_server.services.atri_service import atri_service
 
-atri_bp_v1 = Blueprint('atri_bp_v1', __name__, url_prefix='/api_server/v1/atri')
+atri_bp_v1 = Blueprint('atri_bp_v1', __name__, url_prefix='/api/v1/bot/atri')
+
+@atri_bp_v1.route('/initialize', methods=['POST'])
+def initialize_atri():
+    result = atri_service.initialize_atri()
+    return result.as_response()
+
+@atri_bp_v1.route('/terminate', methods=['POST'])
+def terminate_atri():
+    """
+    启动亚托莉接口
+    ---
+    tags:
+      - 机器人接口
+    description: 用于停止机器人线程
+    responses:
+      200:
+        description: 机器人启动成功
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              examples: 'start success'
+      400:
+        description: 不支持的操作
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              examples: 'unsupported operation'
+              description: '操作不支持'
+    """
+    result = atri_service.terminate_atri()
+    return result.as_response()
 
 @atri_bp_v1.route('/start', methods=['POST'])
 def start_atri():

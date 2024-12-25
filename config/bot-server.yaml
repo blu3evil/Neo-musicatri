@@ -1,6 +1,6 @@
 active-environment: global
 application:
-  namespace: api-server
+  namespace: bot-server
   dev-mode: true
   information:
     name: musicatri
@@ -89,12 +89,8 @@ application:
       loglevel: warning
 services:
   discord:
-    api-endpoint: https://discord.com/api/v10
-    oauth:
-      client-id: 1295653634234650624
-      client-secret: UI1Q-7G5H-eU1dPW-quqP05dGg6xGQtd
-      redirect-uri: http://localhost:5173/authorized
-      scope: 'identify guilds guilds.join'  # 权限范围
+    bot:
+      token:
 ---
 environment: docker  # dev
 application:

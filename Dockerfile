@@ -16,7 +16,8 @@ WORKDIR $WORKDIR
 COPY src $WORKDIR/src
 COPY resources $WORKDIR/resources
 # 复制项目配置文件
-COPY api-server-config.yaml requirements.txt $WORKDIR/
+COPY config $WORKDIR/config
+COPY requirements.txt $WORKDIR/
 
 # 启动入口点文件
 #COPY deploy/basic-services/musicatri-entrypoint.sh /musicatri/entrypoint.sh

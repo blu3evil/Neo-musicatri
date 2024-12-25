@@ -13,7 +13,7 @@ from threading import Thread
 
 from bot_server.app_context import config, ConfigKey, log, locales
 
-bot_token = config.get(ConfigKey.BOT_TOKEN)  # 机器人认证token
+bot_token = config.get(ConfigKey.DISCORD_BOT_TOKEN)  # 机器人认证token
 
 class Atri(commands.AutoShardedBot):
     """ 音乐机器人——音乐亚托莉(Music Atri) """
@@ -75,7 +75,8 @@ class BotThreadIdle(AtriState):
         ctx.bot_thread.start()
         log.debug('bot thread start successfully')
         ctx.update_state(BotIdle())  # 机器人线程准备就绪，执行亚托莉初始化
-        return Result(200)
+        _ = locales.get()
+        return Result(200, message=_('start atri thread'))
 
 
 class BotThreadTerminated(AtriState):
@@ -203,6 +204,12 @@ class AtriContext:
 
     def stop(self):
         return self.state.stop(self)  # 停止亚托莉
+
+    def initialize(self):
+        return self.state.initialize(self)  # 启动线程
+
+    def terminate(self):
+        return self.state.terminate(self)  # 停止线程
 
     @property
     def identify(self):

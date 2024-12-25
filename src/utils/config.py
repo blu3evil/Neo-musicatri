@@ -107,6 +107,9 @@ class Config:
 
             configurations = self._update_dicts(global_config, active_env_config)  # 使用环境配置覆盖全局配置
 
+        if configurations.get('application.namespace') == 'undefined':
+            raise RuntimeError('undefined application namespace')
+
         self.configurations = v.normalized(configurations)  # 补齐默认值
 
     from typing import Any

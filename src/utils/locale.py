@@ -39,7 +39,7 @@ class LocaleFactory:
     default_language = 'en-US'
     available_languages = ['en-US', 'zh-CN']  # todo: 优化可用语言列表加载
 
-    def __init__(self, locale_domain, locale_resource_directory_path):
+    def __init__(self, locale_domain, locale_resource_directory_path, default_language='en-US'):
         self.available_locales = {}  # 加载可用语言
         for country in self.available_languages:
             try:

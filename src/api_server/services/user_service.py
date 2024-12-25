@@ -1,5 +1,5 @@
-from api_server.app_context import cache, db, locales
-from api_server.domain.models import DiscordUser, to_dict
+from api_server.app_context import cache, locales
+from api_server.domain.models import DiscordUser, to_dict, db
 from common import Result
 
 users_prefix = 'users'

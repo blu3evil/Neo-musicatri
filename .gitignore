@@ -4,6 +4,7 @@ test/
 # 项目运行时缓存
 runtime/
 tmp/
+temp/
 
 # python字节码文件
 __pycache__/

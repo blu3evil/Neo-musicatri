@@ -12,7 +12,7 @@ services:
     ports:
       - '5000:5000'
     volumes:
-      - ./api-server-config.yaml:/musicatri/api-server-config.yaml
+      - ./api-server.yaml:/musicatri/api-server.yaml
     depends_on:
       redis:
         condition: service_healthy

@@ -5,10 +5,11 @@ from os import path
 from flask import session
 from flask_caching import Cache
 from flask_session import Session
-from flask_sqlalchemy import SQLAlchemy
 
 import os
 from flask import Flask, jsonify, Response
+from flask_sqlalchemy import SQLAlchemy
+
 from utils import root_path, LocaleFactory, Config, SimpleLoggerFacade
 
 dev_mode = False                # dev mode
@@ -16,10 +17,7 @@ dev_mode = False                # dev mode
 app = Flask(__name__)           # 应用
 session = session               # 会话
 cache = Cache()                 # 缓存
-db = SQLAlchemy()               # 数据库
-
-locale_resource_directory_path = os.path.join(root_path, 'resources', 'bot-server', 'locales')
-locales = LocaleFactory('bot-server', locale_resource_directory_path)
+db = SQLAlchemy()
 
 schema = {
     # 应用信息配置
@@ -29,6 +27,7 @@ schema = {
         'type': 'dict',
         'schema': {
             # 是否开启dev模式
+            'namespace': {'type': 'string', 'default': 'undefined'},
             'dev-mode': {'type': 'boolean', 'default': False},
             'language': {'type': 'string', 'default': 'en-US'},
             'information': {
@@ -129,7 +128,7 @@ schema = {
                     'port': {'type': 'integer', 'default': 3306},
                     'username': {'type': 'string', 'default': 'root'},
                     'password': {'type': 'string', 'default': '1234'},
-                    'database': {'type': 'string', 'default': 'musicatri-bot'},
+                    'database': {'type': 'string', 'default': 'musicatri-api'},
                     'track-modification': {'type': 'boolean', 'default': False},
                 }
             },
@@ -190,10 +189,20 @@ schema = {
                     }
                 }
             },
-            'bot': {
+        }
+    },
+    'services': {
+        'type': 'dict',
+        'schema': {
+            'discord': {
                 'type': 'dict',
                 'schema': {
-                    'token': {'type': 'string', 'default': 'bot_token'}
+                    'bot': {
+                        'type': 'dict',
+                        'schema': {
+                            'token': {'type': 'string', 'default': 'bot-token'}
+                        }
+                    }
                 }
             }
         }
@@ -203,6 +212,7 @@ schema = {
 class ConfigKey:
     # 应用配置
     APP_DEV_MODE = 'application.dev-mode'
+    APP_NAMESPACE = 'application.namespace'
     APP_DEFAULT_LANGUAGE = 'application.language'
     APP_INFO_NAME = 'application.information.name'
     APP_INFO_VERSION = 'application.information.version'
@@ -284,10 +294,16 @@ class ConfigKey:
     CACHE_FILESYSTEM_FILE_THRESHOLD = 'application.cache.filesystem.file-threshold'
     CACHE_FILESYSTEM_FILE_DIRECTORY = 'application.cache.filesystem.file-directory'
 
-    BOT_TOKEN = 'bot.token'
+    DISCORD_BOT_TOKEN = 'services.discord.bot.token'
 
-config = Config(path.join(root_path, 'bot-server-config.yaml'), schema)  # 项目配置
+config_path = path.join(root_path, 'config', 'bot-server.yaml')
+config = Config(config_path, schema)  # 项目配置
 
+namespace = config.get(ConfigKey.APP_NAMESPACE)
+default_language = config.get(ConfigKey.APP_DEFAULT_LANGUAGE) # 默认语言
+
+locale_resource_directory_path = os.path.join(root_path, 'resources', namespace, 'locales')
+locales = LocaleFactory(namespace, locale_resource_directory_path, default_language)
 
 def init_config():  # 配置文件初始化
     global dev_mode
@@ -308,7 +324,6 @@ def init_config():  # 配置文件初始化
     if config.get(ConfigKey.APP_SECURITY_OAUTH_RELAX_TOKEN_SCOPE):
         os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
-
 def init_cors():
     """ 前后端项目需要配置适当跨域 """
     from flask_cors import CORS
@@ -322,7 +337,7 @@ def init_cors():
     CORS(app, resources={
         # 支持前端调用后端RESTFUL api_server
         # 如果手动携带Authorization请求头，需要明确来源，而非'*'，浏览器可能对'*'来源的响应不作答复
-        r"/api_server/*": {  # 支持restful api_server
+        r"/api/*": {  # 支持restful api_server
             "origins": origins,
             "allow_headers": headers,
             "allow_methods": methods,
@@ -449,7 +464,7 @@ def init_session():
         app.config['SESSION_TYPE'] = session_type
 
         session_directory = config.get(ConfigKey.SESSION_FILESYSTEM_FILE_DIRECTORY)
-        session_directory_path = path.join(root_path, 'tmp', session_directory)
+        session_directory_path = path.join(root_path, namespace, 'temp', session_directory)
         log.debug(f'session file directory: {session_directory_path}')
 
         session_threshold = config.get(ConfigKey.SESSION_FILESYSTEM_FILE_THRESHOLD)
@@ -476,7 +491,7 @@ def init_cache():
     if cache_type == 'filesystem':
         # 使用文件系统进行缓存
         cache_directory = config.get(ConfigKey.CACHE_FILESYSTEM_FILE_DIRECTORY)
-        cache_directory_path = path.join(root_path, 'tmp', cache_directory)
+        cache_directory_path = path.join(root_path, namespace, 'temp', cache_directory)
         log.debug(f'cache file directory: {cache_directory_path}')
 
         app.config['CACHE_TYPE'] = cache_type
@@ -490,17 +505,16 @@ def init_cache():
         app.config['CACHE_REDIS_DB'] = config.get(ConfigKey.CACHE_REDIS_DATABASE)
         app.config['CACHE_REDIS_USERNAME'] = config.get(ConfigKey.CACHE_REDIS_USERNAME)
         app.config['CACHE_REDIS_PASSWORD'] = config.get(ConfigKey.CACHE_REDIS_PASSWORD)
-
     cache.init_app(app)
 
 
 def init_database():
+    host = config.get(ConfigKey.DATABASE_HOST)
+    port = config.get(ConfigKey.DATABASE_PORT)
     driver = config.get(ConfigKey.DATABASE_DRIVER)
     username = config.get(ConfigKey.DATABASE_USERNAME)
     password = config.get(ConfigKey.DATABASE_PASSWORD)
     database = config.get(ConfigKey.DATABASE_DATABASE)
-    host = config.get(ConfigKey.DATABASE_HOST)
-    port = config.get(ConfigKey.DATABASE_PORT)
     track_modification = config.get(ConfigKey.DATABASE_TRACK_MODIFICATION)
 
     if driver == 'mysql':
@@ -511,8 +525,7 @@ def init_database():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = track_modification  # 追踪模式
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 
-    # from domain.models import init
-    # init(app)  # 初始化库表
+    db.init_app(app)
 
 import logging
 facade = SimpleLoggerFacade()  # 日志配置
@@ -523,9 +536,9 @@ if config.get(ConfigKey.APP_LOG_DEFAULT_LOGGING_ENABLE):
         facade.set_console(config.get(ConfigKey.APP_LOG_CONSOLE_LOGGING_LEVEL))
 
     if config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_ENABLE):  # 文件日志
-        logs_directory_path = os.path.join(root_path, 'temp', config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
+        logs_directory_path = os.path.join(root_path, namespace, 'temp', config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
         extname = config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_EXTNAME)
-        facade.set_filelog(config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_LEVEL), extname)
+        facade.set_filelog(config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_LEVEL), logs_directory_path ,extname)
 
 else: logging.disable()  # 禁用日志输出
 log = facade.get_logger()  # 默认日志
