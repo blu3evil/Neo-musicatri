@@ -5,7 +5,6 @@ from oauthlib.oauth2 import InvalidGrantError
 
 from common import Result
 from api_server.clients import discord_oauth
-from api_server.clients.discord_oauth import fetch_token
 from api_server.app_context import session, cache, locales
 from api_server.services.user_service import user_service
 from api_server.domain.models import copy_properties, DiscordUser, to_dict, Role, db
@@ -21,7 +20,7 @@ class AuthService:
         """
         _ = locales.get()
         try:
-            user_token = fetch_token(code)      # 拉取用户授权凭证
+            user_token = discord_oauth.fetch_token(code)      # 拉取用户授权凭证
             access_token = user_token.get('access_token')
             user_data = discord_oauth.fetch_user(access_token)      # 拉取用户信息
         except InvalidGrantError:  # code异常
@@ -89,6 +88,7 @@ class AuthService:
     def verify_login(user_id) -> Result:
         """ 当前用户是否登入 """
         _ = locales.get()
+        session['test'] = 'helo'
         session_token = session.get('discord_oauth_token', {})
         if not session_token:
             return Result(401, _('login status expired'))  # 无状态视为过期

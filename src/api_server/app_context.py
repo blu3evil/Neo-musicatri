@@ -376,7 +376,6 @@ def init_socketio():
     admin_socketio.init(socketio)  # 初始化管理员socketio服务器
     log.debug(f"socketio using server: {socketio.async_mode} ")
 
-
 def init_cors():
     """ 前后端项目需要配置适当跨域 """
     from flask_cors import CORS
@@ -524,7 +523,7 @@ def init_session():
         app.config['SESSION_TYPE'] = session_type
 
         session_directory = config.get(ConfigKey.SESSION_FILESYSTEM_FILE_DIRECTORY)
-        session_directory_path = path.join(root_path, namespace, 'temp', session_directory)
+        session_directory_path = path.join(root_path, 'temp', namespace, session_directory)
         log.debug(f'session file directory: {session_directory_path}')
 
         session_threshold = config.get(ConfigKey.SESSION_FILESYSTEM_FILE_THRESHOLD)
@@ -551,7 +550,7 @@ def init_cache():
     if cache_type == 'filesystem':
         # 使用文件系统进行缓存
         cache_directory = config.get(ConfigKey.CACHE_FILESYSTEM_FILE_DIRECTORY)
-        cache_directory_path = path.join(root_path, namespace, 'temp', cache_directory)
+        cache_directory_path = path.join(root_path, 'temp', namespace, cache_directory)
         log.debug(f'cache file directory: {cache_directory_path}')
 
         app.config['CACHE_TYPE'] = cache_type
@@ -598,7 +597,7 @@ if config.get(ConfigKey.APP_LOG_DEFAULT_LOGGING_ENABLE):
         facade.set_console(config.get(ConfigKey.APP_LOG_CONSOLE_LOGGING_LEVEL))
 
     if config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_ENABLE):  # 文件日志
-        logs_directory_path = os.path.join(root_path, namespace, 'temp', config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
+        logs_directory_path = os.path.join(root_path, 'temp', namespace, config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY))
         extname = config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_EXTNAME)
         facade.set_filelog(config.get(ConfigKey.APP_LOG_LOGFILE_LOGGING_LEVEL), logs_directory_path ,extname)
 

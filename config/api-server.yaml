@@ -7,7 +7,7 @@ application:
     version: 1.0.0
     description: neo-musicatri
   logging:
-    print-banner: false  # 打印musicatri旗帜
+    print-banner: true  # 打印musicatri旗帜
     default-logging:  # 默认日志
       enable: true
       level: DEBUG
@@ -15,15 +15,15 @@ application:
       enable: true
       level: DEBUG
     logfile-logging:  # 文件日志
-      enable: true
+      enable: false
       level: DEBUG
       extname: api
       file-directory: logs  # temp/logs
   security:
     secret-key: musicatri
     oauth:
-      insecure-transport: false  # 允许在HTTP下执行oauth
-      relax-token-scope: True  # 允许动态调整oauth申请权限
+      insecure-transport: true  # 允许在HTTP下执行oauth
+      relax-token-scope: true  # 允许动态调整oauth申请权限
     cors:
       allow-origins: [http://localhost:5173, http://localhost:5174]
       allow_headers: [Content-Type, Authorization, Accept-Language]
@@ -39,8 +39,8 @@ application:
     track-modification: false
   session:
     type: redis
-    cookie-samesite: None
-    cookie-httponly: false
+    cookie-samesite: Lax
+    cookie-httponly: true
     cookie-secure: false  # 仅允许https下传递cookie
     lifetime: 1800
     permanent: true
@@ -87,14 +87,17 @@ application:
       accesslog: gunicorn/gunicorn_access.log
       errorlog: gunicorn/gunicorn_error.log
       loglevel: warning
-services:
-  discord:
-    api-endpoint: https://discord.com/api/v10
-    oauth:
-      client-id: 1295653634234650624
-      client-secret: UI1Q-7G5H-eU1dPW-quqP05dGg6xGQtd
-      redirect-uri: http://localhost:5173/authorized
-      scope: 'identify guilds guilds.join'  # 权限范围
+discord:
+  api-endpoint: https://discord.com/api/v10
+  oauth:
+    client-id: 1295653634234650624
+    client-secret: UI1Q-7G5H-eU1dPW-quqP05dGg6xGQtd
+    redirect-uri: http://localhost:5173/authorized
+    scope: 'identify guilds guilds.join'  # 权限范围
+yt-dlp:
+  name: musicatri
+neteasecloudmusic-api:
+  url: http://127.0.0.2:3000
 ---
 environment: docker  # dev
 application:

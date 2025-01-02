@@ -139,7 +139,7 @@ class SimpleLoggerFacade:
 
         return to_return
 
-    def get_logger(self):
+    def get_logger(self) -> logging.Logger:
         return self.logger
 
 

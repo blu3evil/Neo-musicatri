@@ -8,8 +8,7 @@ def do_run_werkzeug():
     log_output = config.get(ConfigKey.APP_WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
     use_reloader = config.get(ConfigKey.APP_WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
 
-    app.run(host=host, port=port, debug=debug_mode,
-                 use_reloader=use_reloader)  # 使用werkzeug启动flask
+    app.run(host=host, port=port, debug=debug_mode, use_reloader=use_reloader, )  # 使用werkzeug启动flask
 
     log.info("musicatri teardown")
 
