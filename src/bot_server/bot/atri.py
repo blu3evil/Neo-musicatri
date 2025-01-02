@@ -13,6 +13,7 @@ from threading import Thread
 
 from bot_server.bot_server_context import context, BotServerConfigKey
 
+from bot_server.utils.ffempgutils import FFempegUtils
 config = context.config  # 配置
 logger = context.logger
 locale = context.locale
@@ -62,7 +63,10 @@ class AtriState:
     def terminate(self, ctx: AtriContext) -> Result:
         _ = locale.get()
         return Result(400, _('unsupported operation'))
-
+    
+    def play(self, ctx: AtriContext, id:str) -> Result:
+        _ = locale.get()
+        return Result(400, _('unsupported operation'))
 
 # 线程启动前
 class BotThreadIdle(AtriState):
@@ -170,6 +174,9 @@ class BotStarted(AtriState):
         asyncio.run_coroutine_threadsafe(async_stop(), ctx.bot_event_loop)  # 停止机器人协程
         return Result(200, _("submit musicatri shutdown workflow task"))  # 执行亚托莉停止工作流
 
+    def play(self, ctx, id):
+        _ = locale.get()
+        return Result(200, _(f"playing {id} ..."))
 
 class BotStopping(AtriState):  # 正在停止
     def __init__(self):
@@ -214,6 +221,9 @@ class AtriContext:
 
     def terminate(self):
         return self.state.terminate(self)  # 停止线程
+    
+    def play(self, id):
+        return self.state.play(self, id)    #播放歌曲
 
     @property
     def identify(self):

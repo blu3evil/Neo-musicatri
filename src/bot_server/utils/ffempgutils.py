@@ -1,0 +1,2 @@
+class FFempegUtils:
+    pass

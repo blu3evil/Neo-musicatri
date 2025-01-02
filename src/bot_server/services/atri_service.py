@@ -24,6 +24,9 @@ class AtriService:
     @staticmethod
     def terminate_atri():
         return atri_context.terminate()
+    @staticmethod
+    def playsongbyid(id):
+        return atri_context.play(id)
 
 atri_service = AtriService()
 
