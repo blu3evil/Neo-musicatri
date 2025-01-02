@@ -1,13 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.mysql import JSON
+from api_server.api_server_context import context
 from flask import Flask
 
-db = SQLAlchemy()
+db = context.db
 
-def init(app: Flask, database: SQLAlchemy):
-    global db
-    db = database
-
+def init(app: Flask):
     with app.app_context():
         db.create_all()
 

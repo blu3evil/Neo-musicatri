@@ -2,11 +2,17 @@
 from flask import Blueprint, jsonify, request
 
 from api_server.clients import discord_oauth
-from api_server.app_context import cache, session, config, ConfigKey, locales
+from api_server.api_server_context import context, ApiServerConfigKey
 from api_server.services.auth_service import auth_service
 
 auth_bp_v1 = Blueprint('auth_bp_v1', __name__, url_prefix='/api/v1/auth')
-redirect_uri = config.get(ConfigKey.DISCORD_OAUTH_REDIRECT_URI)
+
+cache = context.cache
+session = context.session
+config = context.config
+locale = context.locale
+
+redirect_uri = config.get(ApiServerConfigKey.DISCORD_OAUTH_REDIRECT_URI)
 
 # 登入接口，检测用户是否登入，如果已经登入那么返回用户数据，否则返回重定向url指引用户登入
 @auth_bp_v1.route('/login', methods=['GET'])
@@ -47,7 +53,7 @@ def login():
               example: 'Forbidden'
               description: 用户不具备登入的权限
     """
-    _ = locales.get()
+    _ = locale.get()
     return jsonify({ 'message': _('Login success') })  # 登录成功
 
 
@@ -98,7 +104,7 @@ def authorize():
       400:
         description: 参数错误
     """
-    _ = locales.get()
+    _ = locale.get()
     code = request.get_json().get('code')
     if not code: return jsonify({ 'message': _('invalid argument') }), 403  # 参数错误
 
@@ -131,7 +137,7 @@ def verify_login():
       403:
         description: 用户权限不足（至少需要用户级别权限）
     """
-    _ = locales.get()
+    _ = locale.get()
     return jsonify({ 'message': _('Logged in') })  # 认证通过
 
 
@@ -159,7 +165,7 @@ def verify_role(role):
       403:
         description: 用户权限不足
     """
-    _ = locales.get()
+    _ = locale.get()
     user_id = session.get('user_id')
     result = auth_service.verify_role(user_id, role)  # 校验用户权限
     return result.as_response()

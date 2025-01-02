@@ -284,6 +284,7 @@ class ApplicationContextV1:
     app: Flask  # 应用
     cache: Cache  # 缓存
     socketio: SocketIO  # 长连接
+    session = session  # 会话
 
     def __init__(self, namespace):
         self.namespace = namespace

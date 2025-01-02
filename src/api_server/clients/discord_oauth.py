@@ -4,13 +4,15 @@ from requests.exceptions import SSLError
 from requests_oauthlib import OAuth2Session
 from werkzeug.exceptions import InternalServerError, BadRequest
 
-from api_server.app_context import config, ConfigKey
+from api_server.api_server_context import context, ApiServerConfigKey
 
-api_endpoint = config.get(ConfigKey.DISCORD_API_ENDPOINT)
-client_id = config.get(ConfigKey.DISCORD_OAUTH_CLIENT_ID)
-client_secret = config.get(ConfigKey.DISCORD_OAUTH_CLIENT_SECRET)
-redirect_uri = config.get(ConfigKey.DISCORD_OAUTH_REDIRECT_URI)
-scope = config.get(ConfigKey.DISCORD_OAUTH_SCOPE)
+config = context.config
+
+scope = config.get(ApiServerConfigKey.DISCORD_OAUTH_SCOPE)
+client_id = config.get(ApiServerConfigKey.DISCORD_OAUTH_CLIENT_ID)
+redirect_uri = config.get(ApiServerConfigKey.DISCORD_OAUTH_REDIRECT_URI)
+api_endpoint = config.get(ApiServerConfigKey.DISCORD_API_ENDPOINT)
+client_secret = config.get(ApiServerConfigKey.DISCORD_OAUTH_CLIENT_SECRET)
 
 def refresh_token(_refresh_token) -> dict:
     """

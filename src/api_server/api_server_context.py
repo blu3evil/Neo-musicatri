@@ -69,7 +69,7 @@ class ApiServerContext(ApplicationContextV1):
     def init_models(self):
         self.db.init_app(self.app)
         import api_server.domain.models as models
-        models.init(self.app, self.db)
+        models.init(self.app)
 
     def init_views(self):
         """ 初始化路由 """
@@ -86,6 +86,3 @@ class ApiServerContext(ApplicationContextV1):
 context = ApiServerContext()
 context.initialize()
 context.init_socketio()
-
-if __name__ == '__main__':
-    context.run_werkzeug()

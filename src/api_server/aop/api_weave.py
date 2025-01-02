@@ -1,7 +1,8 @@
 from functools import wraps
 from flask import request
-from api_server.app_context import log
+from api_server.api_server_context import context
 
+logger = context.logger
 
 class AOP:
     # todo : 记录请求URL地址 记录请求方法
@@ -34,7 +35,7 @@ class AOP:
 
                 # 将所有日志信息整合并记录
                 log_message = " | ".join(logging_info)
-                log.info(f"route logging: {route_path} : {log_message}")
+                logger.info(f"route logging: {route_path} : {log_message}")
                 # 执行原始路由逻辑
                 return func(*args, **kwargs)
             return wrapper
@@ -54,7 +55,7 @@ class AOP:
 
                 end_time = time.time()  # 记录结束时间
                 time_consuming = end_time - start_time  # 记录耗时
-                log.info(f"route time consuming: {route_path} : {time_consuming}.6f seconds")
+                logger.info(f"route time consuming: {route_path} : {time_consuming}.6f seconds")
                 return response
             return wrapper
         return decorator
@@ -76,7 +77,7 @@ class AOP:
 
                 if time_consuming > threshold:
                     # 若超出时间阈值则记录日志
-                    log.info(f"route_timeout: {route_path} : {time_consuming} seconds, higher than setting threshold {threshold} seconds")
+                    logger.info(f"route_timeout: {route_path} : {time_consuming} seconds, higher than setting threshold {threshold} seconds")
 
                 return response
             return wrapper
@@ -95,7 +96,7 @@ class AOP:
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
-                log.info(f"route_event_triggered: {route_path} : {event_name}")
+                logger.info(f"route_event_triggered: {route_path} : {event_name}")
                 before_execute()  # 执行前置函数
                 response = func(*args, **kwargs)  # 执行路由逻辑
                 after_execute()  # 执行后置函数

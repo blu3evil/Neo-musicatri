@@ -4,11 +4,14 @@
 from flask_socketio import SocketIO, disconnect, emit
 
 from flask import request
-from api_server.app_context import session, log
+from api_server.api_server_context import context
 from api_server.services import auth_service
 from events import SocketioEvent
 
 session_sid_name = 'admin_sid'
+
+session = context.session
+logger = context.logger
 
 # 初始化用户长连接
 def init(socketio: SocketIO):
@@ -30,12 +33,12 @@ def init(socketio: SocketIO):
             return
 
         session[session_sid_name] = str(request.sid)  # 记录用户sid
-        log.info(f'admin socket connected, admin sid: {session.get(session_sid_name)}')
+        logger.info(f'admin socket connected, admin sid: {session.get(session_sid_name)}')
         emit(SocketioEvent.CONNECT_ACCEPT, result.as_dict())
 
 
     @socketio.on('disconnect', namespace='/socket/admin')
     def admin_disconnect():
         """ 客户端中断websocket连接 """
-        log.info(f'admin socket disconnected, admin sid: {session.get(session_sid_name)}')
+        logger.info(f'admin socket disconnected, admin sid: {session.get(session_sid_name)}')
         session.pop(session_sid_name, None)  # 清除sid

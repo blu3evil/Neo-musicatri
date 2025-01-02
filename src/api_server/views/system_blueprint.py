@@ -6,11 +6,14 @@ from datetime import time, datetime
 from api_server.services.auth_service import auth_service
 from flask import Blueprint, jsonify
 import time, math
-from api_server.app_context import cache, config, ConfigKey
+from api_server.api_server_context import context, ApiServerConfigKey
 
 status_bp_v1 = Blueprint('status_bp_v1', __name__, url_prefix='/api/v1/system')
 start_time = time.time()
 created_at = int(datetime.now().timestamp())
+
+cache = context.cache
+config = context.config
 
 @status_bp_v1.route('/health', methods=['GET'])
 def health():
@@ -82,8 +85,8 @@ def info():
     """
     return jsonify({
         'data': {
-            'name': config.get(ConfigKey.APP_INFO_NAME),
-            'version': config.get(ConfigKey.APP_INFO_VERSION),
-            'description': config.get(ConfigKey.APP_INFO_DESCRIPTION),
+            'name': config.get(ApiServerConfigKey.APP_INFO_NAME),
+            'version': config.get(ApiServerConfigKey.APP_INFO_VERSION),
+            'description': config.get(ApiServerConfigKey.APP_INFO_DESCRIPTION),
         }
     })  # 成功获取服务器数据

@@ -4,9 +4,11 @@ from flask import Blueprint
 
 from api_server.services.auth_service import auth_service
 from api_server.services.user_service import user_service
-from api_server.app_context import session
+from api_server.api_server_context import context
 
 user_bp_v1 = Blueprint('user_bp_v1', __name__, url_prefix='/api/v1/users')
+
+session = context.session
 
 @user_bp_v1.route('/me/details', methods=['GET'])
 @auth_service.require_login

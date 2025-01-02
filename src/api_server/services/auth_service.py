@@ -5,9 +5,14 @@ from oauthlib.oauth2 import InvalidGrantError
 
 from common import Result
 from api_server.clients import discord_oauth
-from api_server.app_context import session, cache, locales
+
+from api_server.api_server_context import context
 from api_server.services.user_service import user_service
 from api_server.domain.models import copy_properties, DiscordUser, to_dict, Role, db
+
+session = context.session
+cache = context.cache
+locale = context.locale
 
 class AuthService:
     """ 认证服务 """
@@ -18,7 +23,7 @@ class AuthService:
         如果当前用户没有登入而让用户接触到下面的api，那么会造成一些不可预期的后果
         :param code: 用户授权码
         """
-        _ = locales.get()
+        _ = locale.get()
         try:
             user_token = discord_oauth.fetch_token(code)      # 拉取用户授权凭证
             access_token = user_token.get('access_token')
@@ -58,7 +63,7 @@ class AuthService:
     @staticmethod
     def user_logout(user_id) -> Result:
         """ 登出当前用户 """
-        _ = locales.get()
+        _ = locale.get()
         session.clear()  # 清理session
         user_service.clear_cache(user_id)  # 清理缓存
         return Result(200, _('User logged out'))  # 用户登出成功
@@ -73,7 +78,7 @@ class AuthService:
         """
         if role == 'anonymous':
             return Result(200)  # 允许匿名
-        _ = locales.get()
+        _ = locale.get()
         role = db.session.query(Role).filter_by(name=role).first()
         if not role: return Result(500, _('role not found'))
 
@@ -87,7 +92,7 @@ class AuthService:
     @staticmethod
     def verify_login(user_id) -> Result:
         """ 当前用户是否登入 """
-        _ = locales.get()
+        _ = locale.get()
         session['test'] = 'helo'
         session_token = session.get('discord_oauth_token', {})
         if not session_token:

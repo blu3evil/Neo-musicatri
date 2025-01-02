@@ -11,9 +11,13 @@ from events import SocketioEvent, AtriEvent
 from pyee.executor import ExecutorEventEmitter
 from threading import Thread
 
-from bot_server.app_context import config, ConfigKey, log, locales
+from bot_server.bot_server_context import context, BotServerConfigKey
 
-bot_token = config.get(ConfigKey.DISCORD_BOT_TOKEN)  # 机器人认证token
+config = context.config  # 配置
+logger = context.logger
+locale = context.locale
+
+bot_token = config.get(BotServerConfigKey.DISCORD_BOT_TOKEN)  # 机器人认证token
 
 class Atri(commands.AutoShardedBot):
     """ 音乐机器人——音乐亚托莉(Music Atri) """
@@ -33,30 +37,30 @@ class AtriState:
         # from core import socketio
         # socketio.start_background_task(target=socketio.emit, event=SocketioEvent.ATRI_STATE_CHANGE, data=self.identify, namespace='/socket/admin')
         # socketio.emit(SocketioEvent.ATRI_STATE_CHANGE, self.identify, namespace='/socket/admin')
-        log.debug(f'musicatri change status to {self.identify}')
+        logger.debug(f'musicatri change status to {self.identify}')
 
     def fadeout(self, ctx: AtriContext):
         pass
 
     # 启动亚托莉，用于启动机器人
     def start(self, ctx: AtriContext) -> Result:
-        _ = locales.get()
+        _ = locale.get()
         return Result(400, _('unsupported operation'))
 
     # 停止亚托莉，用于关闭机器人
     def stop(self, ctx: AtriContext) -> Result:
-        _ = locales.get()
+        _ = locale.get()
         return Result(400, _('unsupported operation'))
 
     # 初始化，在应用启动时初始化机器人线程
     def initialize(self, ctx: AtriContext) -> Result:
         """ 初始化实例 """
-        _ = locales.get()
+        _ = locale.get()
         return Result(400, _('unsupported operation'))
 
     # 用于线程退出的时候清理资源
     def terminate(self, ctx: AtriContext) -> Result:
-        _ = locales.get()
+        _ = locale.get()
         return Result(400, _('unsupported operation'))
 
 
@@ -73,9 +77,9 @@ class BotThreadIdle(AtriState):
 
         ctx.bot_thread = Thread(target=thread_target)
         ctx.bot_thread.start()
-        log.debug('bot thread start successfully')
+        logger.debug('bot thread start successfully')
         ctx.update_state(BotIdle())  # 机器人线程准备就绪，执行亚托莉初始化
-        _ = locales.get()
+        _ = locale.get()
         return Result(200, message=_('start atri thread'))
 
 
@@ -112,7 +116,7 @@ class BotStopped(AtriState):
 
         @ctx.bot_instance.event  # 启动成功回调
         async def on_ready():
-            log.info(f"musicatri name: {ctx.bot_instance.user}; musicatri id: {ctx.bot_instance.user.id}")
+            logger.info(f"musicatri name: {ctx.bot_instance.user}; musicatri id: {ctx.bot_instance.user.id}")
             ctx.bot_eventbus.emit(AtriEvent.READY)
             ctx.update_state(BotStarted())  # 启动状态
 
@@ -127,11 +131,11 @@ class BotStopped(AtriState):
 
         asyncio.run_coroutine_threadsafe(async_start(), ctx.bot_event_loop)
 
-        _ = locales.get()
+        _ = locale.get()
         return Result(200, _("submit musicatri launching workflow task"))  # 执行亚托莉启动工作流
 
     def stop(self, ctx: AtriContext):
-        _ = locales.get()
+        _ = locale.get()
         return Result(200, _("musicatri already stopped"))
 
     def terminate(self, ctx: AtriContext):
@@ -144,14 +148,14 @@ class BotStarted(AtriState):
 
     """ 亚托莉已启动 """
     def start(self, ctx: AtriContext) -> Result:
-        _ = locales.get()
+        _ = locale.get()
         return Result(200, _('musicatri already started'))
 
     def stop(self, ctx: AtriContext) -> Result:
         """ 停止亚托莉 """
         ctx.update_state(BotStopping())   # 切换到stopping状态
         async def async_stop():  # 异步停止亚托莉
-            _ = locales.get()
+            _ = locale.get()
             try:
                 await ctx.bot_instance.close()  # 尝试关闭亚托莉
                 # ctx.bot_eventbus.emit(AtriEvent.CLOSE)
@@ -162,7 +166,7 @@ class BotStarted(AtriState):
                 ctx.bot_eventbus.emit(AtriEvent.DISCONNECT_FAILED, str(e))
                 ctx.update_state(BotStarted())  # 恢复到原始状态
 
-        _ = locales.get()
+        _ = locale.get()
         asyncio.run_coroutine_threadsafe(async_stop(), ctx.bot_event_loop)  # 停止机器人协程
         return Result(200, _("submit musicatri shutdown workflow task"))  # 执行亚托莉停止工作流
 
@@ -173,11 +177,11 @@ class BotStopping(AtriState):  # 正在停止
 
     """ 亚托莉等待状态 """
     def start(self, ctx: AtriContext):
-        _ = locales.get()
+        _ = locale.get()
         return Result(400, _('musicatri is still stopping'))
 
     def stop(self, ctx: AtriContext):
-        _ = locales.get()
+        _ = locale.get()
         return Result(400, _('musicatri is still stopping'))
 
 
@@ -233,17 +237,17 @@ class AtriContext:
             from api_server.sockets.dispatcher import admin_socket_dispatcher
             # socketio.start_background_task(target=socketio.emit, event=SocketioEvent.ATRI_STATE_CHANGE, data=self.identify, namespace='/socket/admin')
             admin_socket_dispatcher.emit(SocketioEvent.ATRI_STATE_CHANGE, self.identify)
-            log.debug(f'musicatri change status to {identify}')
+            logger.debug(f'musicatri change status to {identify}')
         self.bot_eventbus.on(AtriEvent.STATE_CHANGE, handle_atri_state_change)
 
-        self.bot_eventbus.on(AtriEvent.CONNECT, lambda: log.info("musicatri connect"))
+        self.bot_eventbus.on(AtriEvent.CONNECT, lambda: logger.info("musicatri connect"))
         # self.bot_eventbus.on(AtriEvent.DISCONNECT, lambda: log.info("musicatri disconnect"))
         # self.bot_eventbus.on(AtriEvent.RECONNECT, lambda: log.info("musicatri reconnect"))
-        self.bot_eventbus.on(AtriEvent.READY, lambda: log.info("musicatri ready"))
+        self.bot_eventbus.on(AtriEvent.READY, lambda: logger.info("musicatri ready"))
         # self.bot_eventbus.on(AtriEvent.CLOSE, lambda: log.info("musicatri close"))
 
-        self.bot_eventbus.on(AtriEvent.CONNECT_FAILED, lambda message: log.error(message))
-        self.bot_eventbus.on(AtriEvent.DISCONNECT_FAILED, lambda message: log.error(message))
+        self.bot_eventbus.on(AtriEvent.CONNECT_FAILED, lambda message: logger.error(message))
+        self.bot_eventbus.on(AtriEvent.DISCONNECT_FAILED, lambda message: logger.error(message))
 
     def init_bot_instance(self, command_prefix: str= 'a', intents: Intents=Intents.all()):
         """ 初始化上下文的亚托莉对象 """

@@ -72,7 +72,7 @@ application:
       file-directory: cache  # temp/cache
   wsgi-server:
     host: 0.0.0.0
-    port: 5000
+    port: 5001
     werkzeug:
       debug-mode: false
       log-output: false
@@ -87,10 +87,8 @@ application:
       accesslog: gunicorn/gunicorn_access.log
       errorlog: gunicorn/gunicorn_error.log
       loglevel: warning
-services:
-  discord:
-    bot:
-      token:
+bot:
+  token: token
 ---
 environment: docker  # dev
 application:

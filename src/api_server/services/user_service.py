@@ -1,4 +1,4 @@
-from api_server.app_context import cache, locales
+from api_server.api_server_context import context
 from api_server.domain.models import DiscordUser, to_dict, db
 from common import Result
 
@@ -6,10 +6,13 @@ users_prefix = 'users'
 roles_prefix = 'roles'
 info_prefix = 'info'
 
+cache = context.cache
+locale = context.locale
+
 class UserService:
     @staticmethod
     def get_info(user_id):
-        _ = locales.get()
+        _ = locale.get()
         user_info = cache.get(f'{users_prefix}:{user_id}:{info_prefix}')
         if user_info: return Result(200, _('hit cache'), user_info)
         user = db.session.query(DiscordUser).get(user_id)  # 缓存不存在，从数据库查询
@@ -21,7 +24,7 @@ class UserService:
 
     @staticmethod
     def get_roles(user_id):
-        _ = locales.get()
+        _ = locale.get()
         role_names = cache.get(f'{users_prefix}:{user_id}:{roles_prefix}')
         if role_names: return Result(200, _('hit cache'), role_names)
 
