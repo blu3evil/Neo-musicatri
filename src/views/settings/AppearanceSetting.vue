@@ -26,7 +26,9 @@ export default {
     })
 
     onMounted(() => {
-      store.dispatch('setActiveSettingMenuItem', 'appearance')
+      store.dispatch('setHistory', {
+        name: 'settingsHistory', history: 'appearance'
+      })
     })
 
     return {

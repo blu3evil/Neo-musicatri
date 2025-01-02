@@ -38,11 +38,13 @@ export default {
       :index="item['name']"
       :class="['menu-item', activeMenuItem === item['name']? 'is-active': '' ]"
       @click="onMenuItemSelected(item['name'])">
-      <span>{{item['span']}}</span>
+<!--      <el-badge :value="1" :offset="[0, 5]">{{item['span']}}</el-badge>-->
+      <span>{{item['span']}}</span>  <!-- todo: 完成徽章样式 -->
     </el-menu-item>
   </el-menu>
 </template>
 <style scoped>
+
 /* 导航栏本身 */
 .el-menu {
   background-color: var(--navbar-bg-color);

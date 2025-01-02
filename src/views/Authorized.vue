@@ -10,7 +10,7 @@ import { AbstractState, StateContext } from '@/pattern.js'
 import { authService } from '@/services/auth-service.js'
 import { navigator } from '@/router.js'
 import { config } from '@/config.js'
-import { userSocketContext } from '@/sockets/user-socket.js'
+import { useStore } from 'vuex'
 
 export default {
   components: {
@@ -21,6 +21,7 @@ export default {
 
   setup() {
     const { t } = useI18n() // 本地化
+    const store = useStore()
     let context = null
 
     const bgRef = useTemplateRef('bg-ref')
@@ -64,7 +65,7 @@ export default {
         const result = await authService.userLogin()
         if (result.isSuccess()) {
           // 登陆成功后建立socketio连接
-          context.setState(new BuildSocketConnectionState())
+          context.setState(new loadCurrentUserDetailsState())
         } else {
           ErrorState.handleErrorResult(result)
         }
@@ -75,17 +76,18 @@ export default {
       }
     }
 
-    // 建立socketio连接
-    class BuildSocketConnectionState extends AbstractState {
+    // 加载当前用户信息
+    class loadCurrentUserDetailsState extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(
-          t('view.UserLogin.build_socket_connection'), true)
+          t('view.UserLogin.load_user_details'), true)
 
-        const result = await userSocketContext.connect()  // 尝试建立socketio连接
+        // 尝试建立socketio连接
+        const result = await store.dispatch('loadCurrentUserDetails')
 
         if (result.isSuccess()) {
           // 连接建立成功，将用户引导到主页
-          await navigator.toWorkspace()
+          await navigator.toWorkspaceHistory()
         } else {
           // 其他返回码使用分类处理器
           ErrorState.handleErrorResult(result)
@@ -211,14 +213,14 @@ export default {
       addRetryConnectLink() {
         panelRef.value.appendEventLink(
           t('view.UserLogin.retry_connect'),
-          () => context.setState(new BuildSocketConnectionState())
+          () => context.setState(new loadCurrentUserDetailsState())
           )
       }
     }
 
     class ServerErrorState extends ErrorState {
-      constructor(_message) {
-        super(t('view.UserLogin.server_error'), _message)
+      constructor(message) {
+        super(t('view.UserLogin.server_error'), message)
       }
       enter(context) {
         super.enter(context)
@@ -233,8 +235,8 @@ export default {
     }
 
     class UnknownErrorState extends ErrorState {
-      constructor(_message) {
-        super(t('view.UserLogin.unknown_error'), _message)
+      constructor(message) {
+        super(t('view.UserLogin.unknown_error'), message)
       }
 
       enter(context) {

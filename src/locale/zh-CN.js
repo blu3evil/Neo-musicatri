@@ -25,9 +25,6 @@ export default {
       'about_setting': '关于',
       'atri_setting': '亚托莉设定'
     },
-    'workspace-sidebar': {
-      'dashboard': '仪表盘'
-    },
     'user-panel': {
       'more_settings': '应用设置',
       'account_logout': '账户登出',
@@ -35,20 +32,39 @@ export default {
     },
     'user-avatar': {
       'fetch_avatar_failed': '获取用户头像失败',
+    },
+    'loading-string': {
+      'on-loading': '加载中'
+    },
+    'atri-status-panel': {
+      'atri_stopped': '未运行',
+      'atri_started': '运行中',
+      'atri_starting': '启动中',
+      'atri_stopping': '停止中',
+      'atri_failed': '状态异常',
     }
   },
   'view': {
     'workspace': {
+      'Workspace': {
+        'portal': '指南针',
+        'quick_start': '快速开始',
+        'admin_function': '管理员功能',
+        'app-management': '应用管理',
+        'user_management': '用户管理',
+        'musiclib_management': '曲库管理'
+      },
+      'Portal': {},
       'Dashboard': {
         'overview': '应用总览',
-        'user_management': '用户管理',
         'log_monitoring': '日志监控',
       },
-      'Workspace': {
-        'dashboard': '仪表盘',
-        'portal': '传送门',
-        'quick_start': '快速开始',
-        'admin_function': '管理员功能'
+      'UserManagement': {
+        'overview': '用户总览',
+        'user_management': '用户管理',
+      },
+      'MusiclibManagement': {
+        'overview': '曲库总览'
       }
     },
     'AppearanceSetting': {
@@ -73,12 +89,21 @@ export default {
       'system_name': '名称',
       'system_version': '版本',
       'system_description': '描述',
-      'dashboard_connection': '仪表盘',
-      'connect_dashboard': '连接仪表盘',
-      'disconnect_dashboard': '断开仪表盘',
-      'connected': '已连接',
-      'connecting': '连接中',
-      'unconnected': '未连接'
+      'dashboard_connection': '管理员',
+      'connect_dashboard': '提权',
+      'disconnect_dashboard': '降权',
+      'button_disable': '不可用',
+      'connected': '已提权',
+      'connecting': '提权中',
+      'disconnecting': '降权中',
+      'disconnected': '未提权',
+      'discord_logo': '我们的Discord频道',
+      'github_logo': '项目源代码',
+      'admin_function': '管理员功能',
+      'admin_function_enable_success': '管理员功能开启',
+      'admin_function_enable_failed': '管理员功能开启失败: {reason}',
+      'admin_function_disable_success': '管理员功能关闭',
+      'admin_function_disable_failed': '管理员功能关闭失败: {reason}'
     },
     'UserLoginPending': {
       'invalid_auth_code': '非法的认证code参数'
@@ -110,7 +135,7 @@ export default {
       'unknown_error': '未知异常',
       'server_error': '服务端异常',
       'client_error': '客户端异常',
-      'build_socket_connection': '建立长连接'
+      'load_user_details': '加载用户数据'
     },
     'UserLoginCallback': {
       'retry_authorize': '重新授权',
@@ -132,14 +157,22 @@ export default {
     },
   },
   'sockets': {
+    'socket-context': {
+      'timeout': '等待超时',
+    },
     'admin-socket': {
-      'connect_success': '仪表盘连接成功，请多指教，夏生先生!',
-      'disconnect_success': '仪表盘连接中断，晚安，夏生先生~',
-      'connect_timeout': '仪表盘连接失败，连接超时',
-      'connect_shutdown': '管理员长连接被神秘力量中断了...'
+      'disconnect_failed': '管理员连接断开失败: {reason}',
+      'connect_failed': '管理员功能连接失败: {reason}',
+      'connect_success': '管理员功能开启',
+      'disconnect_success': '管理员功能关闭',
+      'connect_shutdown': '管理员连接被神秘力量中断了...',
+      'disconnect_timeout': '管理员连接断开失败，等待超时',
+      'atri_state_change': '亚托莉状态变更: {identify}'
     },
     'user-socket': {
-      'connect_shutdown': '用户长连接被神秘力量中断了...'
+      'disconnect_failed': '用户连接断开失败: {reason}',
+      'connect_shutdown': '用户长连接被神秘力量中断了...',
+      'disconnect_timeout': '用户连接断开失败，等待超时',
     }
   },
   'utils': {
@@ -147,10 +180,11 @@ export default {
       'toast_message_error_title': '有些事情不对劲!',
       'toast_message_success_title': '执行成功',
       'toast_message_warning_title': '严重警告',
-      'toast_message_info_title': '友善提示',
+      'toast_message_info_title': '提示',
       'popup_message_warning_title': '这是一条警告',
       'popup_message_warning_confirm': '确定',
-      'popup_message_warning_cancel': '取消'
+      'popup_message_warning_cancel': '取消',
+      'system_info_load_failed': '服务器信息获取失败',
     }
   },
 }

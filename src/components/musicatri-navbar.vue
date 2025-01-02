@@ -4,7 +4,6 @@ import UserPanel from '@/components/user-panel.vue'
 import UserAvatar from '@/components/user-avatar.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useStore } from 'vuex'
 import { navigator } from '@/router.js'
 import { Tools, Loading } from '@element-plus/icons-vue'
 import { authService } from '@/services/auth-service.js'
@@ -18,14 +17,11 @@ export default {
   },
   setup() {
     const { t } = useI18n()  // 本地化
-    const store = useStore()  // 存储
     const isAvatarActive = ref(false)
-    const userSocketStatus = computed(() => store.getters.userSocketStatus)
-    const userLoginStatus = computed(() => authService.verifyLogin())
+    const isLogin = computed(() => authService.checkLogin())
 
     return {
-      userLoginStatus,
-      userSocketStatus,
+      isLogin,
       isAvatarActive,
       navigator,
       t, // 本地化
@@ -41,7 +37,7 @@ export default {
     :ellipsis="false"
   >
     <!-- musicatriLOGO -->
-    <el-menu-item index="0" @click="navigator.toWorkspace()">
+    <el-menu-item index="0" @click="navigator.toWorkspaceHistory()">
       <img
         style="width: 150px; margin-bottom: 2px"
         src="/src/assets/common-navbar/navbar-logo.png"
@@ -51,7 +47,7 @@ export default {
     </el-menu-item>
 
     <!-- 用户头像 -->
-    <el-menu-item index="1" v-if="userLoginStatus">
+    <el-menu-item index="1" v-if="isLogin">
       <el-popover
         placement="bottom-start"
         :width="340"

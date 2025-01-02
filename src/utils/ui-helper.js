@@ -1,6 +1,8 @@
 import { i18n } from '@/locale/index.js'
 import { ElNotification } from 'element-plus'
 import { ElMessageBox } from 'element-plus'
+import { Events } from '@/events.js'
+import { globalEventbus } from '@/mitt/global-eventbus.js'
 
 export class PopupMessage {
   static warning(
@@ -56,3 +58,8 @@ export class ToastMessage {
     })
   }
 }
+
+// 管理员socketio连接超时
+
+
+

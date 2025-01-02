@@ -29,7 +29,7 @@ export default {
     const addReturnMainLink = () => {
       panelRef.value.appendEventLink(
         t('view.NotFound.return_index'),
-        async () => await navigator.toWorkspace()
+        async () => await navigator.toWorkspaceHistory()
         )
     }
 

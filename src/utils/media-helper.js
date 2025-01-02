@@ -26,4 +26,26 @@ class AudioPlayer {
   }
 }
 
+class AtriAudio {
+  constructor () {
+    this.player = new AudioPlayer()
+    this.highPerformanceWAVs = [
+      '/src/assets/about-setting/high-performance-1.WAV',
+      '/src/assets/about-setting/high-performance-2.WAV',
+      '/src/assets/about-setting/high-performance-3.WAV',
+      '/src/assets/about-setting/high-performance-4.WAV',
+      '/src/assets/about-setting/high-performance-5.WAV',
+      '/src/assets/about-setting/high-performance-6.WAV',
+      '/src/assets/about-setting/high-performance-7.WAV',
+      '/src/assets/about-setting/high-performance-8.WAV',
+      '/src/assets/about-setting/high-performance-9.WAV',
+    ]
+  }
+
+  playHighPerformances() {
+    this.player.playRandomly(this.highPerformanceWAVs)
+  }
+}
+
+export const atriAudio = new AtriAudio()
 export const audioPlayer = new AudioPlayer()

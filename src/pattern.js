@@ -15,14 +15,15 @@ export class AbstractState {
 }
 
 export class StateContext {
-  constructor (state=null) {
-    this.state = state
-  }
   // 设置状态
   setState (state) {
-    if (this.state !== null) this.state.fadeout(this)  // 状态退出
+    if (this.state !== null && this.state !== undefined) {
+      this.state.fadeout(this)  // 状态退出
+    }
     this.state = state  // 切换状态
-    if (this.state !== null) this.state.enter(this)  // 切入状态
+    if (this.state !== null && this.state !== undefined) {
+      this.state.enter(this)  // 切入状态
+    }
   }
   // 获得当前状态
   getState () {

@@ -7,10 +7,7 @@ import { useI18n } from 'vue-i18n'
 import { useStore } from 'vuex'
 import { computed } from 'vue'
 import { navigator } from '@/router.js'
-import { PopupMessage, ToastMessage } from '@/utils/ui-helper.js'
-import { authService } from '@/services/auth-service.js'
-import { userSocketContext } from '@/sockets/user-socket.js'
-import { adminSocketContext } from '@/sockets/admin-socket.js'
+import { PopupMessage } from '@/utils/ui-helper.js'
 
 export default {
   components: {
@@ -28,21 +25,7 @@ export default {
     const onLogoutClick = () => {
       PopupMessage.warning(t('component.user-panel.confirm_logout'))
         .then(async () => {
-          // 执行用户登出
-          const result = await authService.userLogout()
-          if (result.isSuccess()) {  // 登出成功
-            // 断开user socket连接
-            const result1 = await userSocketContext.disconnect()
-            if (!result1.isSuccess()) ToastMessage.error(result.message)
-            // 断开admin socket连接
-            const result2 = await adminSocketContext.disconnect()
-            if (!result2.isSuccess()) ToastMessage.error(result.message)
-            // 清除用户数据
-            await store.dispatch('clearCurrentUser')
-            await navigator.toLogin()  // 跳转到login页面
-          } else {
-            ToastMessage.error(result.message)  // 登出失败
-          }
+          await store.dispatch('logoutCurrentUser')  // 执行用户登出
         }).catch(() => {})
     }
 
@@ -70,7 +53,7 @@ export default {
 
   <el-row style="margin-top: 15px">  <!-- 更多设置 -->
     <el-col :span="24"><div class="text-mini" >
-      <a href="/" class="slide-animation-a" @click.prevent="navigator.toSettingHistory()">
+      <a href="/" class="slide-animation-a" @click.prevent="navigator.toSettingsHistory()">
         <el-icon class="optional-icon"><Tools /></el-icon>
         <span class="optional-label">{{t('component.user-panel.more_settings')}}</span>
       </a>

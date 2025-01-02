@@ -22,10 +22,17 @@
     --popper-hover-bg-color: #ffffff;  /* 弹出框悬浮背景色 */
     --popper-border-color: #595959;  /* 弹出框边框颜色 */
 
+    --switch-bg-color: #424242;  /* 开关背景颜色 */
+    --switch-active-bg-color: #ffffff;  /* 开关激活颜色 */
+    --switch-disable-bg-color: #ffffff;  /* 开关禁用颜色 */
+    --switch-border-color: #2f2f2f;  /* 开关边框颜色 */
+    --switch-btn-bg-color: #ffffff;  /* 开关按钮颜色 */
+
     --a-color: #e0e0e0;
     --a-color-2: #e0e0e0;
     --navbar-color: #e0e0e0;
     --navbar-bg-color: #e0e0e0;
+
     /* 用户登录页 */
     --redirect-card-bg-color: #e0e0e0;
     --box-shadow: 2px 2px 7px rgba(0, 0, 0, 0.7);  /* 默认阴影 */
@@ -326,6 +333,33 @@ body {
     font-size: var(--text-small);
     margin-left: 10px;
     margin-bottom: 5px;
+}
+
+/* 卡片头 */
+.el-card__header {
+   /*border-bottom: 1px solid var(--divider-color) !important;*/
+    border-bottom: none !important;
+    padding: 10px 0 25px 19px !important;
+}
+
+/* 卡片体 */
+.el-card__body {
+    padding: 0 0 0 20px !important;
+}
+
+/* 开关 */
+.el-switch__core {
+    /*background-color: var(--popper-bg-color) !important;*/
+    border-color: var(--popper-border-color) !important;
+}
+
+.el-switch {
+    --el-switch-on-color: var(--switch-active-bg-color) !important;
+    --el-switch-off-color: var(--switch-bg-color) !important;
+}
+
+.el-switch__core .el-switch__action {
+    background-color: var(--switch-btn-bg-color) !important;
 }
 
 

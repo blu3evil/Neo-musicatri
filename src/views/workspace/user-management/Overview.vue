@@ -7,17 +7,15 @@ export default {
     const store = useStore()
     onMounted(() => {
       store.dispatch('setHistory', {
-        name: 'workspaceHistory', history: 'portal'
+        name: 'userManagementHistory', history: 'overview'
       })
     })
   }
 }
 </script>
-
 <template>
-  <h1>Portal</h1>
+  <h1>Users Overview</h1>
 </template>
-
 <style scoped>
 
 </style>

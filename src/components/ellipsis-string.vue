@@ -1,6 +1,5 @@
 <script>
-import { onMounted, ref, watch, computed } from 'vue'
-
+import { onMounted, ref, watch, computed, onUnmounted } from 'vue'
 export default {
   props: {
     message: {
@@ -28,17 +27,34 @@ export default {
     const ellipsisStr = ref('.')  // 字符串加载动画
     let ellipsisIntervalId = ref('')
     const message = computed(() => props.message)
+    const ellipsis = computed(() => props.ellipsis)
+
+    const reloadEllipsis = () => {
+      // 设置字符串循环
+      clearTimeout(ellipsisIntervalId)
+      if (props.ellipsis) {
+        ellipsisStr.value = '.'
+        ellipsisIntervalId = setInterval(() => {
+          ellipsisStr.value = ellipsisStr.value.length < props.ellipsisLength ?
+            ellipsisStr.value + '.' : '.'
+        }, props.interval)
+      }
+    }
 
     onMounted(() => {
-      // 设置字符串循环
-      ellipsisIntervalId = setInterval(() => {
-        ellipsisStr.value = ellipsisStr.value.length < props.ellipsisLength ?
-          ellipsisStr.value + '.' : '.'
-      }, props.interval)
+      reloadEllipsis()
+    })
+
+    onUnmounted(() => {
+      clearTimeout(ellipsisIntervalId)
     })
 
     watch(message, (newVal, oldVal) => {
       ellipsisStr.value = '.'
+    })
+
+    watch(ellipsis, (newVal, oldVal) => {
+      reloadEllipsis()
     })
 
     return { ellipsisStr }

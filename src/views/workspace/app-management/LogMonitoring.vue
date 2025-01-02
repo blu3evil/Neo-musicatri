@@ -1,12 +1,14 @@
 <script>
-import { onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { onMounted } from 'vue'
 
 export default {
   setup() {
     const store = useStore()
     onMounted(() => {
-      store.dispatch('setActiveDashboardMenuItem', 'logs')
+      store.dispatch('setHistory', {
+        name: 'appManagementHistory', history: 'logs'
+      })
     })
   }
 }

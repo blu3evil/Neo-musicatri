@@ -12,38 +12,35 @@ export default {
   setup() {
     const { t } = useI18n()
     const store = useStore()
-    const activeDashboardPage = computed(
-      () => store.getters.activeDashboardMenuItem)
+    const activeMenuItem = computed(
+      () => store.getters.history.appManagementHistory)
 
     const onDashboardMenuItemSelected = (name) => {
-      navigator.toDashboard(name)
+      navigator.toAppManagement(name)
     }
 
     const dashboardMenuItems = [
       {
         name: 'overview',
-        path: '/workspace/dashboard/overview',
+        path: '/workspace/app-management/overview',
         span: t('view.workspace.Dashboard.overview'),
       },
       {
-        name: 'users',
-        path: '/workspace/dashboard/users',
-        span: t('view.workspace.Dashboard.user_management'),
-      },
-      {
         name: 'logs',
-        path: '/workspace/dashboard/logs',
+        path: '/workspace/app-management/logs',
         span: t('view.workspace.Dashboard.log_monitoring'),
       }
     ]
 
     onMounted(() => {
-      store.dispatch('setActiveWorkspaceMenuItem', 'dashboard')
-      navigator.toDashboardHistory()
+      store.dispatch('setHistory', {
+        name: 'workspaceHistory', history: 'app-management'
+      })
+      navigator.toAppManagementHistory()
     })
 
     return {
-      activeDashboardPage,
+      activeMenuItem,
       dashboardMenuItems,
       onDashboardMenuItemSelected
     }
@@ -52,7 +49,7 @@ export default {
 </script>
 <template>
   <CommonNavbar :menu-items="dashboardMenuItems"
-                :active-menu-item="activeDashboardPage"
+                :active-menu-item="activeMenuItem"
                 :on-menu-item-selected="onDashboardMenuItemSelected" />
   <RouterView />
 </template>

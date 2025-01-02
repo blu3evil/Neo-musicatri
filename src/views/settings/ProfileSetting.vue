@@ -9,7 +9,9 @@ export default {
     const { t } = useI18n()
 
     onMounted(() => {
-      store.dispatch('setActiveSettingMenuItem', 'profile')
+      store.dispatch('setHistory', {
+        name: 'settingsHistory', history: 'profile'
+      })
     })
 
     return {

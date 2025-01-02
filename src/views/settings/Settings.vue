@@ -25,12 +25,8 @@ export default {
     // todo: 页面间距过窄时导航栏收缩
     const { t } = useI18n()
     const store = useStore()
-    const activeSettingMenuItem = computed(
-      () => store.getters.activeSettingMenuItem)
-
-    const onSettingMenuItemSelected = (name) => {
-      navigator.toSetting(name)
-    }
+    const activeMenuItem = computed(
+      () => store.getters.history.settingsHistory)
 
     const settingMenuItems = [
       {
@@ -54,8 +50,7 @@ export default {
       t,
       navigator,
       settingMenuItems,
-      activeSettingMenuItem,
-      onSettingMenuItemSelected
+      activeMenuItem,
     }
   }
 }
@@ -64,24 +59,27 @@ export default {
 <template>
   <CommonBackground />
   <MusicatriNavbar />  <!-- 导航栏 -->
-  <div class="app-setting">
+
+  <div class="app-setting">  <!-- 侧边栏 -->
     <div class="sidebar">
       <div class="sidebar-divider-text unselectable">
         {{ t('component.setting-sidebar.atri_setting') }}
       </div>
       <CommonSidebar
         :menu-items="settingMenuItems"
-        :active-menu-item="activeSettingMenuItem"
-        :on-menu-item-selected="onSettingMenuItemSelected" />
+        :active-menu-item="activeMenuItem"
+        :on-menu-item-selected="navigator.toSettings" />
     </div>
+
     <div class="content"><RouterView /></div>  <!-- 设置面板 -->
     <div class="close-btn-area unselectable">
       <el-icon class="close-btn" size="42px"
-               @click="navigator.toWorkspace()">
+               @click="navigator.toWorkspaceHistory()">
         <CircleClose />
       </el-icon>
     </div>
   </div>
+<!--  <el-backtop :right="100" :bottom="100" />-->  <!-- todo: 可能的回到顶部按钮 -->
 </template>
 <style scoped>
 /* 设置页详情 */

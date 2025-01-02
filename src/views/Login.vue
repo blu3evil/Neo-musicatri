@@ -4,15 +4,14 @@ import MusicatriNavbar from '@/components/musicatri-navbar.vue'
 import CommonPanel from '@/components/common-panel.vue'
 import CommonBackground from '@/components/common-background.vue'
 import { useI18n } from 'vue-i18n'
-import { onBeforeUnmount, onMounted, onUnmounted, useTemplateRef } from 'vue'
+import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
 import { navigator } from '@/router.js'
 import { authService } from '@/services/auth-service.js'
 import { systemService } from '@/services/system-service.js'
-import { userSocketContext } from '@/sockets/user-socket.js'
 import { config } from '@/config.js'
+import { useStore } from 'vuex'
 
-// todo: 优化登录逻辑，编写管理员登入，完成登出功能编写
 export default {
   name: 'UserLogin',
   components: {
@@ -22,6 +21,7 @@ export default {
   },
   setup() {
     const { t } = useI18n() // 本地化
+    const store = useStore()
     const panelRef = useTemplateRef('panel-ref') // 面板
     const bgRef = useTemplateRef('bg-ref')
     let context = new StateContext() // 登录状态上下文
@@ -55,8 +55,8 @@ export default {
         panelRef.value.setTitle(t('view.UserLogin.checking_login_status'), true)
         const result = await authService.userLogin()
         if (result.isSuccess()) {
-          // 认证成功，尝试建立socketio连接后跳转到用户主页
-          context.setState(new BuildSocketConnectionState())
+          // 认证成功，加载用户信息
+          context.setState(new LoadUserInfoState())
         } else if (result.code === 401) {
           // 单独处理401错误，此状态码表示用户没有登入，从后端拉取授权链接
           context.setState(new AwaitingRedirectDiscordOauthState())
@@ -69,21 +69,20 @@ export default {
       }
     }
 
-    // 3.建立socketio连接
-    class BuildSocketConnectionState extends AbstractState {
+    // 3.加载用户数据
+    class LoadUserInfoState extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(
-          t('view.UserLogin.build_socket_connection'),
+          t('view.UserLogin.load_user_details'),
           true,
         )
-        const result = await userSocketContext.connect()
+        const result = await store.dispatch('loadCurrentUserDetails')
         if (result.isSuccess()) {
-          await navigator.toWorkspace()  // 连接建立成功，引导用户到工作空间
+          await navigator.toWorkspaceHistory()  // 成功加载用户信息，跳转到主页
         } else {
           ErrorState.handleErrorResult(result)  // 处理异常
         }
       }
-
       fadeout(context) {
         panelRef.value.clearTitle()
       }
@@ -244,10 +243,6 @@ export default {
     // 在组件销毁之前完成panel执行
     onBeforeUnmount(() => {
       context.setState(null)
-    })
-
-    onUnmounted(() => {
-      // healthcheck.stop() // 清理健康检查
     })
   },
 }

@@ -24,20 +24,24 @@ class AuthService {
     return musicatriClient.delete(`${urlPrefix}/logout`)
   }
 
-  // 校验用户登入状态接口
-  verifyLogin() {
-    // 通过socket连接状态判断登录
-    return store.getters.userSocketStatus === 'connected'
+  // 严格权限校验
+  async verifyRole(role) {
+    return musicatriClient.get(`${urlPrefix}/role/${role}`)
   }
 
-  verifyAdmin() {
-    return store.getters.adminSocketStatus === 'connected'
+  // 严格登录校验
+  async verifyLogin() {
+    return musicatriClient.get(`${urlPrefix}/status`)
   }
 
-  // 校验用户是否包含目标权限
-  verifyRole(role) {
-    const userRoles = store.getters.currentUser.roles
-    return userRoles.length > 0 && userRoles.includes(role);
+  // 非严格权限校验
+  checkRole(role) {
+    return store.getters.currentUser.roles.includes(role)
+  }
+
+  // 非严格登录校验
+  checkLogin() {
+    return store.getters.currentUser.roles.includes('user')
   }
 }
 

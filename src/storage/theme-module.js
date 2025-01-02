@@ -17,7 +17,6 @@ export default {
     setActiveTheme({ commit }, theme) {
       if (availableThemes[theme]) {
         // 主题存在，设置主题
-
         const style = availableThemes[theme]['styles']
         for (let key in style) {  // 遍历主题字段逐个设置
           document.documentElement.style.setProperty(key, style[key])

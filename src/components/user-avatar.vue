@@ -39,14 +39,14 @@ export default {
       if (props.allowRefresh
         && userAvatarURL.value === null
         && userAvatarStatus.value === 'unset' ) {
-        await userService.loadUserAvatar()
+        store.dispatch('loadUserAvatar').then()
       }
     }
 
     // 在用户每次建立连接的时候初始化头像
     watch(userSocketStatus, async (newVal, oldVal) => {
       if (newVal === 'connected') {
-        await userService.loadUserAvatar()
+        store.dispatch('loadUserAvatar').then()
       }
     })
 

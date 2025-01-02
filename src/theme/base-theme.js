@@ -21,6 +21,12 @@ export default {
   '--popper-hover-bg-color': '#e5e5e5',  /* 弹出框悬浮背景色 */
   '--popper-border-color': '#27ceb9',  /* 弹出框边框颜色 */
 
+  '--switch-bg-color': '#ffffff',  /* 开关背景颜色 */
+  '--switch-active-bg-color': '#ffffff',  /* 开关激活颜色 */
+  '--switch-disable-bg-color': '#ffffff',  /* 开关禁用颜色 */
+  '--switch-border-color': '#27ceb9',  /* 开关边框颜色 */
+  '--switch-btn-bg-color': '#2c3e50',  /* 开关按钮颜色 */
+
   '--navbar-color': '#2c3e50',
   '--navbar-bg-color': '#c9c9c9',
   '--redirect-card-bg-color': 'rgba(201, 201, 201, 1.0)',

@@ -1,17 +1,19 @@
 <!-- 授权结果信息回显 -->
 <script>
+import EllipsisString from '@/components/ellipsis-string.vue'
 import { useI18n } from 'vue-i18n'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { ref } from 'vue'
 
 export default {
+  components: {
+    EllipsisString,
+  },
   setup(props, { expose }) {
     const { t } = useI18n() // 本地化
     const panelTitle = ref('') // 标题
 
     const panelEllipsisDisplay = ref(false) // 加载字符串显示
-    const panelEllipsis = ref('.') // 字符串加载动画
     const panelSubtitle = ref('') // 子标题
-    let panelEllipsisIntervalId = 0 // 字符串循环事件id
 
     const panelLinks = ref([]) // 所有可用连接
     const panelMessage = ref('') // 消息
@@ -25,9 +27,6 @@ export default {
     const setTitle = (title, ellipsisDisplay=false) => {
       panelTitle.value = title
       panelEllipsisDisplay.value = ellipsisDisplay
-      if (ellipsisDisplay) {
-        panelEllipsis.value = '.'
-      }
     }
 
     /**
@@ -53,9 +52,7 @@ export default {
       panelLinks.value.push(linkItem)
     }
 
-    /**
-     * 添加事件链接
-     */
+    /* 添加事件链接 */
     const appendEventLink = (name, event) => {
       panelLinks.value.push({
         desc: name,
@@ -65,9 +62,7 @@ export default {
       })
     }
 
-    /**
-     * 添加跳转链接
-     */
+    /* 添加跳转链接 */
     const appendHrefLink = (name, href, isBlank=true) => {
       panelLinks.value.push({
         desc: name,
@@ -93,17 +88,6 @@ export default {
       panelMessage.value = ''
     }
 
-    onMounted(() => {
-      // 设置字符串循环
-      panelEllipsisIntervalId = setInterval(() => {
-        panelEllipsis.value = panelEllipsis.value.length < 4 ? panelEllipsis.value + '.' : '.'
-      }, 500)
-    })
-
-    onUnmounted(() => {
-      clearInterval(panelEllipsisIntervalId) // 清除字符串循环
-    })
-
     // 将方法暴露到外部
     expose({
       setTitle,
@@ -121,7 +105,6 @@ export default {
       t,
       title: panelTitle,
       subtitle: panelSubtitle, // 子标题
-      ellipsis: panelEllipsis, // 省略号
       ellipsisDisplay: panelEllipsisDisplay,
       message: panelMessage,
       isError: isErrorMessage,
@@ -139,8 +122,9 @@ export default {
         <template #header>
           <div class="card-header">
             <h2>
-              <span>{{ title }}</span>
-              <span v-if="ellipsisDisplay">{{ ellipsis }}</span>
+              <EllipsisString
+                :message="title"
+                :ellipsis="ellipsisDisplay" />
             </h2>
             {{ subtitle }}
             <h3 class="text-error" v-if="isError">{{ message }}</h3>
@@ -149,8 +133,7 @@ export default {
               <a class="slide-animation-a"
                 :href="link['href']"
                 :target="link['target']"
-                v-if="link['click'] == null"
-              >
+                v-if="link['click'] == null">
                 <!-- 超链接 -->
                 {{ link['desc'] }}
               </a>
@@ -158,8 +141,7 @@ export default {
                 :href="link['href']"
                 :target="link['target']"
                 v-if="link['click'] != null"
-                @click.prevent="link['click']"
-              >
+                @click.prevent="link['click']">
                 <!-- 事件链接 -->
                 {{ link['desc'] }}
               </a>

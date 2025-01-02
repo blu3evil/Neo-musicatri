@@ -5,10 +5,6 @@ import { createApp } from 'vue'
 import App from './App.vue'
 const app = createApp(App);
 
-// 配置初始化
-import { initConfig } from '@/config.js'
-await initConfig()  // 等待配置加载完成
-
 // vuex配置
 import { store } from './storage'
 app.use(store)
@@ -36,5 +32,8 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
+
+// mitt事件初始化
+import '@/mitt/listeners.js'
 
 app.mount('#app')

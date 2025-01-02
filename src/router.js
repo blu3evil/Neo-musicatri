@@ -52,28 +52,46 @@ export const router = createRouter({
       meta: { requireLogin: true },
       children: [
         {
-          path: 'dashboard',
-          component: () => import('@/views/workspace/dashboard/Dashboard.vue'),
+          path: 'portal',
+          component: () => import('./views/workspace/portal/Portal.vue'),
+        },
+        {
+          path: 'app-management',  // 仪表盘
+          component: () => import('@/views/workspace/app-management/AppManagement.vue'),
           meta: { requireAdmin: true },
           children: [
             {
               path: 'overview',
-              component: () => import('./views/workspace/dashboard/ApplicationOverview.vue'),
-            },
-            {
-              path: 'users',
-              component: () => import('./views/workspace/dashboard/UserManagement.vue'),
+              component: () => import('@/views/workspace/app-management/Overview.vue'),
             },
             {
               path: 'logs',
-              component: () => import('./views/workspace/dashboard/LogMonitoring.vue'),
+              component: () => import('@/views/workspace/app-management/LogMonitoring.vue'),
             }
           ]
         },
         {
-          path: 'portal',
-          component: () => import('./views/workspace/portal/Portal.vue'),
-        }
+          path: 'user-management',  // 用户管理
+          component: () => import('@/views/workspace/user-management/UserManagement.vue'),
+          meta: { requireAdmin: true },
+          children: [
+            {
+              path: 'overview',
+              component: () => import('./views/workspace/user-management/Overview.vue'),
+            },
+          ]
+        },
+        {
+          path: 'musiclib-management',  // 曲库管理
+          component: () => import('@/views/workspace/musiclib-management/MusiclibManagement.vue'),
+          meta: { requireAdmin: true },
+          children: [
+            {
+              path: 'overview',
+              component: () => import('./views/workspace/musiclib-management/Overview.vue'),
+            },
+          ]
+        },
       ]
     },
     {
@@ -99,23 +117,21 @@ router.beforeEach(async (
   let requireAdmin = to.meta.requireAdmin
 
   if (requireLogin) {  // 登录检查
-    if (!authService.verifyLogin()) {
+    if (!authService.checkLogin()) {
       next('/login')
       return
     }
   }
 
   if (requireAdmin) {
-    if (!authService.verifyAdmin()) {
+    if (!authService.checkRole('admin')) {
       next('/workspace/portal')  // 无管理员权限
       return
     }
   }
-
   next()  // 放行
 })
 
-// 跳转助手，封装跳转逻辑
 class Navigator {
   // 用户登录页面
   toLogin() {
@@ -126,33 +142,55 @@ class Navigator {
     return router.push('/workspace/portal')
   }
 
-  toDashboard(page) {
-    return router.push(`/workspace/dashboard/${page}`)
+  toAppManagement(page) {
+    return router.push(`/workspace/app-management/${page}`)
   }
 
-  toDashboardHistory() {
-    const activeDashboardMenuItem = store.getters.activeDashboardMenuItem
-    return router.push(`/workspace/dashboard/${activeDashboardMenuItem}`)
+  toUserManagement(page) {
+    return router.push(`/workspace/user-management/${page}`)
   }
 
-  // 用户功能模块主页
-  toWorkspace() {
-    return router.push('/workspace')
+  toMusicLibManagement(page) {
+    return router.push(`/workspace/musiclib-management/${page}`)
   }
 
-  toWorkspaceHistory() {
-    const activeWorkspaceMenuItem = store.getters.activeWorkspaceMenuItem
-    return router.push(`/workspace/${activeWorkspaceMenuItem}`)
-  }
-
-  toSetting(page) {
+  toSettings(page) {
     return router.push(`/settings/${page}`)
   }
 
+  toWorkspace = async (page) => {
+    switch (page) {
+      case 'app-management': await this.toAppManagementHistory(); break;
+      case 'user-management': await this.toUserManagementHistory(); break;
+      case 'musiclib-management': await this.toMusiclibManagementHistory(); break;
+      default: await this.toPortal()
+    }
+  }
+
+  toWorkspaceHistory() {
+    const history = store.getters.history.workspaceHistory
+    return this.toWorkspace(history)
+  }
+
+  toAppManagementHistory() {
+    const history = store.getters.history.appManagementHistory
+    return router.push(`/workspace/app-management/${history}`)
+  }
+
+  toUserManagementHistory() {
+    const history = store.getters.history.userManagementHistory
+    return router.push(`/workspace/user-management/${history}`)
+  }
+
+  toMusiclibManagementHistory() {
+    const history = store.getters.history.musiclibManagementHistory
+    return router.push(`/workspace/musiclib-management/${history}`)
+  }
+
   // 转到设置页面
-  toSettingHistory() {
-    const activeSettingMenuItem = store.getters.activeSettingMenuItem
-    return router.push(`/settings/${activeSettingMenuItem}`)
+  toSettingsHistory() {
+    const history = store.getters.history.settingsHistory
+    return router.push(`/settings/${history}`)
   }
 }
 

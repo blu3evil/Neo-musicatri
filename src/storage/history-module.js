@@ -1,36 +1,32 @@
+const historyPrototype = {
+  settingsHistory: 'appearance',
+  workspaceHistory: 'portal',
+  appManagementHistory: 'overview',
+  userManagementHistory: 'overview',
+  musiclibManagementHistory: 'overview',
+}
 export default {
   namespace: true,
   state: () => ({
-    activeSettingMenuItem: 'appearance',  // 当前激活的设置页面
-    activeWorkspaceMenuItem: 'portal',  // 当前激活的工作台页面
-    activeDashboardMenuItem: 'overview',  // dashboard当前页面
+    history: historyPrototype,
   }),
   mutations: {
-    setActiveSettingMenuItem(state, page) {
-      state.activeSettingMenuItem = page
+    setHistory(state, { name, history }) {
+      state.history[name] = history
     },
-    setActiveWorkspaceMenuItem(state, page) {
-      state.activeWorkspaceMenuItem = page
+    clearHistory(state) {
+      state.history = historyPrototype
     },
-    setActiveDashboardMenuItem(state, page) {
-      state.activeDashboardMenuItem = page
-    }
   },
   actions: {
-    setActiveSettingMenuItem({ commit }, page) {
-      commit('setActiveSettingMenuItem', page)
+    setHistory({ commit }, payload) {
+      commit('setHistory', payload)
     },
-    setActiveWorkspaceMenuItem({ commit }, page) {
-      commit('setActiveWorkspaceMenuItem', page)
+    clearHistory({ commit }) {  // 清除历史
+      commit('clearHistory')
     },
-    setActiveDashboardMenuItem({ commit }, page) {
-      commit('setActiveDashboardMenuItem', page)
-    }
   },
   getters: {
-    // activeSettingPage GETTER
-    activeSettingMenuItem: state => state.activeSettingMenuItem,
-    activeWorkspaceMenuItem: state => state.activeWorkspaceMenuItem,
-    activeDashboardMenuItem: state => state.activeDashboardMenuItem,
+    history: state => state.history,
   },
 }

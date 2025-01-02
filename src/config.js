@@ -1,8 +1,3 @@
 import axios from 'axios'
-export let config = null
-export const initConfig = async () => {
-  const response = await axios.get('/config.json')
-  config = response.data
-}
-
-
+const response = await axios.get('/config.json')
+export const config = response.data
