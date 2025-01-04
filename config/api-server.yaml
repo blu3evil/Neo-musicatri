@@ -2,6 +2,7 @@ active-environment: global
 application:
   namespace: api-server
   dev-mode: true
+  language: zh-CN
   information:
     name: musicatri
     version: 1.0.0

@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2025-01-03 13:01+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp936\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:48
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:53
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:59
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:64
+msgid "unsupported operation"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:83
+msgid "start atri thread"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:135
+msgid "submit musicatri launching workflow task"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:139
+msgid "musicatri already stopped"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:152
+msgid "musicatri already started"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:171
+msgid "submit musicatri shutdown workflow task"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:181
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\bot_server\bot\atri.py:185
+msgid "musicatri is still stopping"
+msgstr ""
+
