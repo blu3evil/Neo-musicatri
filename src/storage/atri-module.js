@@ -1,7 +1,7 @@
 // 服务器信息模块
 import { globalEventbus } from '@/mitt/global-eventbus.js'
 import { atriService } from '@/services/atri-service.js'
-import { adminSocketContext } from '@/sockets/admin-socket.js'
+// import { adminSocketContext } from '@/sockets/admin-socket.js'
 import { Events } from '@/events.js'
 import { Result } from '@/common.js'
 

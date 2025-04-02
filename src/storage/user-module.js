@@ -4,8 +4,8 @@ import { Events } from '@/events.js'
 import { discordService } from '@/services/discord_service.js'
 import { userService } from '@/services/user-service.js'
 import { authService } from '@/services/auth-service.js'
-import { userSocketContext } from '@/sockets/user-socket.js'
-import { adminSocketContext } from '@/sockets/admin-socket.js'
+// import { userSocketContext } from '@/sockets/user-socket.js'
+// import { adminSocketContext } from '@/sockets/admin-socket.js'
 import { navigator } from '@/router.js'
 
 
@@ -27,6 +27,9 @@ export default {
   state: () => ({
     currentUser: userPrototype,  // 当前用户(此处作占位)
     userAvatar: userAvatarPrototype,  // 当前用户头像
+
+    userAvatars: {},  // 用户头像
+
     userSocketStatus: 'disconnected',  // userSocket当前状态
     adminSocketStatus: 'disconnected',  // adminSocket当前状态
     enableAdminFunction: false,  // 启用管理员功能
@@ -53,6 +56,20 @@ export default {
     },
     setAdminFunctionStatus(state, status) {
       state.enableAdminFunction = status
+    },
+
+
+    setAvatarStatus(state, userId, status) {
+      state.userAvatars[userId].status = status  // 设置某一个用户的Avatar状态
+    },
+    setAvatarURL(state, userId, url) {
+      state.userAvatars[userId].url = url  // 设置某一个用户的Avatar路径
+    },
+    initializeAvatar(state, userId) {
+      state.userAvatars[userId] = {
+        status: 'idle',  // idle loading completed
+        url: '',  // 头像路径
+      }
     }
   },
   actions: {
@@ -75,6 +92,42 @@ export default {
     clearCurrentUser({ commit }) {
       commit('setCurrentUser', userPrototype)  // 重置用户数据
       commit('setUserAvatar', userAvatarPrototype)  // 重置用户头像
+    },
+
+    /**
+     * 指定加载用户头像数据
+     * @param commit
+     * @param getter
+     * @param userId 用户id，这里是discord用户id
+     * @param userAvatar 用户头像hash
+     * @returns {Promise<Result>}
+     */
+    async loadAvatar({ commit, getter }, userId, userAvatar) {
+      // 用户头像状态量不存在，初始化状态量
+      if (!getter.userAvatars[userId]) {
+        commit('initializeAvatar', userId)
+      }
+
+      if (getter.userAvatars[userId].status === 'loading') {
+        return new Result(400, 'Avatar is still loading')
+      }
+
+      if (userAvatar === null) {  // 判断用户头像hash有效性
+        return new Result(404, 'Avatar not found')
+      }
+
+      commit('setAvatarStatus', userId, 'loading')  // 将状态设置为loading
+      const result = await discordService.fetchUserAvatar(userId, userAvatar)  // 加载头像
+      if (result.isSuccess()) {  // 成功拉取用户头像信息
+        // globalEventbus.emit(Events.MITT.CURRENT_USER.AVATAR.LOAD_SUCCESS)  // 发布事件
+        commit('setAvatarStatus', userId, 'completed')
+        commit('setAvatarURL', URL.createObjectURL(result.data))
+      } else {  // 用户头像信息拉取失败
+        // globalEventbus.emit(Events.MITT.CURRENT_USER.AVATAR.LOAD_FAILED)
+        commit('setAvatarStatus', userId, 'idle')  // 变更状态
+        commit('setUserAvatarURL', null)
+      }
+      return result
     },
 
     // 加载用户头像数据

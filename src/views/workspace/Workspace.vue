@@ -69,42 +69,58 @@ export default {
 <template>
   <CommonBackground />
   <!-- 背景 -->
-  <MusicatriNavbar />
-  <!-- 导航栏 -->
-  <div class="workspace">
-    <div class="sidebar">
-      <div class="sidebar-divider-text unselectable">
-        {{ t('view.workspace.Workspace.quick_start') }}
+  <div class="container">
+    <MusicatriNavbar />
+    <!-- 导航栏 -->
+    <div class="workspace">
+      <div class="sidebar">
+        <div class="sidebar-divider-text unselectable">
+          {{ t('view.workspace.Workspace.quick_start') }}
+        </div>
+        <CommonSidebar
+          :menu-items="normalMenuItems"
+          :active-menu-item="activeMenuItem"
+          :on-menu-item-selected="navigator.toWorkspace"
+        />
+        <!-- 管理员面板 -->
+        <div class="sidebar-divider-text unselectable"
+             v-if="enableAdminFunction">
+          {{ t('view.workspace.Workspace.admin_function') }}
+        </div>
+        <CommonSidebar
+          v-if="enableAdminFunction"
+          :menu-items="adminMenuItems"
+          :active-menu-item="activeMenuItem"
+          :on-menu-item-selected="navigator.toWorkspace"
+        />
       </div>
-      <CommonSidebar
-        :menu-items="normalMenuItems"
-        :active-menu-item="activeMenuItem"
-        :on-menu-item-selected="navigator.toWorkspace"
-      />
-      <!-- 管理员面板 -->
-      <div class="sidebar-divider-text unselectable"
-           v-if="enableAdminFunction">
-        {{ t('view.workspace.Workspace.admin_function') }}
-      </div>
-      <CommonSidebar
-        v-if="enableAdminFunction"
-        :menu-items="adminMenuItems"
-        :active-menu-item="activeMenuItem"
-        :on-menu-item-selected="navigator.toWorkspace"
-      />
+      <!-- 工作空间列表 -->
+      <div class="content"><RouterView /></div>
+      <!-- 功能面板 -->
     </div>
-    <!-- 工作空间列表 -->
-    <div class="content"><RouterView /></div>
-    <!-- 功能面板 -->
   </div>
+
 </template>
 <style scoped>
 .content {
   flex: 1; /* 填充剩余空间 */
   padding: 20px;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .workspace {
   display: flex;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  min-width: 100vw
+}
+
+body, html {
+  width: 100%;
+  overflow-x: auto;
 }
 </style>

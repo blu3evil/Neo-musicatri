@@ -1,7 +1,7 @@
 <!--suppress JSUnresolvedReference -->
 <script>
 import MusicatriNavbar from '@/components/musicatri-navbar.vue'
-import CommonPanel from '@/components/common-panel.vue'
+import ActionPanel from '@/components/action-panel.vue'
 import CommonBackground from '@/components/common-background.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
@@ -17,7 +17,7 @@ export default {
   components: {
     CommonBackground /* 背景 */,
     MusicatriNavbar /* 导航栏 */,
-    CommonPanel /* 面板 */,
+    ActionPanel /* 面板 */,
   },
   setup() {
     const { t } = useI18n() // 本地化
@@ -250,5 +250,15 @@ export default {
 <template>
   <CommonBackground ref="bg-ref" />
   <MusicatriNavbar />
-  <CommonPanel ref="panel-ref" />
+  <el-row class="row-bg full-height" align="middle" justify="center">
+    <el-col :style="{ display: 'flex', alignItems: 'center', justifyContent: 'center' }">
+      <ActionPanel ref="panel-ref" />
+    </el-col>
+  </el-row>
 </template>
+<style scoped>
+/* 高度置中 */
+.full-height {
+  height: 85vh;
+}
+</style>

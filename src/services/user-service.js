@@ -9,6 +9,10 @@ class UserService {
       return musicatriClient.get(`${urlPrefix}/me/details`)
     }
   }
+
+  getUsersPreview(condition={}) {
+    return musicatriClient.post(`${urlPrefix}/preview`, condition)
+  }
 }
 
 export const userService = new UserService();

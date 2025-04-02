@@ -5,7 +5,7 @@
   "DISCORD_LINK": "https://discord.gg/9FwdKEGQXf",
   "API_ENDPOINT": "http://localhost:5000/api/v1",
   "SOCKET_ENDPOINT": "http://localhost:5000/socket",
-  "REQUEST_TIMEOUT": 10000,
+  "REQUEST_TIMEOUT": 20000,
   "SOCKET_CONNECT_TIMEOUT": 5000,
   "MAX_RECONNECT_TIMES": 5,
   "DISCORD_IMAGE_BASE_URL": "https://cdn.discordapp.com"

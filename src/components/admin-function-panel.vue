@@ -1,3 +1,4 @@
+<!-- 管理员功能启用关闭 -->
 <script>
 import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'

@@ -56,7 +56,11 @@ export default {
         @hide="isAvatarActive = false"
       >
         <template #reference>
-          <UserAvatar :class="{ active: isAvatarActive, 'user-avatar': true }"
+          <UserAvatar :class="{
+            active: isAvatarActive,
+            'user-avatar': true ,
+            'navbar-user-avatar': true
+          }"
                       @click="isAvatarActive = !isAvatarActive"
                       :allow-refresh="false"
                       text-style="margin-top: 4px"
@@ -147,4 +151,13 @@ export default {
   box-shadow: 0 0 0 4px var(--popper-bg-color);
 }
 
+.el-loading-spinner {
+  top: 20% !important;
+}
+</style>
+<style>
+.navbar-user-avatar .el-loading-spinner {
+  position: absolute;
+  line-height: 0;
+}
 </style>

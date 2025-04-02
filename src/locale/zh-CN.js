@@ -1,4 +1,12 @@
 export default {
+  'global': {
+    'admin': '管理员',
+    'user': '用户',
+    'traveler': '游客',
+    'active': '已激活',
+    'banned': '被禁用',
+    'any': '任意',
+  },
   'component': {
     'common-navbar': {},
     'pending-panel': {
@@ -50,9 +58,9 @@ export default {
         'portal': '指南针',
         'quick_start': '快速开始',
         'admin_function': '管理员功能',
-        'app-management': '应用管理',
-        'user_management': '用户管理',
-        'musiclib_management': '曲库管理'
+        'app-management': '应用面板',
+        'user_management': '用户面板',
+        'musiclib_management': '曲库面板'
       },
       'Portal': {},
       'Dashboard': {
@@ -61,7 +69,14 @@ export default {
       },
       'UserManagement': {
         'overview': '用户总览',
-        'user_management': '用户管理',
+        'management': '用户管理',
+        'username_label': '标识名',
+        'global_name_label': '用户名',
+        'roles_label': '权限',
+        'is_active_label': '状态',
+        'query': '检索',
+        'fuzzy_query_placeholder': "使用'*'进行模糊匹配",
+        'empty_text': '亚托莉什么也没有找到>.<'
       },
       'MusiclibManagement': {
         'overview': '曲库总览'

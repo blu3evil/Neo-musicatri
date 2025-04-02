@@ -40,6 +40,8 @@
     --button-bg-color: #e0e0e0;  /* 按钮背景色 */
     --button-border-color: #e0e0e0;  /* 按钮边框颜色 */
     --button-text-color: #e0e0e0;  /* 按钮字体颜色 */
+
+    /* 表格 */
 }
 
 /* 超链接字色设定 */
@@ -192,6 +194,8 @@ body {
     border: 2px solid var(--popper-border-color) !important;
 }
 
+
+
 /* 多选择框下拉选单选项样式 */
 .el-select-dropdown__item {
     font-size: var(--text-small) !important;
@@ -333,18 +337,6 @@ body {
     font-size: var(--text-small);
     margin-left: 10px;
     margin-bottom: 5px;
-}
-
-/* 卡片头 */
-.el-card__header {
-   /*border-bottom: 1px solid var(--divider-color) !important;*/
-    border-bottom: none !important;
-    padding: 10px 0 25px 19px !important;
-}
-
-/* 卡片体 */
-.el-card__body {
-    padding: 0 0 0 20px !important;
 }
 
 /* 开关 */

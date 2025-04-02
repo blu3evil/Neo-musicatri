@@ -1,10 +1,16 @@
 export const Events = {
   // mitt事件
   MITT: {
+    USER_MANAGEMENT: {
+      LOAD_USERS_PREVIEW: {
+        LOAD_SUCCESS: 'mitt:user_management:load_users_preview:load_success',  // 加载用户概览成功
+        LOAD_FAILED: 'mitt:user_management:load_users_preview:load_failed',  // 加载用户概览失败
+      }
+    },
     CURRENT_USER: {
       AVATAR: {
-        LOAD_SUCCESS: "mitt:current_user:avatar:load_success",
-        LOAD_FAILED: "mitt:current_user:avatar:load_failed"
+        LOAD_SUCCESS: "mitt:current_user:avatar:load_success",  // 当前用户头像加载成功
+        LOAD_FAILED: "mitt:current_user:avatar:load_failed"  // 当前用户头像加载失败
       },
       LOGOUT: {
         FAILED: "mitt:current_user:logout:failed"

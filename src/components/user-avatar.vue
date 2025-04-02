@@ -3,7 +3,6 @@
 import { useStore } from 'vuex'
 import { computed, watch } from 'vue'
 import { Loading, Refresh } from '@element-plus/icons-vue'
-import { userService } from '@/services/user-service.js'
 import { useI18n } from 'vue-i18n'
 
 export default {
@@ -26,9 +25,9 @@ export default {
       type: String,
       required: false,
       default: ''
-    }
+    },
   },
-  setup(props) {
+  setup(props, { expose }) {
     const { t } = useI18n()
     const store = useStore()
     const userAvatarURL = computed(() => store.getters.userAvatarURL)
@@ -43,6 +42,10 @@ export default {
       }
     }
 
+    const refreshAvatar = (userId, userAvatar) => {
+
+    }
+
     // 在用户每次建立连接的时候初始化头像
     watch(userSocketStatus, async (newVal, oldVal) => {
       if (newVal === 'connected') {
@@ -52,14 +55,16 @@ export default {
 
     return {
       userAvatarURL,
-      onAvatarClick,
       userAvatarStatus,
+      onAvatarClick,
     }
   }
 }
 </script>
 <template>
-  <el-avatar :src="userAvatarURL" @click="onAvatarClick">
+  <el-avatar :src="userAvatarURL"
+             @click="onAvatarClick"
+             v-loading="userAvatarStatus === 'loading'">
     <div v-if="userAvatarURL === null">
       <div v-if="userAvatarStatus === 'unset'">
         <el-icon v-if="allowRefresh" :style="iconStyle">
@@ -67,12 +72,13 @@ export default {
         </el-icon>
         <div v-else :style="textStyle">'_>'</div>
       </div>
-
-      <div v-if="userAvatarStatus === 'loading'">
-        <el-icon class="is-loading" :style="iconStyle">
-          <Loading/>
-        </el-icon>
-      </div>
     </div>
   </el-avatar>
 </template>
+<style>
+.el-loading-mask {
+  background-color: transparent;
+  transition: none;
+  --el-color-primary: var(--text-color);
+}
+</style>

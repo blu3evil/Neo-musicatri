@@ -56,7 +56,7 @@ export const router = createRouter({
           component: () => import('./views/workspace/portal/Portal.vue'),
         },
         {
-          path: 'app-management',  // 仪表盘
+          path: 'app-management',  // 应用面板
           component: () => import('@/views/workspace/app-management/AppManagement.vue'),
           meta: { requireAdmin: true },
           children: [
@@ -71,7 +71,7 @@ export const router = createRouter({
           ]
         },
         {
-          path: 'user-management',  // 用户管理
+          path: 'user-management',  // 用户面板
           component: () => import('@/views/workspace/user-management/UserManagement.vue'),
           meta: { requireAdmin: true },
           children: [
@@ -79,10 +79,14 @@ export const router = createRouter({
               path: 'overview',
               component: () => import('./views/workspace/user-management/Overview.vue'),
             },
+            {
+              path: 'management',
+              component: () => import('./views/workspace/user-management/Management.vue'),
+            },
           ]
         },
         {
-          path: 'musiclib-management',  // 曲库管理
+          path: 'musiclib-management',  // 曲库面板
           component: () => import('@/views/workspace/musiclib-management/MusiclibManagement.vue'),
           meta: { requireAdmin: true },
           children: [

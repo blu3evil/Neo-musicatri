@@ -21,6 +21,11 @@ export default {
         path: '/workspace/user-management/overview',
         span: t('view.workspace.UserManagement.overview'),
       },
+      {
+        name: 'management',
+        path: '/workspace/user-management/management',
+        span: t('view.workspace.UserManagement.management'),
+      },
     ]
 
     onMounted(() => {
