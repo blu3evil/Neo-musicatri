@@ -1,0 +1,139 @@
+active-environment: global
+application:
+  namespace: api-server
+  dev-mode: true
+  language: zh-CN
+  information:
+    name: musicatri
+    version: 1.0.0
+    description: neo-musicatri
+  logging:
+    print-banner: true  # 打印musicatri旗帜
+    default-logging:  # 默认日志
+      enable: true
+      level: DEBUG
+    console-logging:  # 控制台日志
+      enable: true
+      level: DEBUG
+    logfile-logging:  # 文件日志
+      enable: false
+      level: DEBUG
+      extname: api
+      file-directory: logs  # temp/logs
+  security:
+    secret-key: musicatri
+    oauth:
+      insecure-transport: true  # 允许在HTTP下执行oauth
+      relax-token-scope: true  # 允许动态调整oauth申请权限
+    cors:
+      allow-origins: [http://localhost:5173, http://localhost:5174]
+      allow_headers: [Content-Type, Authorization, Accept-Language]
+      allow-methods: [GET, POST, PUT, DELETE, TRACE]
+      supports-credentials: true
+  socketio:
+    cors:
+      allow-origins: [http://localhost:5173, http://localhost:5174]
+  database:
+    driver: mysql
+    host: 127.0.0.1
+    port: 3306
+    username: root
+    password: 1234
+    database: musicatri-auth
+    track-modification: false
+  session:
+    type: redis
+    cookie-samesite: Lax
+    cookie-httponly: true
+    cookie-secure: false  # 仅允许https下传递cookie
+    lifetime: 1800
+    permanent: true
+    permanent-lifetime: 3600
+    user-signer: false
+    key-prefix: 'session:'
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      username: ''
+      password: ''
+      database: 0
+    filesystem:
+      file-threshold: 5000
+      file-directory: session  # temp/session
+  cache:
+    type: redis
+    timeout: 60
+    key-prefix: 'cache:'
+    ignore-errors: false
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      username: ''
+      password: ''
+      database: 0
+    filesystem:
+      file-threshold: 5000
+      file-directory: cache  # temp/cache
+  wsgi-server:
+    host: 0.0.0.0
+    port: 5000
+    werkzeug:
+      debug-mode: false
+      log-output: false
+      use-reloader: false
+    gunicorn:
+      workers: 1
+      threads: 4
+      daemon: false
+      worker-class: gthread
+      worker-connections: 2000
+      pidfile: gunicorn/gunicorn.pid
+      accesslog: gunicorn/gunicorn_access.log
+      errorlog: gunicorn/gunicorn_error.log
+      loglevel: warning
+  discord:
+    api-endpoint: https://discord.com/api/v10
+    oauth:
+      client-id: 1295653634234650624
+      client-secret: AlS0oXa3HEWIElDdBKMJOSPi4Gm1gwKv
+      redirect-uri: http://localhost:5173/authorized
+      scope: 'identify guilds guilds.join'  # 权限范围
+  nacos:
+    server-addr: localhost
+    server-port: 8848
+    registration:
+      service-name: auth-server
+      service-addr: localhost
+      service-port: 5000
+      heartbeat-interval: 10
+  swagger:
+    title: auth-server API接口文档
+    uiversion: 3
+    description: 认证服务API接口文档
+    version: 0.2.0
+    terms-of-service: https://blu3evil.github.io/musicatri1
+    contact:
+      name: pineclone
+      email: pineclone@outlook.com
+      url: https://github.com/eyespore
+    license:
+      name: MIT
+      url: https://opensource.org/licenses/MIT
+yt-dlp:
+  name: musicatri
+neteasecloudmusic-api:
+  url: http://127.0.0.2:3000
+---
+environment: docker  # dev
+application:
+  session:
+    redis:
+      host: 172.17.208.1
+      port: 6379
+  cache:
+    redis:
+      host: 172.17.208.1
+      port: 6379
+  database:
+    host: 172.17.208.1
+    port: 3306

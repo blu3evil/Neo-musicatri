@@ -1,0 +1,133 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2025-03-18 16:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp936\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:32
+msgid "Invalid code"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:34
+msgid "Cannot fetch user access token"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:46
+msgid "'user role' not found"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:69
+msgid "User logged out"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:83
+msgid "role not found"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:89
+msgid "permission denied"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:90
+msgid "access granted"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:98
+msgid "login status expired"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:105
+msgid "account is not active"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\auth_service.py:118
+msgid "refresh token failed"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:17
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:29
+msgid "hit cache"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:22
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:41
+msgid "miss hit cache"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:23
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:33
+msgid "no such user"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\services\user_service.py:36
+msgid "user has no roles"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\views\auth_blueprint.py:57
+msgid "Login success"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\views\auth_blueprint.py:109
+msgid "invalid argument"
+msgstr ""
+
+#:
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\auth_server\views\auth_blueprint.py:141
+msgid "Logged in"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:238
+msgid "dev mode is enabled, know more about development mode at README.md, this mode is only used for development and testing, do not enable this mode in production environment"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:266
+msgid "Bad Request"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:267
+msgid "Unauthorized"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:268
+msgid "Forbidden"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:269
+msgid "NotFound"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:270
+msgid "Internal Server Error"
+msgstr ""
+
+#: D:\Users\pinec\Documents\Code\python\neo-musicatri\src\utils\context.py:279
+msgid "unknown: %s"
+msgstr ""
+

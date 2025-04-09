@@ -1,23 +1,23 @@
 version: '3.8'
 name: neo-musicatri
 services:
-  musicatri:
-    image: pineclone/musicatri:dev-base-v2.1.0
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-    entrypoint: /bin/bash
-    tty: true
-    stdin_open: true
-    ports:
-      - '5000:5000'
-    volumes:
-      - ./api-server.yaml:/musicatri/api-server.yaml
-    depends_on:
-      redis:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
+#  musicatri:
+#    image: pineclone/musicatri:dev-base-v2.1.0
+##    build:
+##      context: .
+##      dockerfile: Dockerfile
+#    entrypoint: /bin/bash
+#    tty: true
+#    stdin_open: true
+#    ports:
+#      - '5000:5000'
+#    volumes:
+#      - ./auth-server.yaml:/musicatri/auth-server.yaml
+#    depends_on:
+#      redis:
+#        condition: service_healthy
+#      mysql:
+#        condition: service_healthy
   # 缓存
   redis:
     image: redis:7
@@ -32,19 +32,47 @@ services:
       timeout: 10s
   # 数据库
   mysql:
-    image: mysql:9.0
+    image: mysql:8.0.30
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: 1234
     ports:
       - '3306:3306'
-#    volumes:
-#      - ./data:/var/lib/mysql  # 数据
-#      - ./conf:/etc/mysql/mysql.conf.d  # 配置
-#      - ./logs:/logs  # 日志
+    volumes:
+      - ./temp/mysql/data:/var/lib/mysql  # 数据
+#      - ./mysql/conf:/etc/mysql/mysql.conf.d  # 配置
+#      - ./mysql/logs:/logs  # 日志
     healthcheck:
       test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
-      interval: 5s
+      interval: 30s
       timeout: 10s
       retries: 10
+  # nacos
+  nacos:
+    image: nacos/nacos-server:2.0.2
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    restart: unless-stopped
+    privileged: true
+    environment:
+      PREFER_HOST_MODE: hostname
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: mysql
+      MYSQL_SERVICE_HOST: mysql
+      MYSQL_SERVICE_DB_NAME: nacos
+      MYSQL_SERVICE_PORT: 3306
+      MYSQL_SERVICE_USER: root
+      MYSQL_SERVICE_PASSWORD: 1234
+      MYSQL_SERVICE_DB_PARAM: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      NACOS_AUTH_IDENTITY_KEY: 2222
+      NACOS_AUTH_IDENTITY_VALUE: 2xxx
+      NACOS_AUTH_TOKEN: SecretKey012345678901234567890123456789012345678901234567890123456789
+    depends_on:
+      mysql:
+        condition: service_healthy
+#    volumes:
+#      - ./nacos/logs:/home/nacos/logs  # 日志
+#      - ./nacos/conf:/home/nacos/conf  # 配置
+
 

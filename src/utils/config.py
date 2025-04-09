@@ -8,7 +8,6 @@ class Config:
         self.configurations = {}  # 项目配置
         self.rule_schema = rule_schema  # 配置校验
         self.config_path = config_path  # 配置文件路径
-        self.load()
 
     def _update_dicts(self, base_dict, new_dict):
         """
@@ -120,5 +119,5 @@ class Config:
             try:
                 value = value[key]
             except KeyError:
-                raise RuntimeError(f"{tag.name}({tag}) not found '{key}'")
+                raise RuntimeError(f"config tag '{tag}' does not contain key '{key}'")
         return value

@@ -234,7 +234,7 @@ class AtriContext:
 
     def pre_initialize(self):  # 挂载事件
         def handle_atri_state_change(identify):
-            from api_server.sockets.dispatcher import admin_socket_dispatcher
+            from auth_server.sockets.dispatcher import admin_socket_dispatcher
             # socketio.start_background_task(target=socketio.emit, event=SocketioEvent.ATRI_STATE_CHANGE, data=self.identify, namespace='/socket/admin')
             admin_socket_dispatcher.emit(SocketioEvent.ATRI_STATE_CHANGE, self.identify)
             logger.debug(f'musicatri change status to {identify}')

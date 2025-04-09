@@ -64,6 +64,21 @@ class Command:
         if flag == 'y': return True
         else: return False
 
+    from typing import Callable
+    def print_help_doc(self, printer: Callable) -> None:
+        print()
+        command_path_copy = self.command_path.copy()[1:]
+        command_path_copy.reverse()
+        logger.success(f"Command: {' '.join(command_path_copy)}")
+        logger.info('==============================================')
+        printer()
+        logger.info('==============================================')
+        print()
+
+    @staticmethod
+    def warn_unexpected_args(args, usage):
+        logger.error(f'Unexpected command args: "{args}", Usage: {usage}')
+
 class BranchCommand(Command):
     """ 枝条命令 """
     subcommands: list[Command]
@@ -121,6 +136,10 @@ class CommandTree:
         self.root_command_map = {}
         for root_command in self.root_commands:
             self.root_command_map[root_command.command] = root_command
+
+    def get_root_commands(self):
+        """ 获取命令列表，可用于打印帮助指令说明 """
+        return [root_command.command for root_command in self.root_commands]
 
     def parse_and_execute(self, command_string):
         """ 解析并执行 """
@@ -278,7 +297,7 @@ current_namespace = ''  # 当前指定的命名空间
 # noinspection PyMethodMayBeStatic
 class I18NCLI(DevToolCLIV1):
     """ 本地化命令行接口 """
-    intro = f"{Color.CYAN}😎实现本地化愿望的小助手~{Color.RESET}"
+    intro = f"{Color.CYAN}😎Helper for localization~{Color.RESET}"
 
     def __init__(self):
         cmd.Cmd.__init__(self)
@@ -299,6 +318,13 @@ class I18NCLI(DevToolCLIV1):
     def default(self, line):
         self.command_tree.parse_and_execute(line)  # 解析并执行命令
 
+    def do_help(self, arg):
+        print()
+        logger.info('Allow commands: (type for further information)')
+        logger.info('==============================================')
+        logger.info(self.command_tree.get_root_commands())
+        print()
+
 class LocaleCommand(BranchCommand):
     """ locale 本地化根命令 """
     def __init__(self):
@@ -318,14 +344,10 @@ class LocaleNamespaceCommand(BranchCommand):
             command='namespace',
             subcommands=[
                 LocaleNamespaceResetCommand(),
+                LocaleNamespaceInspectCommand(),
+                LocaleNamespaceHelpCommand(),
             ]
         )
-
-    def execute(self, args):
-        if not args:
-            logger.info(f'Current namespace: "{current_namespace}"')
-            return
-        super().execute(args)
 
 class LocaleNamespaceResetCommand(LeafCommand):
     """ locale namespace reset 重置本地化域子命令 """
@@ -342,6 +364,39 @@ class LocaleNamespaceResetCommand(LeafCommand):
         global current_namespace
         current_namespace = args[0]
         logger.success(f'Set current namespace to "{current_namespace}"')
+
+class LocaleNamespaceInspectCommand(LeafCommand):
+    """ locale namespace inspect 查看当前命名空间指令 """
+    def __init__(self):
+        super().__init__(command='inspect')
+
+    def execute(self, args):
+        if not args:
+            global current_namespace
+            if not current_namespace:
+                logger.warn(f'No namespace selected, use "locale namespace reset <namespace>" appoint a specific namespace')
+            else:
+                logger.info(f'Current namespace: "{current_namespace}"')
+            return
+        else:
+            self.warn_unexpected_args(args, self.command_path_str)
+
+class LocaleNamespaceHelpCommand(LeafCommand):
+    """ locale namespace reset namespace帮助命令 """
+    def __init__(self):
+        super().__init__(command='help')
+
+    def execute(self, args):
+        if not args:
+            def help_doc_printer():
+                logger.info("This command is about to set a specific namespace, namespace plays an important role in localization,")
+                logger.info("before step into locale job, a namespace must be specific, namespace is usually from a server's namespace,")
+                logger.info("for example 'auth_server' can own a namespace called 'auth-server', later this namespace will be used to")
+                logger.info("create a resources directory in the path '/resources/<namespace>/...'")
+                logger.info("via namespace, It becomes possible to isolate the localization of different services")
+            self.print_help_doc(help_doc_printer)
+        else:
+            self.warn_unexpected_args(args, self.command_path_str)
 
 class LocaleGenerateCommand(LeafCommand):
     def __init__(self, command):
@@ -401,8 +456,8 @@ class LocaleGPOCommand(LocaleGenerateCommand):
         lang_dir = path.join(namespace_locale_dir, target_lang)
         if not self.ensure_directory(lang_dir): return
 
-        logger.info('Input scanning scope, for example "api_server" will cause scanning "/src/api_server" package')
-        logger.info('Using Space to split multiple package, for example "api_server bot_server" will cause scanning both packages')
+        logger.info('Input scanning scope, for example "auth_server" will cause scanning "/src/auth_server" package')
+        logger.info('Using Space to split multiple package, for example "auth_server bot_server" will cause scanning both packages')
         logger.info('Scanning: ', end='')
         scan_scope = input()
 
