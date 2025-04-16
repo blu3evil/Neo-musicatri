@@ -1,35 +1,20 @@
 from __future__ import annotations
 
-config_schema = {
+resource_context_config_schema = {
     # 应用信息配置
     'environment': {'type': 'string', 'default': 'global'},
     'active-environment': {'type': 'string', 'default': 'global'},
     'application': {
         'type': 'dict',
         'schema': {
-            'namespace': {'type': 'string', 'default': 'undefined'},
             'dev-mode': {'type': 'boolean', 'default': False},  # 是否开启dev模式
             'language': {'type': 'string', 'default': 'en-US'},  # 首选语言
             'information': {
                 'type': 'dict',
                 'schema': {
-                    'name': {'type': 'string', 'default': 'musicatri'},
+                    'name': {'type': 'string', 'default': 'undefined'},
                     'version': {'type': 'string', 'default': '1.0.0'},
-                    'description': {'type': 'string', 'default': '高知能バイオニックロボット'},
-                }
-            },
-            # 安全配置
-            'security': {
-                'type': 'dict',
-                'schema': {
-                    'secret-key': {'type': 'string', 'default': 'musicatri'},
-                    'oauth': {
-                        'type': 'dict',
-                        'schema': {
-                            'insecure-transport': {'type': 'boolean', 'default': False},  # 允许在HTTP下执行oauth
-                            'relax-token-scope': {'type': 'boolean', 'default': False},  # 允许动态调整oauth申请权限
-                        }
-                    }
+                    'description': {'type': 'string', 'default': 'undefined context.py'},
                 }
             },
             # 日志配置
@@ -49,90 +34,67 @@ config_schema = {
                         'schema': {
                             'enable': {'type': 'boolean', 'default': True},
                             'level': {'type': 'string', 'default': 'DEBUG'},
+                            'formatter': {'type': 'string', 'default': 'default'},
                         }
                     },
-                    'logfile-logging': {
+                    'filelog-logging': {
                         'type': 'dict',
                         'schema': {
                             'enable': {'type': 'boolean', 'default': False},
                             'level': {'type': 'string', 'default': 'DEBUG'},
                             'extname': {'type': 'string', 'default': ''},
                             'file-directory': {'type': 'string', 'default': 'logs'},  # /temp/logs
+                            'formatter': {'type': 'string', 'default': 'default'},
                         }
                     },
-                }
-            },
-            'wsgi-server': {
-                'type': 'dict',
-                'schema': {
-                    'host': {'type': 'string', 'default': '127.0.0.1'},
-                    'port': {'type': 'integer', 'default': 5000},
-                    'werkzeug': {
-                        'type': 'dict',
-                        'schema': {
-                            'debug-mode': {'type': 'boolean', 'default': False},
-                            'log-output': {'type': 'boolean', 'default': False},
-                            'use-reloader': {'type': 'boolean', 'default': False},
-                        }
-                    },
-                    'gunicorn': {
-                        'type': 'dict',
-                        'schema': {
-                            'workers': {'type': 'integer', 'default': 1},
-                            'threads': {'type': 'integer', 'default': 4},
-                            'daemon': {'type': 'boolean', 'default': False},
-                            'worker-class': {'type': 'string', 'default': 'gthread'},
-                            'worker-connections': {'type': 'integer', 'default': 2000},  # 仅对eventlet gevent生效
-                            'pidfile': {'type': 'string', 'default': 'gunicorn/gunicorn.pid'},
-                            'accesslog': {'type': 'string', 'default': 'gunicorn/gunicorn_access.log'},
-                            'errorlog': {'type': 'string', 'default': 'gunicorn/gunicorn_error.log'},
-                            'loglevel': {'type': 'string', 'default': 'warning'},
-                        }
-                    }
                 }
             }
         }
     }
 }
 
-class DefaultConfigKey:
+class ResourceContextConfigKey:
     # 应用配置
-    APP_DEV_MODE = 'application.dev-mode'
-    APP_LANGUAGE = 'application.language'
-    APP_INFO_NAME = 'application.information.name'
-    APP_INFO_VERSION = 'application.information.version'
-    APP_INFO_DESCRIPTION = 'application.information.description'
-
-    # 安全配置
-    APP_SECURITY_SECRET_KEY = 'application.security.secret-key'
-    APP_SECURITY_OAUTH_INSECURE_TRANSPORT = 'application.security.oauth.insecure-transport'
-    APP_SECURITY_OAUTH_RELAX_TOKEN_SCOPE = 'application.security.oauth.insecure-transport'
+    DEV_MODE = 'application.dev-mode'
+    LANGUAGE = 'application.language'
+    INFO_NAME = 'application.information.name'
+    INFO_VERSION = 'application.information.version'
+    INFO_DESCRIPTION = 'application.information.description'
 
     # 日志配置
-    APP_LOG_PRINT_BANNER = 'application.logging.print-banner'
-    APP_LOG_DEFAULT_LOGGING_ENABLE = 'application.logging.default-logging.enable'
-    APP_LOG_DEFAULT_LOGGING_LEVEL = 'application.logging.default-logging.level'
-    APP_LOG_CONSOLE_LOGGING_ENABLE = 'application.logging.console-logging.enable'
-    APP_LOG_CONSOLE_LOGGING_LEVEL = 'application.logging.console-logging.level'
-    APP_LOG_LOGFILE_LOGGING_ENABLE = 'application.logging.logfile-logging.enable'
-    APP_LOG_LOGFILE_LOGGING_LEVEL = 'application.logging.logfile-logging.level'
-    APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY = 'application.logging.logfile-logging.file-directory'
+    LOG_PRINT_BANNER = 'application.logging.print-banner'
+    LOG_DEFAULT_LOGGING_ENABLE = 'application.logging.default-logging.enable'
+    LOG_DEFAULT_LOGGING_LEVEL = 'application.logging.default-logging.level'
+    LOG_CONSOLE_LOGGING_ENABLE = 'application.logging.console-logging.enable'
+    LOG_CONSOLE_LOGGING_LEVEL = 'application.logging.console-logging.level'
+    LOG_CONSOLE_LOGGING_FORMATTER = 'application.logging.console-logging.formatter'
+    LOG_FILELOG_LOGGING_ENABLE = 'application.logging.filelog-logging.enable'
+    LOG_FILELOG_LOGGING_LEVEL = 'application.logging.filelog-logging.level'
+    LOG_FILELOG_LOGGING_FILE_DIRECTORY = 'application.logging.filelog-logging.file-directory'
+    LOG_FILELOG_LOGGING_FORMATTER = 'application.logging.filelog-logging.formatter'
+
+
+class WebApplicationContextConfigKey:
+    # 密匙配置
+    SECURITY_SECRET_KEY = 'application.security.secret-key'
+    SECURITY_OAUTH_INSECURE_TRANSPORT = 'application.security.oauth.insecure-transport'
+    SECURITY_OAUTH_RELAX_TOKEN_SCOPE = 'application.security.oauth.insecure-transport'
 
     # WSGI服务器配置
-    APP_WSGI_HOST = 'application.wsgi-server.host'
-    APP_WSGI_PORT = 'application.wsgi-server.port'
-    APP_WSGI_WERKZEUG_DEBUG_MODE = 'application.wsgi-server.werkzeug.debug-mode'
-    APP_WSGI_WERKZEUG_LOG_OUTPUT = 'application.wsgi-server.werkzeug.log-output'
-    APP_WSGI_WERKZEUG_USE_RELOADER = 'application.wsgi-server.werkzeug.use-reloader'
-    APP_WSGI_GUNICORN_WORKERS = 'application.wsgi-server.gunicorn.workers'
-    APP_WSGI_GUNICORN_THREADS = 'application.wsgi-server.gunicorn.threads'
-    APP_WSGI_GUNICORN_DAEMON = 'application.wsgi-server.gunicorn.daemon'
-    APP_WSGI_GUNICORN_WORKER_CLASS = 'application.wsgi-server.gunicorn.worker-class'
-    APP_WSGI_GUNICORN_WORKER_CONNECTIONS = 'application.wsgi-server.gunicorn.worker-connections'
-    APP_WSGI_GUNICORN_PIDFILE = 'application.wsgi-server.gunicorn.pidfile'
-    APP_WSGI_GUNICORN_ACCESSLOG = 'application.wsgi-server.gunicorn.accesslog'
-    APP_WSGI_GUNICORN_ERRORLOG = 'application.wsgi-server.gunicorn.errorlog'
-    APP_WSGI_GUNICORN_LOGLEVEL = 'application.wsgi-server.gunicorn.loglevel'
+    WSGI_HOST = 'application.wsgi-server.host'
+    WSGI_PORT = 'application.wsgi-server.port'
+    WSGI_WERKZEUG_DEBUG_MODE = 'application.wsgi-server.werkzeug.debug-mode'
+    WSGI_WERKZEUG_LOG_OUTPUT = 'application.wsgi-server.werkzeug.log-output'
+    WSGI_WERKZEUG_USE_RELOADER = 'application.wsgi-server.werkzeug.use-reloader'
+    WSGI_GUNICORN_WORKERS = 'application.wsgi-server.gunicorn.workers'
+    WSGI_GUNICORN_THREADS = 'application.wsgi-server.gunicorn.threads'
+    WSGI_GUNICORN_DAEMON = 'application.wsgi-server.gunicorn.daemon'
+    WSGI_GUNICORN_WORKER_CLASS = 'application.wsgi-server.gunicorn.worker-class'
+    WSGI_GUNICORN_WORKER_CONNECTIONS = 'application.wsgi-server.gunicorn.worker-connections'
+    WSGI_GUNICORN_PIDFILE = 'application.wsgi-server.gunicorn.pidfile'
+    WSGI_GUNICORN_ACCESSLOG = 'application.wsgi-server.gunicorn.accesslog'
+    WSGI_GUNICORN_ERRORLOG = 'application.wsgi-server.gunicorn.errorlog'
+    WSGI_GUNICORN_LOGLEVEL = 'application.wsgi-server.gunicorn.loglevel'
 
 import logging
 import os, os.path as path
@@ -162,93 +124,282 @@ class GunicornConfig:
     errorlog: str  # '/var/log/gunicorn_error.log'
     loglevel: str  # 设置日志记录水平 warning
 
+
 from typing import Callable
+from pathlib import Path
 from collections import OrderedDict
-class ApplicationContextV1:
-    """ 服务实例建造器，实现它来快速构建一个服务实例 """
-    banner: str  # 旗帜
+from typing import Type, TypeVar
+
+U = TypeVar('U', bound=LocaleFactory)  # LocaleFactory及其子类
+class ResourceContext:
+    """
+    资源上下文，资源上下文具有基础的资源，例如配置、本地化以及日志，每个资源上下文以命名空间（namespace）相互独立
+    资源默认分布在对应的资源目录中，例如配置默认分布于/config目录下，本地化分布于/resources/{namespace}/locale下
+    日志则分布于/temp/logs目录下
+
+    配置： 通过传入日志配置校验config_schema来设定上下文的配置校验
+    本地化：资源上下文可以通过读取.po .mo文件实现本地化
+    日志：资源上下文具备基础的记录日志能力
+    """
     namespace: str  # 命名空间
-    config_schema: dict  # 配置校验
-    priority_plugin_setups: OrderedDict  # 优先级插件初始化
+    config_schema: dict  # 配置文件校验规则
 
     config: Config  # 配置
     locale: LocaleFactory  # 本地化
     logger: logging.Logger  # 日志
 
-    app: Flask  # 应用
-
     def __init__(self, namespace):
         self.namespace = namespace
-        self.config_schema = config_schema
-        self.priority_plugin_setups = OrderedDict()
+        self.config_schema = resource_context_config_schema
 
-    def modify_config_schema(self, schema: dict):
-        """ 修改配置结构，用于添加 """
-
-    def pre_init(self):
-        """ 预初始化钩子 """
-        pass
-
-    def post_init(self):
-        """ 初始化后钩子 """
-        pass
-
-    def init_config(self):
+    def _init_config(self):
         """ 初始化配置，配置文件路径位于/config/${namespace}.yaml """
-        config_path = path.join(root_path, 'config', f'{self.namespace}.yaml')
-        self.config = Config(config_path, self.config_schema)  # 项目配置
+        self.config = Config(self.config_file_path, self.config_schema)  # 项目配置
         self.config.load()  # 加载配置
 
-    def init_logger(self):
+    def _init_logger(self):
         """ 初始化日志 """
-        facade = SimpleLoggerFacade()  # 日志配置
-        if self.config.get(DefaultConfigKey.APP_LOG_DEFAULT_LOGGING_ENABLE):  # 是否开启配置
-            facade.set_default(self.config.get(DefaultConfigKey.APP_LOG_DEFAULT_LOGGING_LEVEL))
+        facade = SimpleLoggerFacade(name=self.namespace)  # 日志配置
+        if self.config.get(ResourceContextConfigKey.LOG_DEFAULT_LOGGING_ENABLE):  # 是否开启配置
+            facade.set_default(self.config.get(ResourceContextConfigKey.LOG_DEFAULT_LOGGING_LEVEL))
 
-            if self.config.get(DefaultConfigKey.APP_LOG_CONSOLE_LOGGING_ENABLE):  # 控制台日志
-                facade.set_console(self.config.get(DefaultConfigKey.APP_LOG_CONSOLE_LOGGING_LEVEL))
+            # 初始化控制台日志
+            if self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_ENABLE):
+                facade.set_console(
+                    level=self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_LEVEL),
+                    formatter=self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_FORMATTER)
+                )
 
-            if self.config.get(DefaultConfigKey.APP_LOG_LOGFILE_LOGGING_ENABLE):  # 文件日志
-                logs_dir = path.join(
-                    root_path, 'temp', self.namespace,
-                    self.config.get(DefaultConfigKey.APP_LOG_LOGFILE_LOGGING_FILE_DIRECTORY)
+            # 初始化文件日志
+            if self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_ENABLE):
+                logs_directory = str(
+                    self.temp_directory_path /
+                    self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_FILE_DIRECTORY)
                 )  # 日志文件创建目录
 
                 extname = self.namespace
                 facade.set_filelog(
-                    self.config.get(DefaultConfigKey.APP_LOG_LOGFILE_LOGGING_LEVEL),
-                    logs_dir,
-                    extname
+                    level=self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_LEVEL),
+                    logs_directory=logs_directory,
+                    ext=extname,
+                    formatter=self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_FORMATTER)
                 )  # 日志文件创建位置
 
         else:
             logging.disable()  # 禁用日志输出
         self.logger = facade.get_logger()  # 默认日志
 
-    def init_locale(self):
+    def _init_locale(self):
         """ 初始化本地化 """
-        locale_dir = path.join(root_path, 'resources', self.namespace, 'locales')
-        default_language = self.config.get(DefaultConfigKey.APP_LANGUAGE)  # 默认语言
-        self.locale = LocaleFactory(self.namespace, locale_dir, default_language)  # 本地化实例
+        locale_dir = self.resource_directory_path / 'locales'
+        default_language = self.config.get(ResourceContextConfigKey.LANGUAGE)  # 默认语言
+        self.locale = self.get_locale(locale_dir, default_language)
+
+    def get_locale(self, locale_dir: Path, default_language: str) -> U:
+        """ 返回本地化实例，子类可以通过覆写这个方法来自定义实际使用的本地化实例 """
+        return LocaleFactory(self.namespace, locale_dir, default_language)  # 本地化实例
+
+    def pre_init(self):
+        """ 预初始化方法，此方法在所有初始化函数之前调用 """
+
+    def post_init(self):
+        """ 后初始化方法，此方法在所有初始化函数之后调用 """
+
+    def on_init(self):
+        """
+        子类可以覆写此方法自定义自身需要的初始化步骤，上下文在使用时会通过initialize执行初始化
+        在initialize方法中do_initialize方法会被调用以保证初始化方法按照正确的顺序执行
+        """
+
+    def ensure_file(self, target_path: Path):
+        """ 确保文件存在，如果文件不存在，那么创建这个文件 """
+        if not target_path.exists():  # 文件不存在，创建它
+            target_path.parent.mkdir(parents=True, exist_ok=True)  # 确保父目录存在
+            target_path.touch(exist_ok=True)  # 创建空文件
+        elif not target_path.is_file():
+            # 如果路径存在但不是文件，抛出异常
+            _ = self.locale.get()
+            raise ValueError(_("{target_path} exists but is not a regular file")
+                             .format(target_path=target_path))
+
+    def ensure_directory(self, target_path: Path):
+        """ 确保目录存在，如果目录不存在，那么创建它 """
+        if not target_path.exists():  # 目录不存在
+            target_path.mkdir(parents=True, exist_ok=True)
+        elif not target_path.is_dir():
+            # 如果路径存在但不是目录，抛出异常
+            _ = self.locale.get()
+            raise ValueError(_("{target_path} exists but is not a regular directory")
+                             .format(target_path=target_path))
+
+    def ensure_resource_directory(self, target_path: Path):
+        """
+        确保资源路径存在，如果不存在，那么创建它，例如你可以传入Path(songcache)，那么此方法会尝试创建
+        /resources/{namespace}/songcache目录
+        """
+        resource_path = self.resource_directory_path
+        self.ensure_directory(resource_path / target_path)
+
+    def ensure_temp_directory(self, target_path: Path):
+        """
+        确保临时目录下目录存在，如果不存在，那么创建它，例如你可以传入Path(songcache)，之后此方法
+        会尝试创建/temp/{namespace}/songcache目录
+        """
+        temp_path = self.temp_directory_path
+        self.ensure_directory(temp_path / target_path)
+
+    def initialize(self):
+        """ 初始化的实际执行方法 """
+        self.pre_init()
+        self._init_config()
+        self._init_logger()
+        self._init_locale()
+        self.on_init()
+        self.post_init()
+
+    @property
+    def resource_directory_path(self) -> Path:
+        """
+        返回当前上下文的资源目录路径，此路径返回后将会包含上下文的namespace，例如ServerAuthContext将会返回
+        /resources/server-auth/...
+        """
+        return Path(root_path) / 'resources' / self.namespace
+
+    @property
+    def temp_directory_path(self) -> Path:
+        """
+        返回当前服务上下文的临时文件目录路径，此路径返回后将会包含上下文的namespace，例如ServerAuthContext将会返回
+        /temp/server-auth/...
+        """
+        return Path(root_path) / 'temp' / self.namespace
+
+    @property
+    def config_file_path(self) -> Path:
+        """
+        返回当前服务上下文的配置文件路径，此路径返回后将会包含上下文的namespace，例如ServerAuthContext将会返回
+        /config/server-auth.yaml
+        """
+        return Path(root_path) / 'config' / f'{self.namespace}.yaml'
+
+
+class ContextPluginSupportMixin:
+    """ 插件混入支持，通过继承此类来让类支持插件注册 """
+    _plugin_registry: list[ContextPlugin]  # 上下文插件注册表
+
+    def __init__(self):
+        if not isinstance(self, ResourceContext):
+            raise TypeError(f'{self.__class__} is not a subclass of ResourceContext')
+
+        super().__init__()
+        self._plugin_registry = []
+
+    def register_plugin(self, plugin: ContextPlugin):
+        self._plugin_registry.append(plugin)
+
+
+
+T = TypeVar('T', bound=ResourceContext)
+class ContextPlugin:
+    """ 上下文插件父类，通过继承上下文插件类来实现为服务上下文编写拓展插件 """
+    priority = -1  # 优先级，平衡时的优先决策
+    plugin_id: str = None  # 插件唯一标识符
+    depends_on: list[str] = []  # 插件所需依赖
+
+    def modify_config_schema(self, schema: dict):
+        """ 拓展配置结构 """
+        pass
+
+    def plugin_setup(self, ctx: T):
+        """ 插件初始化 """
+        pass
+
+    def __call__(self, ctx: Type[T]):
+        if isinstance(ctx, ContextPluginSupportMixin):
+            raise TypeError(f'{ctx.__class__} is not a subclass of ContextPluginSupportMixin')
+
+        plugin_self = self
+        class EnhancedResourceContext(ctx):
+            def __init__(self):
+                super(EnhancedResourceContext, self).__init__()
+                plugin_self.modify_config_schema(self.config_schema)  # 拓展配置结构
+                self.append_priority_plugin_setup(plugin_self.plugin_setup, priority=plugin_self.priority)
+        return EnhancedResourceContext
+
+
+class WebApplicationContextV1(ResourceContext):
+    """
+    web服务应用上下文，基于资源上下文ResourceContext，web服务应用上下文同样具备配置，本地化，日志输出的
+    基础能力，基于此web服务应用上下文通过封装flask服务实例提供了更灵活便捷的用法
+
+    提供插件能力，可以通过注解来自定义开启flask session、nacos等功能，可以快速完成单体服务实例的开发
+    """
+    app: Flask  # web应用
+    banner: str  # 旗帜
+    priority_plugin_setups: OrderedDict  # 优先级插件初始化
+
+    def __init__(self, namespace):
+        super().__init__(namespace)
+        self.priority_plugin_setups = OrderedDict()
+
+        self.config_schema['application']['schema']['security']['schema'] = {
+            'secret-key': {'type': 'string', 'default': 'undefined'},
+            'oauth': {
+                'type': 'dict',
+                'schema': {
+                    'insecure-transport': {'type': 'boolean', 'default': False},  # 允许在HTTP下执行oauth
+                    'relax-token-scope': {'type': 'boolean', 'default': False},  # 允许动态调整oauth申请权限
+                }
+            }
+        }
+
+        self.config_schema['application']['schema']['wsgi-server'] = {
+            'type': 'dict',
+            'schema': {
+                'host': {'type': 'string', 'default': '127.0.0.1'},
+                'port': {'type': 'integer', 'default': 5000},
+                'werkzeug': {
+                    'type': 'dict',
+                    'schema': {
+                        'debug-mode': {'type': 'boolean', 'default': False},
+                        'log-output': {'type': 'boolean', 'default': False},
+                        'use-reloader': {'type': 'boolean', 'default': False},
+                    }
+                },
+                'gunicorn': {
+                    'type': 'dict',
+                    'schema': {
+                        'workers': {'type': 'integer', 'default': 1},
+                        'threads': {'type': 'integer', 'default': 4},
+                        'daemon': {'type': 'boolean', 'default': False},
+                        'worker-class': {'type': 'string', 'default': 'gthread'},
+                        'worker-connections': {'type': 'integer', 'default': 2000},  # 仅对eventlet gevent生效
+                        'pidfile': {'type': 'string', 'default': 'gunicorn/gunicorn.pid'},
+                        'accesslog': {'type': 'string', 'default': 'gunicorn/gunicorn_access.log'},
+                        'errorlog': {'type': 'string', 'default': 'gunicorn/gunicorn_error.log'},
+                        'loglevel': {'type': 'string', 'default': 'warning'},
+                    }
+                }
+            }
+        }
 
     def init_flask_app(self):
         """ 初始化flask app """
-        dev_mode = self.config.get(DefaultConfigKey.APP_DEV_MODE)
+        dev_mode = self.config.get(ResourceContextConfigKey.DEV_MODE)
         _ = self.locale.get()
         if dev_mode: self.logger.warning(_(
             "dev mode is enabled, know more about development mode at README.md, this mode is only used for "
             "development and testing, do not enable this mode in production environment"))
 
         self.app = Flask(self.namespace)  # app实例
-        secret_key = self.config.get(DefaultConfigKey.APP_SECURITY_SECRET_KEY)
+        secret_key = self.config.get(WebApplicationContextConfigKey.SECURITY_SECRET_KEY)
         self.app.config['SECRET_KEY'] = secret_key  # 应用密钥配置
 
     def init_oauthlib(self):
         """ 初始化oauth lib """
-        if self.config.get(DefaultConfigKey.APP_SECURITY_OAUTH_INSECURE_TRANSPORT):
+        if self.config.get(WebApplicationContextConfigKey.SECURITY_OAUTH_INSECURE_TRANSPORT):
             os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # 仅https下的oath
 
-        if self.config.get(DefaultConfigKey.APP_SECURITY_OAUTH_RELAX_TOKEN_SCOPE):
+        if self.config.get(WebApplicationContextConfigKey.SECURITY_OAUTH_RELAX_TOKEN_SCOPE):
             os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'  # 允许oauth2动态权限调整
 
     def init_exception_handlers(self):
@@ -269,7 +420,7 @@ class ApplicationContextV1:
         register_errorhandler(404, lambda e, _: jsonify({'message': _('NotFound')}))
         register_errorhandler(500, lambda e, _: jsonify({'message': _('Internal Server Error')}))
 
-        dev_mode = self.config.get(DefaultConfigKey.APP_DEV_MODE)
+        dev_mode = self.config.get(ResourceContextConfigKey.DEV_MODE)
         if dev_mode: return  # 开发者模式下并不会注册这一项
 
         @self.app.errorhandler(Exception)
@@ -283,16 +434,16 @@ class ApplicationContextV1:
 
     def print_banner(self):
         """ 打印旗帜 """
-        if self.config.get(DefaultConfigKey.APP_LOG_PRINT_BANNER):
+        if self.config.get(ResourceContextConfigKey.LOG_PRINT_BANNER):
             self.logger.info(self.banner)
 
     def run_werkzeug(self):
         """ 使用werkzeug启动flask """
-        host = self.config.get(DefaultConfigKey.APP_WSGI_HOST)  # 服务器主机名
-        port = self.config.get(DefaultConfigKey.APP_WSGI_PORT)  # 服务器端口号
-        debug_mode = self.config.get(DefaultConfigKey.APP_WSGI_WERKZEUG_DEBUG_MODE)  # 调试模式
-        log_output = self.config.get(DefaultConfigKey.APP_WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
-        use_reloader = self.config.get(DefaultConfigKey.APP_WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
+        host = self.config.get(WebApplicationContextConfigKey.WSGI_HOST)  # 服务器主机名
+        port = self.config.get(WebApplicationContextConfigKey.WSGI_PORT)  # 服务器端口号
+        debug_mode = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_DEBUG_MODE)  # 调试模式
+        log_output = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
+        use_reloader = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
 
         self.app.run(
             host=host,
@@ -305,21 +456,21 @@ class ApplicationContextV1:
     def gunicorn_config(self) -> GunicornConfig:
         config = GunicornConfig()
         """ gunicorn上下文，包含gunicorn配置项 """
-        config.workers = self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_WORKERS)  # 进程数
-        config.threads = self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_THREADS)  # 线程数
-        config.bind = f'{self.config.get(DefaultConfigKey.APP_WSGI_HOST)}:{self.config.get(DefaultConfigKey.APP_WSGI_PORT)}'  # 端口ip
-        config.daemon = self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_DAEMON)  # 是否后台运行
-        config.worker_class = self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_WORKER_CLASS)  # 工作模式协程
-        config.worker_connections = self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_WORKER_CONNECTIONS)  # 最大连接数（并发量）
+        config.workers = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKERS)  # 进程数
+        config.threads = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_THREADS)  # 线程数
+        config.bind = f'{self.config.get(WebApplicationContextConfigKey.WSGI_HOST)}:{self.config.get(WebApplicationContextConfigKey.WSGI_PORT)}'  # 端口ip
+        config.daemon = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_DAEMON)  # 是否后台运行
+        config.worker_class = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKER_CLASS)  # 工作模式协程
+        config.worker_connections = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKER_CONNECTIONS)  # 最大连接数（并发量）
 
         # todo: 修复gunicorn启动时的pidfile accesslog errorlog配置问题
-        config.pidfile = path.join(root_path, 'temp', self.namespace, self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_PIDFILE))  # gunicorn进程文件'/var/run/gunicorn.pid'
-        config.accesslog = path.join(root_path, 'temp', self.namespace, self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_ACCESSLOG))  # 设置访问日志和错误信息日志路径'/var/log/gunicorn_access.log'
-        config.errorlog = path.join(root_path, 'temp', self.namespace, self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_ERRORLOG))  # '/var/log/gunicorn_error.log'
-        config.loglevel = self.config.get(DefaultConfigKey.APP_WSGI_GUNICORN_LOGLEVEL)  # 设置日志记录水平 warning
+        config.pidfile = str(self.temp_directory_path / self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_PIDFILE))  # gunicorn进程文件'/var/run/gunicorn.pid'
+        config.accesslog = str(self.temp_directory_path / self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_ACCESSLOG))  # 设置访问日志和错误信息日志路径'/var/log/gunicorn_access.log'
+        config.errorlog = str(self.temp_directory_path / self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_ERRORLOG))  # '/var/log/gunicorn_error.log'
+        config.loglevel = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_LOGLEVEL)  # 设置日志记录水平 warning
         return config
 
-    def append_priority_plugin_setup(self, plugin_setup: Callable[[ApplicationContextV1], None], priority: int=-1) -> None:
+    def append_priority_plugin_setup(self, plugin_setup: Callable[[WebApplicationContextV1], None], priority: int=-1) -> None:
         if priority not in self.priority_plugin_setups:
             self.priority_plugin_setups[priority] = []
         self.priority_plugin_setups[priority].append(plugin_setup)
@@ -329,24 +480,22 @@ class ApplicationContextV1:
             for priority_plugin_setup in self.priority_plugin_setups[priority]:
                 priority_plugin_setup(self)
 
-    def initialize(self):
-        self.modify_config_schema(self.config_schema)  # 加载自定义配置
-        self.pre_init()  # 预初始化
-        self.init_config()  # 初始化配置
-        self.init_logger()  # 初始化日志
-        self.init_locale()  # 初始化本地化
+    def get_locale(self, locale_dir, default_language) -> U:
+        from utils.locale import FlaskLocaleFactory
+        return FlaskLocaleFactory(locale_domain=self.namespace,
+                                  locale_dir=locale_dir,
+                                  default_language=default_language)
+
+    def on_init(self):
         self.init_flask_app()  # 初始化flask
         self.init_oauthlib()  # 初始化oauthlib
         self.init_exception_handlers()  # 初始化异常处理器
         self.print_banner()  # 打印旗帜
         self.init_priority_plugins()  # 初始化优先级插件
-        self.post_init()  # 初始化后
-
-from typing import Type, TypeVar
-T = TypeVar('T', bound=ApplicationContextV1)
 
 
-class ApplicationContextPlugin:
+T = TypeVar('T', bound=WebApplicationContextV1)
+class WebApplicationContextPlugin:
     """ 上下文插件父类，通过继承上下文插件类来实现为服务上下文编写拓展插件 """
     priority = -1  # 优先级，初始化闭包执行顺序依据
     def modify_config_schema(self, schema: dict):
@@ -358,13 +507,16 @@ class ApplicationContextPlugin:
         pass
 
     def __call__(self, ctx: Type[T]):
+        if isinstance(ctx, WebApplicationContextV1):
+            raise TypeError(f'{ctx.__class__} is not a subclass of WebApplicationContextV1')
+
         plugin_self = self
-        class EnhancedApplicationContext(ctx):
+        class EnhancedWebApplicationContext(ctx):
             def __init__(self):
-                super(EnhancedApplicationContext, self).__init__()
+                super(EnhancedWebApplicationContext, self).__init__()
                 plugin_self.modify_config_schema(self.config_schema)  # 拓展配置结构
                 self.append_priority_plugin_setup(plugin_self.plugin_setup, priority=plugin_self.priority)
-        return EnhancedApplicationContext
+        return EnhancedWebApplicationContext
 
 
 class CorsConfigKey:
@@ -373,7 +525,7 @@ class CorsConfigKey:
     SECURITY_CORS_ALLOW_METHODS = 'application.security.cors.allow-methods'
     SECURITY_CORS_SUPPORTS_CREDENTIALS = 'application.security.cors.supports-credentials'
 
-class EnableCors(ApplicationContextPlugin):
+class EnableCors(WebApplicationContextPlugin):
     priority = 1  # socketio依赖cors配置项
     """ 启用cors """
     def modify_config_schema(self, schema: dict):
@@ -397,9 +549,9 @@ class EnableCors(ApplicationContextPlugin):
         supports_credentials = ctx.config.get(CorsConfigKey.SECURITY_CORS_SUPPORTS_CREDENTIALS)
 
         CORS(ctx.app, resources={
-            # 支持前端调用后端RESTFUL auth_server
+            # 支持前端调用后端RESTFUL server_auth
             # 如果手动携带Authorization请求头，需要明确来源，而非'*'，浏览器可能对'*'来源的响应不作答复
-            r"/api/*": {  # 支持restful auth_server
+            r"/api/*": {  # 支持restful server_auth
                 "origins": origins,
                 "allow_headers": headers,
                 "allow_methods": methods,
@@ -431,7 +583,7 @@ class SessionConfigKey:
     SESSION_FILESYSTEM_FILE_DIRECTORY = 'application.session.filesystem.file-directory'
 
 
-class SessionEnhance(ApplicationContextPlugin):
+class SessionEnhance(WebApplicationContextPlugin):
     """ 会话增强 """
     def modify_config_schema(self, schema: dict):
         schema['application']['schema']['session'] = {
@@ -535,7 +687,7 @@ class CacheConfigKey:
     CACHE_FILESYSTEM_FILE_DIRECTORY = 'application.cache.filesystem.file-directory'
 
 
-class EnableCache(ApplicationContextPlugin):
+class EnableCache(WebApplicationContextPlugin):
     """ 启用缓存 """
     priority = -1
     def modify_config_schema(self, schema: dict):
@@ -616,7 +768,7 @@ class DatabaseConfigKey:
     DATABASE_DATABASE = 'application.database.database'
     DATABASE_TRACK_MODIFICATION = 'application.database.track-modification'
 
-class EnableDatabase(ApplicationContextPlugin):
+class EnableDatabase(WebApplicationContextPlugin):
     """ 启用数据库 """
     priority = -1
 
@@ -657,7 +809,7 @@ class EnableDatabase(ApplicationContextPlugin):
 class SocketIOConfigKey:
     SOCKETIO_CORS_ALLOW_ORIGINS = 'application.socketio.cors.allow-origins'
 
-class EnableSocketIO(ApplicationContextPlugin):
+class EnableSocketIO(WebApplicationContextPlugin):
     """ 开启socketio """
     priority = -1
     def __call__(self, ctx: Type[T]):
@@ -671,11 +823,11 @@ class EnableSocketIO(ApplicationContextPlugin):
             def run_werkzeug(self):
                 """ 覆写run_werkzeug启动流程 """
                 # 覆写原始的run_werkzeug启动流程，在socketio启动时需要通过socketio实例直接启动flask
-                host = self.config.get(DefaultConfigKey.APP_WSGI_HOST)  # 服务器主机名
-                port = self.config.get(DefaultConfigKey.APP_WSGI_PORT)  # 服务器端口号
-                debug_mode = self.config.get(DefaultConfigKey.APP_WSGI_WERKZEUG_DEBUG_MODE)  # 调试模式
-                log_output = self.config.get(DefaultConfigKey.APP_WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
-                use_reloader = self.config.get(DefaultConfigKey.APP_WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
+                host = self.config.get(WebApplicationContextConfigKey.WSGI_HOST)  # 服务器主机名
+                port = self.config.get(WebApplicationContextConfigKey.WSGI_PORT)  # 服务器端口号
+                debug_mode = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_DEBUG_MODE)  # 调试模式
+                log_output = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
+                use_reloader = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
 
                 self.socketio.run(
                     app=self.app,
@@ -718,7 +870,7 @@ class EnableSocketIO(ApplicationContextPlugin):
         # admin_socketio.init(socketio)  # 初始化管理员socketio服务器
         # log.debug(f"socketio using server: {socketio.async_mode} ")
 
-        ctx.logger.info(f'socketio enabled for application context [{ctx.namespace}]')
+        ctx.logger.info(f'socketio enabled for application context.py [{ctx.namespace}]')
 
 
 class NacosConfigKey:
@@ -731,7 +883,7 @@ class NacosConfigKey:
     NACOS_REG_WEIGHT = 'application.nacos.registration.weight'  # 权重
     NACOS_REG_HEARTBEAT_INTERVAL = 'application.nacos.registration.heartbeat-interval'  # 心跳信号间隔
 
-class EnableNacos(ApplicationContextPlugin):
+class EnableNacos(WebApplicationContextPlugin):
     """ 启用nacos注册中心，启用之后服务在启动时会被自动注册到nacos注册中心 """
     def modify_config_schema(self, schema: dict):
         """ 初始化nacos相关的配置拓展 """
@@ -763,7 +915,7 @@ class EnableNacos(ApplicationContextPlugin):
     @staticmethod
     def init_nacos_client(ctx: T):
         """ 初始化nacos """
-        ctx.logger.info(f'nacos enabled for application context [{ctx.namespace}]')
+        ctx.logger.info(f'nacos enabled for application context.py [{ctx.namespace}]')
         nacos_server_addr = ctx.config.get(NacosConfigKey.NACOS_SERVER_ADDR)
         nacos_server_port = ctx.config.get(NacosConfigKey.NACOS_SERVER_PORT)
 
@@ -832,7 +984,7 @@ class SwaggerConfigKey:
     SWAGGER_LICENSE_NAME = 'application.swagger.license.name'
     SWAGGER_LICENSE_URL = 'application.swagger.license.url'
 
-class EnableSwagger(ApplicationContextPlugin):
+class EnableSwagger(WebApplicationContextPlugin):
     """ 启用Swagger，依赖注释自动生成接口文档 """
     priority = -1
     def modify_config_schema(self, schema: dict):
@@ -864,7 +1016,7 @@ class EnableSwagger(ApplicationContextPlugin):
 
     def plugin_setup(self, ctx: T):
         """ 初始化项目接口文档(flasgger) """
-        dev_mode = ctx.config.get(DefaultConfigKey.APP_DEV_MODE)
+        dev_mode = ctx.config.get(ResourceContextConfigKey.DEV_MODE)
         if not dev_mode: return  # 仅在开发者模式下开启swagger文档
 
         from flasgger import Swagger
@@ -888,6 +1040,321 @@ class EnableSwagger(ApplicationContextPlugin):
         Swagger(ctx.app)
 
 
-class DiscordBotContextV1:
+from common import Result
+from events import BotEvent
+class BotState:
+    """ 机器人状态 """
+    def __init__(self, identify):
+        self._identify = identify  # 状态标识符
+
+    @property
+    def identify(self):
+        return self._identify
+
+    def enter(self, ctx: DiscordBotContextV1):  # 状态变更
+        """ 切入状态时的钩子函数 """
+        pass
+
+    def fadeout(self, ctx: DiscordBotContextV1):
+        """ 切出此状态时将会触发此钩子函数 """
+        pass
+
+    def do_enter(self, ctx: DiscordBotContextV1):
+        """ 实际切入状态时触发此钩子函数 """
+        # 发布内部事件后执行切入状态钩子函数
+        ctx.bot_eventbus.emit(BotEvent.STATE_CHANGE, self.identify)
+        self.enter(ctx)
+        # from core import socketio
+        # socketio.start_background_task(target=socketio.emit, event=SocketioEvent.ATRI_STATE_CHANGE, data=self.identify, namespace='/socket/admin')
+        # socketio.emit(SocketioEvent.ATRI_STATE_CHANGE, self.identify, namespace='/socket/admin')
+
+    def do_fadeout(self, ctx: DiscordBotContextV1):
+        """ 实际切出状态时触发此钩子函数 """
+        self.fadeout(ctx)
+
+    def start(self, ctx: DiscordBotContextV1) -> Result:
+        """ 启动机器人 """
+        return Result(500, "unsupported operation: start")
+
+    def stop(self, ctx: DiscordBotContextV1) -> Result:
+        """ 停止机器人 """
+        return Result(500, "unsupported operation: stop")
+
+    # 初始化，在应用启动时初始化机器人线程
+    def launch(self, ctx: DiscordBotContextV1) -> Result:
+        """ 启动机器人线程 """
+        return Result(500, "unsupported operation: launch")
+
+    # 用于线程退出的时候清理资源
+    def terminate(self, ctx: DiscordBotContextV1) -> Result:
+        """ 停止机器人线程 """
+        return Result(500, "unsupported operation: terminate")
+
+
+import asyncio
+# 线程启动前
+from threading import Thread
+class BotThreadIdle(BotState):
+    """ 机器人线程未启动时 """
+    def __init__(self):
+        super().__init__('created')
+
+    def launch(self, ctx: DiscordBotContextV1) -> Result:
+        def thread_target():
+            ctx.bot_event_loop = asyncio.new_event_loop()  # 初始化事件循环
+            asyncio.set_event_loop(ctx.bot_event_loop)  # 设置bot_thread的主事件循环
+            ctx.bot_event_loop.run_forever()
+
+        ctx.bot_thread = Thread(target=thread_target)
+        ctx.bot_thread.start()
+        ctx.logger.debug('bot thread start successfully')
+        ctx.update_state(BotIdle())  # 机器人线程准备就绪
+        return Result(200, 'start bot thread')
+
+
+class BotThreadTerminated(BotState):
+    """ 机器人线程终止 """
+    def __init__(self):
+        super().__init__('terminated')
+
+
+class BotThreadTerminating(BotState):
+    def __init__(self):
+        super().__init__('terminating')
+
+# 亚托莉初始化
+class BotIdle(BotState):
+    def __init__(self):
+        super().__init__('initializing')
+
+    def enter(self, ctx: DiscordBotContextV1):
+        ctx.init_bot_instance()  # 初始化机器人实例
+        ctx.update_state(BotStopped())  # 亚托莉准备就绪
+
+class BotStopped(BotState):
+    def __init__(self):
+        super().__init__('stopped')
+
+    def start(self, ctx: DiscordBotContextV1) -> Result:
+        """ 启动亚托莉 """
+        ctx.update_state(BotStarting())   # 切换到starting状态
+
+        @ctx.bot_instance.event  # 启动成功回调
+        async def on_ready():
+            ctx.logger.info(f"bot name: {ctx.bot_instance.user}; bot id: {ctx.bot_instance.user.id}")
+            ctx.bot_eventbus.emit(BotEvent.READY)
+            ctx.update_state(BotStarted())  # 启动状态
+
+        async def async_start():  # 异步启动亚托莉
+            try:
+                bot_token = ctx.config.get(DiscordBotContextConfigKey.BOT_TOKEN)
+                await ctx.bot_instance.start(bot_token, reconnect=False)  # 启动机器人
+            except Exception as e:  # 亚托莉登录失败
+                ctx.bot_eventbus.emit(BotEvent.CONNECT_FAILED, str(e))  # 亚托莉启动失败
+                await ctx.bot_instance.close()  # 关闭实例
+                ctx.init_bot_instance()  # 重新初始化
+                ctx.update_state(BotStopped())  # 恢复状态到stopped
+
+        asyncio.run_coroutine_threadsafe(async_start(), ctx.bot_event_loop)
+        return Result(200, "submit bot launching task")  # 执行亚托莉启动工作流
+
+    def stop(self, ctx: DiscordBotContextV1):
+        return Result(200, "bot already stopped")
+
+    def terminate(self, ctx: DiscordBotContextV1):
+        # ctx.bot_instance.close()  # 关闭资源
+        # todo: 完善Stopped状态下的terminate方法
+        pass
+
+
+class BotStarted(BotState):
+    """ 亚托莉已启动 """
+    def __init__(self):
+        super().__init__('started')
+
+    def start(self, ctx: DiscordBotContextV1) -> Result:
+        return Result(200, 'bot already started')
+
+    def stop(self, ctx: DiscordBotContextV1) -> Result:
+        """ 停止亚托莉 """
+        ctx.update_state(BotStopping())   # 切换到stopping状态
+        async def async_stop():  # 异步停止亚托莉
+            try:
+                await ctx.bot_instance.close()  # 尝试关闭亚托莉
+                # ctx.bot_eventbus.emit(AtriEvent.CLOSE)
+                # 切换亚托莉到初始状态
+                # 机器人在调用close方法之后会话会被关闭，因此需要重新初始化机器人
+                ctx.update_state(BotIdle())
+            except Exception as e:  # 亚托莉退出失败
+                ctx.bot_eventbus.emit(BotEvent.DISCONNECT_FAILED, str(e))
+                ctx.update_state(BotStarted())  # 恢复到原始状态
+
+        asyncio.run_coroutine_threadsafe(async_stop(), ctx.bot_event_loop)  # 停止机器人协程
+        return Result(200, "submit bot shutdown task")  # 执行亚托莉停止工作流
+
+
+class BotStopping(BotState):  # 正在停止
+    """ 正在停止状态 """
+    def __init__(self):
+        super().__init__('stopping')
+
+    def start(self, ctx: DiscordBotContextV1):
+        raise RuntimeError('bot is still stopping')
+
+    def stop(self, ctx: DiscordBotContextV1):
+        return Result(400, 'musicatri is still stopping')
+
+
+class BotStarting(BotState):  # 机器人正在启动
+    def __init__(self):
+        super().__init__('starting')
+
+
+from discord import Intents
+from discord.ext import commands
+class BotInstance(commands.AutoShardedBot):
+    """ 机器人实例 """
+    def __init__(self, command_prefix: str, intents: Intents):
+        super().__init__(command_prefix=command_prefix, intents=intents)
+
+
+class DiscordBotContextConfigKey:
+    BOT_TOKEN = "application.bot.token"
+
+from pyee.executor import ExecutorEventEmitter
+from asyncio import AbstractEventLoop
+class DiscordBotContextV1(ResourceContext):
     """ discord机器人服务上下文，用于快速构建机器人实例 """
-    
+    bot_instance: BotInstance  # 机器人实例
+    bot_eventbus: ExecutorEventEmitter  # 事件总线，用于在机器人内部传递事件消息
+    bot_thread: Thread  # 机器人线程，基于asyncio启动事件循环
+    bot_event_loop: AbstractEventLoop  # 占用机器人线程的事件循环，执行asyncio异步任务
+
+    bot_token: str  # 机器人令牌
+    bot_intents: Intents  # 机器人接收discord网关事件意图
+    bot_command_prefix: str  # 机器人命令前缀
+
+    def __init__(self,
+                 namespace: str,
+                 command_prefix: str,
+                 intents: Intents=Intents.all()):
+        """ 上下文初始化 """
+        super().__init__(namespace=namespace)
+        self.bot_eventbus = ExecutorEventEmitter()  # 事件总线
+        self._state = None
+
+        self.bot_intents = intents
+        self.bot_command_prefix = command_prefix
+        self.config_schema['application']['schema']['bot'] = {
+            'type': 'dict',
+            'schema': {
+                'token': {'type': 'string', 'default': 'bot-token'}
+            }
+        }
+
+    def on_init(self):
+        self.do_init_bot_event_listener(self.bot_eventbus)  # 初始化机器人事件监听器
+        self.update_state(BotThreadIdle())  # 初始化状态
+
+    # def init_logger(self):
+    #     """ 初始化日志记录 """
+    #     # todo: 完善更详细的机器人日志配置项
+    #     facade = SimpleLoggerFacade(name='bot-context.py-logger')  # 日志配置
+    #
+    #     from utils.logger import BACKGROUND_RENDER_CONSOLE_FORMATTER
+    #     facade.set_default(level=logging.DEBUG)
+    #     facade.set_console(level=logging.DEBUG, formatter=BACKGROUND_RENDER_CONSOLE_FORMATTER)
+    #     self.logger = facade.get_logger()
+
+    def start(self):
+        """ 启动机器人 """
+        return self.state.start(self)
+
+    def stop(self):
+        """ 停止机器人 """
+        return self.state.stop(self)
+
+    def launch(self):
+        """
+        启动机器人线程，机器人上下文为了能够以同步的方式执行discord机器人的异步方法，使用子线程+事件循环的
+        形式运行机器人，并通过提交异步函数的形式操作机器人，此方法将启动一个子线程以运行机器人携程事件循环
+        """
+        return self.state.launch(self)
+
+    def terminate(self):
+        """ 停止机器人线程 """
+        return self.state.terminate(self)
+
+    @property
+    def identify(self):
+        return self.state.identify
+
+    @property
+    def state(self) -> BotState:
+        return self._state
+
+    @state.setter
+    def state(self, state: BotState):
+        """
+        设置机器人自身状态，此方法仅仅变更状态，不应该调用此方法变更机器人的状态
+        而是使用update_state
+        """
+        self._state = state
+
+    def update_state(self, state: BotState):
+        if self.state: self.state.do_fadeout(self)  # 状态切出
+        self.state = state  # 状态切入
+        if self.state: self.state.do_enter(self)
+
+    def init_bot_event_listener(self, eventbus: ExecutorEventEmitter):
+        """ 挂载机器人事件监听器，主要针对机器人相关事件进行监听，即BotEvent """
+        pass
+
+    def do_init_bot_event_listener(self, eventbus: ExecutorEventEmitter):
+        """ 初始化机器人事件监听器，实际执行 """
+        self.init_bot_event_listener(eventbus)
+
+    def init_bot_instance(self):
+        """ 初始化上下文的亚托莉对象 """
+        bot = BotInstance(command_prefix=self.bot_command_prefix,
+                          intents=self.bot_intents)
+        self.bot_instance = bot  # 此处应优先初始化字段，避免空指针
+        self.do_init_bot_event_hook(bot)
+        self.do_init_bot_command(bot)
+
+    def init_bot_command(self, bot: BotInstance):
+        """ 初始化机器人命令 """
+        pass
+
+    def init_bot_event_hook(self, bot: BotInstance):
+        """ 初始化机器人生命周期事件监听器 """
+        pass
+
+    def do_init_bot_command(self, bot: BotInstance):
+        @bot.command()
+        async def add(ctx, left: int, right: int):
+            await ctx.send(left + right)
+
+        @bot.command()
+        async def repeat(ctx, times: int, content='repeating...'):
+            """Repeats a message multiple times."""
+            for i in range(times):
+                await ctx.send(content)
+
+        self.init_bot_command(bot)
+
+    def do_init_bot_event_hook(self, bot: BotInstance):
+        @bot.event
+        async def on_connect():
+            """ 机器人成功建立的连接 """
+            self.bot_eventbus.emit(BotEvent.CONNECT_SUCCESS)
+
+        @bot.event
+        async def on_disconnect():
+            """ 机器人断开连接 """
+            self.bot_eventbus.emit(BotEvent.DISCONNECT_SUCCESS)
+
+        self.init_bot_event_hook(bot)
+
+    # todo: 增加阻塞方法，支持以同步形式启动机器人上下文
+

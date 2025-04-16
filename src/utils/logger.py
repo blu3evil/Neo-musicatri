@@ -58,6 +58,17 @@ DEFAULT_FILELOG_FORMATTER = logging.Formatter(
     fmt='%(asctime)s [%(levelname)s] %(name)s %(filename)s:%(lineno)d - %(message)s',
     datefmt='%Y-%m-%d,%H:%M:%S')
 
+console_formatters = {
+    'default': DEFAULT_CONSOLE_FORMATTER,
+    'flask-style': FLASK_STYLE_CONSOLE_FORMATTER,
+    'background-render': BACKGROUND_RENDER_CONSOLE_FORMATTER,
+}
+
+filelog_formatters = {
+    'default': DEFAULT_FILELOG_FORMATTER,
+    'flask-style': FLASK_STYLE_FILELOG_FORMATTER,
+}
+
 class LoggerFactory(object):
     """ 日志创建工厂 """
     @staticmethod
@@ -102,29 +113,48 @@ class SimpleLoggerFacade:
         self.logger.setLevel(level)
 
     # 主要用于在完成配置文件加载后再次配置日志
-    def set_console(self, level):
+    def set_console(self, level,
+                    formatter='default'):
         """ 设置控制台日志等级 """
-        self.console_handler = LoggerFactory.create_console_handler(level=logging.DEBUG, formatter=FLASK_STYLE_CONSOLE_FORMATTER)
+        # 设置日志格式化
+        formatter = console_formatters.get(formatter)
+        self.console_handler = LoggerFactory.create_console_handler(
+            level=logging.DEBUG,
+            formatter=formatter or DEFAULT_CONSOLE_FORMATTER
+        )
+
         level = name_levels_mapping.get(level, logging.INFO)
         self.console_handler.setLevel(level)
         self.logger.addHandler(self.console_handler)
 
-    def __init_logfile(self, logs_dir, ext: str=None, ):
+    def _init_logfile(self, logs_dir, ext: str=None, ):
         """ 初始化日志文件 """
         if not os.path.exists(logs_dir):  # 创建日志目录
             os.makedirs(logs_dir)
-        self.logfile_path = SimpleLoggerFacade.__generate_logfile_name(logs_dir, ext)
+        self.logfile_path = SimpleLoggerFacade._generate_logfile_name(logs_dir, ext)
 
-    def set_filelog(self, level, logs_dir, ext: str=None):
+    def set_filelog(self,
+                    level,
+                    logs_directory,
+                    ext: str=None,
+                    formatter='default'):
         """ 设置日志文件日志等级 """
-        self.__init_logfile(logs_dir, ext)  # 初始化日志文件
-        self.filelog_handler = LoggerFactory.create_logfile_handler(self.logfile_path, level=logging.DEBUG, formatter=FLASK_STYLE_FILELOG_FORMATTER)
+        self._init_logfile(logs_directory, ext)  # 初始化日志文件
+
+        # 设置日志格式化
+        formatter = filelog_formatters.get(formatter)
+        self.filelog_handler = LoggerFactory.create_logfile_handler(
+            self.logfile_path,
+            level=logging.DEBUG,
+            formatter=formatter or DEFAULT_FILELOG_FORMATTER
+        )
+
         level = name_levels_mapping.get(level, logging.INFO)
         self.filelog_handler.setLevel(level)
         self.logger.addHandler(self.filelog_handler)
 
     @staticmethod
-    def __generate_logfile_name(logfile_dir_path, ext: str=None) -> str:
+    def _generate_logfile_name(logfile_dir_path, ext: str=None) -> str:
         """ 基于日志目录生成不会重复的日志文件名，外部使用这个方法来书写日志文件 """
         current_time = int(round(time.time() * 1000))
         logfile_index = 1

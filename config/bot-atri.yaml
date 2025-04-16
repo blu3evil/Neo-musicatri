@@ -1,0 +1,46 @@
+active-environment: global
+application:
+  dev-mode: true
+  language: zh-CN
+  information:
+    name: atri
+    version: 1.0.0
+    description: neo-musicatri
+  logging:
+    print-banner: true  # 打印musicatri旗帜
+    default-logging:  # 默认日志
+      enable: true
+      level: DEBUG
+    console-logging:  # 控制台日志
+      enable: true
+      level: DEBUG
+      formatter: background-render
+    filelog-logging:  # 文件日志
+      enable: false
+      level: DEBUG
+      extname: api
+      file-directory: logs  # temp/logs
+  discord:
+    api-endpoint: https://discord.com/api/v10
+    oauth:
+      client-id: 1295653634234650624
+      client-secret: AlS0oXa3HEWIElDdBKMJOSPi4Gm1gwKv
+      redirect-uri: http://localhost:5173/authorized
+      scope: 'identify guilds guilds.join'  # 权限范围
+  bot:
+    token: MTI5NTY1MzYzNDIzNDY1MDYyNA.GDox9Z.oRgB5lrNpBJbdlP6CsT5rNtDo60VpFY4iK1pTs
+
+---
+environment: docker  # dev
+application:
+  session:
+    redis:
+      host: 172.17.208.1
+      port: 6379
+  cache:
+    redis:
+      host: 172.17.208.1
+      port: 6379
+  database:
+    host: 172.17.208.1
+    port: 3306

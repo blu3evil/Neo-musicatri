@@ -1,10 +1,11 @@
 """ 更简洁的项目配置文件 """
 import yaml
 from cerberus import Validator
+from pathlib import Path
 
 class Config:
     """ 项目配置类，通过Tag枚举类来更方便地获取项目配置 """
-    def __init__(self, config_path, rule_schema: dict):
+    def __init__(self, config_path: Path, rule_schema: dict):
         self.configurations = {}  # 项目配置
         self.rule_schema = rule_schema  # 配置校验
         self.config_path = config_path  # 配置文件路径
@@ -56,9 +57,9 @@ class Config:
         return current_config
 
     def load(self):
-        if self.config_path:  # 配置路径存在，加载配置
-            with open(self.config_path, 'r', encoding='utf-8') as file:
-                env_configs = list(yaml.safe_load_all(file))
+        if self.config_path and self.config_path.exists():  # 配置路径存在，加载配置
+            with self.config_path.open(encoding='utf-8') as f:
+                env_configs = list(yaml.safe_load_all(f))
         else:
             env_configs = []  # 配置路径不存在，返回空配置
         self._do_load(env_configs)

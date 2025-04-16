@@ -7,4 +7,4 @@ class AuthClient:
     def __init__(self, nacos_client):
         self.nacos_client = nacos_client
 
-    def
+

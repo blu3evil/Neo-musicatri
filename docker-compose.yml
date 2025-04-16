@@ -4,7 +4,7 @@ services:
 #  musicatri:
 #    image: pineclone/musicatri:dev-base-v2.1.0
 ##    build:
-##      context: .
+##      context.py: .
 ##      dockerfile: Dockerfile
 #    entrypoint: /bin/bash
 #    tty: true
@@ -12,7 +12,7 @@ services:
 #    ports:
 #      - '5000:5000'
 #    volumes:
-#      - ./auth-server.yaml:/musicatri/auth-server.yaml
+#      - ./server-auth.yaml:/musicatri/server-auth.yaml
 #    depends_on:
 #      redis:
 #        condition: service_healthy

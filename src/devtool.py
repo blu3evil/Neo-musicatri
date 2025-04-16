@@ -179,7 +179,7 @@ class I18nUtils:
 
         参数说明:
             - lang: 目标语言，例如: zh-CN en-US en-UK
-            - modo: 语言域，通常用于区分不同的业务逻辑，例如: api-server bot-server
+            - modo: 语言域，通常用于区分不同的业务逻辑，例如: api-server server-bot
             - includes: 包含目录，扫描哪些目录进行资源加载，会自动扫描目录下的子级目录，如果没有传入目录那么针对src进行扫描
         """
         lc_dir = os.path.join(lang_dir, "LC_MESSAGES")  # 首先确保资源目录存在
@@ -391,7 +391,7 @@ class LocaleNamespaceHelpCommand(LeafCommand):
             def help_doc_printer():
                 logger.info("This command is about to set a specific namespace, namespace plays an important role in localization,")
                 logger.info("before step into locale job, a namespace must be specific, namespace is usually from a server's namespace,")
-                logger.info("for example 'auth_server' can own a namespace called 'auth-server', later this namespace will be used to")
+                logger.info("for example 'server_auth' can own a namespace called 'server-auth', later this namespace will be used to")
                 logger.info("create a resources directory in the path '/resources/<namespace>/...'")
                 logger.info("via namespace, It becomes possible to isolate the localization of different services")
             self.print_help_doc(help_doc_printer)
@@ -456,8 +456,8 @@ class LocaleGPOCommand(LocaleGenerateCommand):
         lang_dir = path.join(namespace_locale_dir, target_lang)
         if not self.ensure_directory(lang_dir): return
 
-        logger.info('Input scanning scope, for example "auth_server" will cause scanning "/src/auth_server" package')
-        logger.info('Using Space to split multiple package, for example "auth_server bot_server" will cause scanning both packages')
+        logger.info('Input scanning scope, for example "server_auth" will cause scanning "/src/server_auth" package')
+        logger.info('Using Space to split multiple package, for example "server_auth server_bot" will cause scanning both packages')
         logger.info('Scanning: ', end='')
         scan_scope = input()
 
