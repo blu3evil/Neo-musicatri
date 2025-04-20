@@ -20,15 +20,8 @@ application:
       level: DEBUG
       extname: api
       file-directory: logs  # temp/logs
-  discord:
-    api-endpoint: https://discord.com/api/v10
-    oauth:
-      client-id: 1295653634234650624
-      client-secret: AlS0oXa3HEWIElDdBKMJOSPi4Gm1gwKv
-      redirect-uri: http://localhost:5173/authorized
-      scope: 'identify guilds guilds.join'  # 权限范围
   bot:
-    token: MTI5NTY1MzYzNDIzNDY1MDYyNA.GDox9Z.oRgB5lrNpBJbdlP6CsT5rNtDo60VpFY4iK1pTs
+    token:
 
 ---
 environment: docker  # dev

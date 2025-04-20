@@ -103,9 +103,11 @@ class SimpleLoggerFacade:
     filelog_handler: logging.FileHandler  # 文件日志输出
     logfile_path: str  # 日志路径
     logger: logging.Logger  # 日志实例
+    name: str  # 日志名称
 
-    def __init__(self, name=__name__):
-        self.logger = LoggerFactory.create_basic_logger(name, propagate=True, level=logging.DEBUG)
+    def __init__(self, name=__name__, propagate=False):
+        self.name = name
+        self.logger = LoggerFactory.create_basic_logger(self.name, propagate=propagate, level=logging.DEBUG)
 
     def set_default(self, level):
         """ 设置日志默认等级 """
@@ -113,10 +115,14 @@ class SimpleLoggerFacade:
         self.logger.setLevel(level)
 
     # 主要用于在完成配置文件加载后再次配置日志
-    def set_console(self, level,
+    def set_console(self,
+                    level,
                     formatter='default'):
         """ 设置控制台日志等级 """
         # 设置日志格式化
+        if any(isinstance(h, logging.StreamHandler) for h in self.logger.handlers):
+            return  # 避免重复添加console handler
+
         formatter = console_formatters.get(formatter)
         self.console_handler = LoggerFactory.create_console_handler(
             level=logging.DEBUG,
@@ -135,7 +141,7 @@ class SimpleLoggerFacade:
 
     def set_filelog(self,
                     level,
-                    logs_directory,
+                    logs_directory: str,
                     ext: str=None,
                     formatter='default'):
         """ 设置日志文件日志等级 """

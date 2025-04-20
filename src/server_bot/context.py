@@ -1,13 +1,14 @@
 from __future__ import annotations
-from utils.context import WebApplicationContextV1, EnableNacos, \
-    EnableSwagger, EnableCors
+from utils.context import *
 
 from server_bot.bot.atri.context import BotAtriContext
+from utils.locale import FlaskLocaleFactory
 
 @EnableNacos()  # 注册发现
 @EnableSwagger()  # 接口文档
 @EnableCors()  # 启用cors
-class ServerBotContext(WebApplicationContextV1):
+@EnableI18N(factory_supplier=FlaskLocaleFactory)  # 启用本地化
+class ServerBotContext(PluginSupportMixin, WebApplicationContext):
     """ 机器人服务，将机器人操作封装为API接口，提供HTTP调用的能力 """
     # 字体: https://toolinone.com/cn/text-ascii/ Slant
     banner = """
@@ -32,9 +33,11 @@ class ServerBotContext(WebApplicationContextV1):
         self.atri_context = BotAtriContext()
         self.atri_context.initialize()
 
-    def post_init(self):
-        self._init_atri()
-        self._init_views()
+    def post_init(self) -> InitHook:
+        def hook_func():
+            self._init_atri()
+            self._init_views()
+        return InitHook(hook_func)
 
 context = ServerBotContext()
 context.initialize()

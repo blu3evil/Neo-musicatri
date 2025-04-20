@@ -3,12 +3,64 @@ import yaml
 from cerberus import Validator
 from pathlib import Path
 
+class ConfigSchemaBuilder:
+    """ 配置校验规则构建器 """
+    _config_schema: dict  # 校验规则
+    def __init__(self, origin: dict=None):
+        self._config_schema = origin if origin is not None else {}
+
+    def set_at_path(self, path: str, value: dict):
+        """
+        自动创建路径并赋值。例如：
+        set_at_path('application.logging.console-logging.level', {'type': 'string', 'default': 'DEBUG'})
+        """
+        keys = path.split('.')
+        current = self._config_schema
+
+        for key in keys[:-1]:
+            # 遍历路径
+            if key not in current:
+                current[key] = {'type': 'dict', 'schema': {}}
+            elif 'schema' not in current[key]:
+                current[key]['schema'] = {}
+            current = current[key]['schema']
+
+        final_key = keys[-1]
+        if final_key in current:
+            current[final_key] = self._deep_merge(current[final_key], value)
+        else:
+            current[final_key] = value
+        return self
+
+    def merge(self, schema: dict):
+        """ 深度合并外部字典 """
+        self._config_schema = self._deep_merge(self._config_schema, schema)
+        return self
+
+    def _deep_merge(self, a: dict, b: dict) -> dict:
+        """ 深度合并两个schema dict """
+        from copy import deepcopy
+        result = deepcopy(a)
+        for key, value in b.items():
+            if key in result and isinstance(a[key], dict) and isinstance(value, dict):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                result[key] = deepcopy(value)
+        return result
+
+    def build(self) -> dict:
+        return self._config_schema
+
 class Config:
     """ 项目配置类，通过Tag枚举类来更方便地获取项目配置 """
-    def __init__(self, config_path: Path, rule_schema: dict):
-        self.configurations = {}  # 项目配置
-        self.rule_schema = rule_schema  # 配置校验
-        self.config_path = config_path  # 配置文件路径
+    _configuration: dict  # 校验完成后存储配置值的字典
+    _config_schema: dict  # 配置校验规则字典
+    _config_path: Path  # 配置文件路径
+
+    def __init__(self, config_path: Path, config_schema: dict):
+        self._configurations = {}  # 项目配置
+        self._config_schema = config_schema  # 配置校验
+        self._config_path = config_path  # 配置文件路径
 
     def _update_dicts(self, base_dict, new_dict):
         """
@@ -57,8 +109,8 @@ class Config:
         return current_config
 
     def load(self):
-        if self.config_path and self.config_path.exists():  # 配置路径存在，加载配置
-            with self.config_path.open(encoding='utf-8') as f:
+        if self._config_path and self._config_path.exists():  # 配置路径存在，加载配置
+            with self._config_path.open(encoding='utf-8') as f:
                 env_configs = list(yaml.safe_load_all(f))
         else:
             env_configs = []  # 配置路径不存在，返回空配置
@@ -68,10 +120,10 @@ class Config:
         envname_config_map = {}  # 环境名到环境配置的映射 name -> env
         # env_configs 为空，使用骨架作为配置（即任何值都没有被定义）
         if not env_configs:
-            env_configs = [self.build_skeleton(self.rule_schema)]
+            env_configs = [self.build_skeleton(self._config_schema)]
 
         for env_config in env_configs:  # 遍历所有环境
-            config_frame = self.build_skeleton(self.rule_schema)  # 为每一份环境配置创建一份配置骨架
+            config_frame = self.build_skeleton(self._config_schema)  # 为每一份环境配置创建一份配置骨架
             extend_env_config = self._update_dicts(config_frame, env_config)  # 使用环境配置来更新骨架
             envname = extend_env_config['environment']  # 获取当前配置环境名进行存储进入字典
 
@@ -89,7 +141,7 @@ class Config:
             raise RuntimeError("'global' config not found")  # global环境未定义
 
         # 使用校验器补齐缺失参数
-        v = Validator(self.rule_schema, purge_unknown=True)
+        v = Validator(self._config_schema, purge_unknown=True)
 
         active_env_config_name = global_config['active-environment']  # 获取激活环境名
 
@@ -109,16 +161,18 @@ class Config:
         if configurations.get('application.namespace') == 'undefined':
             raise RuntimeError('undefined application namespace')
 
-        self.configurations = v.normalized(configurations)  # 补齐默认值
+        self._configurations = v.normalized(configurations)  # 补齐默认值
 
     from typing import Any
     def get(self, tag) -> Any:
         """ 通过标签获取项目配置 """
         keys = tag.split('.')
-        value = self.configurations
+        value = self._configurations
         for key in keys:
             try:
                 value = value[key]
             except KeyError:
                 raise RuntimeError(f"config tag '{tag}' does not contain key '{key}'")
         return value
+
+

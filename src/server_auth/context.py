@@ -1,11 +1,8 @@
-from flask_sqlalchemy import SQLAlchemy
 from redis import Redis, StrictRedis
+from utils.context import *
+from utils.locale import FlaskLocaleFactory
 
-from utils.context import WebApplicationContextV1, WebApplicationContextConfigKey, EnableSocketIO, EnableNacos, \
-    EnableSwagger, EnableDatabase, EnableCache, SessionEnhance, EnableCors, SessionConfigKey
-
-
-class ServerAuthConfigKey(WebApplicationContextConfigKey):
+class ServerAuthConfigKey:
     # yt-dlp配置
     YT_DLP_NAME = 'yt-dlp.name'
     # discord配置
@@ -24,7 +21,9 @@ class ServerAuthConfigKey(WebApplicationContextConfigKey):
 @EnableCache()  # 缓存
 @SessionEnhance()  # 会话增强
 @EnableCors()  # 启用cors
-class ServerAuthContext(WebApplicationContextV1):
+@EnableGunicorn()  # 启用gunicorn
+@EnableI18N(factory_supplier=FlaskLocaleFactory)  # 启用本地化
+class ServerAuthContext(PluginSupportMixin, WebApplicationContext):
     """ 用户接口服务 """
     db: SQLAlchemy
     redis: Redis  # redis客户端
@@ -39,49 +38,35 @@ class ServerAuthContext(WebApplicationContextV1):
     def __init__(self):
         super().__init__('server-auth')  # 命名空间
 
-    def pre_init(self):
-        self._init_config_extension()  # 初始化配置拓展
-
-    def post_init(self):
-        self._init_models()  # 初始化数据库表
-        # self.init_redis()  # 初始化redis客户端
-        self._init_views()   # 初始化路由
-        self._init_flask_lifecycle_event()
-
-    def _init_config_extension(self):
-        """ 初始化配置拓展 """
-        # discord相关配置
-        self.config_schema['application']['schema']['discord'] = {
-            'type': 'dict',
-            'schema': {
-                'api-endpoint': {'type': 'string', 'default': 'https://discord.com/api/v10'},
-                'oauth': {
-                    'type': 'dict',
-                    'schema': {
-                        'client-id': {'type': 'string', 'default': 'client-id'},
-                        'client-secret': {'type': 'string', 'default': 'client-secret'},
-                        'redirect-uri': {'type': 'string', 'default': "http://localhost:5173/api/v1/auth/discord/authorized"},
-                        'scope': {'type': 'string', 'default': 'identify guilds guilds.join'}
+    def pre_init(self) -> InitHook:
+        def hook_func():
+            """ 初始化配置拓展 """
+            # discord相关配置
+            self.config_schema_builder.set_at_path('application.discord', {
+                'type': 'dict',
+                'schema': {
+                    'api-endpoint': {'type': 'string', 'default': 'https://discord.com/api/v10'},
+                    'oauth': {
+                        'type': 'dict',
+                        'schema': {
+                            'client-id': {'type': 'string', 'default': 'client-id'},
+                            'client-secret': {'type': 'string', 'default': 'client-secret'},
+                            'redirect-uri': {'type': 'string',
+                                             'default': "http://localhost:5173/api/v1/auth/discord/authorized"},
+                            'scope': {'type': 'string', 'default': 'identify guilds guilds.join'}
+                        }
                     }
                 }
-            }
-        }
+            })
+        return InitHook(hook_func)
 
-        # 网易云服务配置
-        self.config_schema['neteasecloudmusic-api'] = {
-            'type': 'dict',
-            'schema': {
-                'url': {'type': 'string', 'default': 'http://127.0.0.1:3000'}
-            }
-        }
-
-        # yt-dlp配置
-        self.config_schema['yt-dlp'] = {
-            'type': 'dict',
-            'schema': {
-                'name': {'type': 'string', 'default': 'musicatri'}
-            }
-        }
+    def post_init(self) -> InitHook:
+        def hook_func():
+            self._init_models()  # 初始化数据库表
+            # self.init_redis()  # 初始化redis客户端
+            self._init_views()  # 初始化路由
+            self._init_flask_lifecycle_event()
+        return InitHook(hook_func)
 
     def _init_models(self):
         self.db.init_app(self.app)
@@ -116,6 +101,9 @@ class ServerAuthContext(WebApplicationContextV1):
         #     from flask import request
         #     self.logger.info(f"session raw: {dict(self.session)}")
         #     self.logger.info(f'session id: {request.cookies.get("session")}')
+
+    def enable_boot_logger(self) -> bool:
+        return True
 
 context = ServerAuthContext()
 context.initialize()

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-resource_context_config_schema = {
+import gettext
+from abc import abstractmethod
+
+resource_schema = {
     # 应用信息配置
     'environment': {'type': 'string', 'default': 'global'},
     'active-environment': {'type': 'string', 'default': 'global'},
@@ -8,7 +11,6 @@ resource_context_config_schema = {
         'type': 'dict',
         'schema': {
             'dev-mode': {'type': 'boolean', 'default': False},  # 是否开启dev模式
-            'language': {'type': 'string', 'default': 'en-US'},  # 首选语言
             'information': {
                 'type': 'dict',
                 'schema': {
@@ -17,8 +19,7 @@ resource_context_config_schema = {
                     'description': {'type': 'string', 'default': 'undefined context.py'},
                 }
             },
-            # 日志配置
-            'logging': {
+            'logging': {  # 日志配置
                 'type': 'dict',
                 'schema': {
                     'print-banner': {'type': 'boolean', 'default': True},
@@ -46,7 +47,7 @@ resource_context_config_schema = {
                             'file-directory': {'type': 'string', 'default': 'logs'},  # /temp/logs
                             'formatter': {'type': 'string', 'default': 'default'},
                         }
-                    },
+                    }
                 }
             }
         }
@@ -100,8 +101,8 @@ import logging
 import os, os.path as path
 
 from utils import root_path
-from utils.config import Config
-from utils.locale import LocaleFactory
+from utils.config import Config, ConfigSchemaBuilder
+from utils.locale import DefaultLocaleFactory
 from utils.logger import SimpleLoggerFacade
 
 from flask import Flask, jsonify, Response
@@ -125,12 +126,20 @@ class GunicornConfig:
     loglevel: str  # 设置日志记录水平 warning
 
 
-from typing import Callable
+from typing import Callable, Optional
 from pathlib import Path
-from collections import OrderedDict
 from typing import Type, TypeVar
 
-U = TypeVar('U', bound=LocaleFactory)  # LocaleFactory及其子类
+class InitHook:
+    """ 初始化钩子 """
+    func: Callable
+    def __init__(self, func: Callable):
+        self.func = func
+
+    def init(self):
+        self.func()
+
+U = TypeVar('U', bound=DefaultLocaleFactory)  # LocaleFactory及其子类
 class ResourceContext:
     """
     资源上下文，资源上下文具有基础的资源，例如配置、本地化以及日志，每个资源上下文以命名空间（namespace）相互独立
@@ -143,94 +152,123 @@ class ResourceContext:
     """
     namespace: str  # 命名空间
     config_schema: dict  # 配置文件校验规则
+    config_schema_builder: ConfigSchemaBuilder  # 配置文件规则校验构建器
 
     config: Config  # 配置
-    locale: LocaleFactory  # 本地化
     logger: logging.Logger  # 日志
+    boot_logger: logging.Logger  # 启动日志
+
+    pre_init_hooks: list[InitHook]
+    on_init_hooks: list[InitHook]
+    post_init_hooks: list[InitHook]
 
     def __init__(self, namespace):
         self.namespace = namespace
-        self.config_schema = resource_context_config_schema
+        self.config_schema = resource_schema
+        self.config_schema_builder = ConfigSchemaBuilder(origin=resource_schema)
+
+        self._init_boot_logger()  # 初始化启动日志
+        self._load_init_hook()  # 加载初始化钩子
+
+    def _load_init_hook(self):
+        def _walk_through_mro(hook_name: str, hook_list: list[InitHook]):
+            # MRO 反向遍历，确保 BaseClass 的 pre_init 先执行
+            for cls in reversed(self.__class__.__mro__):
+                if hook_name in cls.__dict__:
+                    method = cls.__dict__[hook_name]
+                    hook: InitHook = method(self)
+                    if hook is not None:
+                        hook_list.append(hook)
+
+        self.pre_init_hooks = []
+        self.on_init_hooks = []
+        self.post_init_hooks = []
+
+        # 加载初始化钩子
+        _walk_through_mro('pre_init', self.pre_init_hooks)
+        _walk_through_mro('on_init', self.on_init_hooks)
+        _walk_through_mro('post_init', self.post_init_hooks)
+
 
     def _init_config(self):
         """ 初始化配置，配置文件路径位于/config/${namespace}.yaml """
-        self.config = Config(self.config_file_path, self.config_schema)  # 项目配置
+        self.config = Config(self.config_file_path, self.config_schema_builder.build())  # 项目配置
         self.config.load()  # 加载配置
 
     def _init_logger(self):
         """ 初始化日志 """
         facade = SimpleLoggerFacade(name=self.namespace)  # 日志配置
-        if self.config.get(ResourceContextConfigKey.LOG_DEFAULT_LOGGING_ENABLE):  # 是否开启配置
-            facade.set_default(self.config.get(ResourceContextConfigKey.LOG_DEFAULT_LOGGING_LEVEL))
+        facade.set_default(self.config.get(ResourceContextConfigKey.LOG_DEFAULT_LOGGING_LEVEL))
 
-            # 初始化控制台日志
-            if self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_ENABLE):
-                facade.set_console(
-                    level=self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_LEVEL),
-                    formatter=self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_FORMATTER)
-                )
+        # 初始化控制台日志
+        if self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_ENABLE):
+            facade.set_console(
+                level=self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_LEVEL),
+                formatter=self.config.get(ResourceContextConfigKey.LOG_CONSOLE_LOGGING_FORMATTER)
+            )
 
-            # 初始化文件日志
-            if self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_ENABLE):
-                logs_directory = str(
-                    self.temp_directory_path /
-                    self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_FILE_DIRECTORY)
-                )  # 日志文件创建目录
+        # 初始化文件日志
+        if self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_ENABLE):
+            logs_directory = str(
+                self.temp_directory_path /
+                self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_FILE_DIRECTORY)
+            )  # 日志文件创建目录
 
-                extname = self.namespace
-                facade.set_filelog(
-                    level=self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_LEVEL),
-                    logs_directory=logs_directory,
-                    ext=extname,
-                    formatter=self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_FORMATTER)
-                )  # 日志文件创建位置
-
-        else:
-            logging.disable()  # 禁用日志输出
+            extname = self.namespace
+            facade.set_filelog(
+                level=self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_LEVEL),
+                logs_directory=logs_directory,
+                ext=extname,
+                formatter=self.config.get(ResourceContextConfigKey.LOG_FILELOG_LOGGING_FORMATTER)
+            )  # 日志文件创建位置
         self.logger = facade.get_logger()  # 默认日志
 
-    def _init_locale(self):
-        """ 初始化本地化 """
-        locale_dir = self.resource_directory_path / 'locales'
-        default_language = self.config.get(ResourceContextConfigKey.LANGUAGE)  # 默认语言
-        self.locale = self.get_locale(locale_dir, default_language)
+        enable_logger = self.config.get(ResourceContextConfigKey.LOG_DEFAULT_LOGGING_ENABLE)
+        self.logger.disabled = not enable_logger  # 禁用日志输出
 
-    def get_locale(self, locale_dir: Path, default_language: str) -> U:
-        """ 返回本地化实例，子类可以通过覆写这个方法来自定义实际使用的本地化实例 """
-        return LocaleFactory(self.namespace, locale_dir, default_language)  # 本地化实例
+    def _init_boot_logger(self):
+        """
+        初始化启动日志，启动日志用于在上下文启动阶段记录日志信息，对于外部不应使用此日志记录器
+        """
+        facade = SimpleLoggerFacade(name=f'{self.namespace}.boot')  # 日志配置
+        facade.set_default(level='DEBUG')
+        facade.set_console(level='DEBUG', formatter='background-render')
+        self.boot_logger = facade.get_logger()
+        self.boot_logger.disabled = not self.enable_boot_logger()
 
-    def pre_init(self):
+    def pre_init(self) -> InitHook:
         """ 预初始化方法，此方法在所有初始化函数之前调用 """
 
-    def post_init(self):
+    def post_init(self) -> InitHook:
         """ 后初始化方法，此方法在所有初始化函数之后调用 """
 
-    def on_init(self):
+    def on_init(self) -> InitHook:
         """
         子类可以覆写此方法自定义自身需要的初始化步骤，上下文在使用时会通过initialize执行初始化
-        在initialize方法中do_initialize方法会被调用以保证初始化方法按照正确的顺序执行
         """
+        def hook_func():
+            self._init_config()  # 初始化配置
+            self._init_logger()  # 初始化日志
+        return InitHook(hook_func)
 
-    def ensure_file(self, target_path: Path):
+    @staticmethod
+    def ensure_file(target_path: Path):
         """ 确保文件存在，如果文件不存在，那么创建这个文件 """
         if not target_path.exists():  # 文件不存在，创建它
             target_path.parent.mkdir(parents=True, exist_ok=True)  # 确保父目录存在
             target_path.touch(exist_ok=True)  # 创建空文件
         elif not target_path.is_file():
             # 如果路径存在但不是文件，抛出异常
-            _ = self.locale.get()
-            raise ValueError(_("{target_path} exists but is not a regular file")
-                             .format(target_path=target_path))
+            raise ValueError(f"{target_path} exists but is not a regular file")
 
-    def ensure_directory(self, target_path: Path):
+    @staticmethod
+    def ensure_directory(target_path: Path):
         """ 确保目录存在，如果目录不存在，那么创建它 """
         if not target_path.exists():  # 目录不存在
             target_path.mkdir(parents=True, exist_ok=True)
         elif not target_path.is_dir():
             # 如果路径存在但不是目录，抛出异常
-            _ = self.locale.get()
-            raise ValueError(_("{target_path} exists but is not a regular directory")
-                             .format(target_path=target_path))
+            raise ValueError(f"{target_path} exists but is not a regular directory")
 
     def ensure_resource_directory(self, target_path: Path):
         """
@@ -248,14 +286,30 @@ class ResourceContext:
         temp_path = self.temp_directory_path
         self.ensure_directory(temp_path / target_path)
 
+    def exec_pre_init_hooks(self):
+        self.boot_logger.debug(f'setup [{self.namespace}] pre init hooks')
+        for hook in self.pre_init_hooks:
+            hook.init()  # 预初始化钩子
+
+    def exec_on_init_hooks(self):
+        self.boot_logger.debug(f'setup [{self.namespace}] on init hooks')
+        for hook in self.on_init_hooks:
+            hook.init()  # 预初始化钩子
+
+    def exec_post_init_hooks(self):
+        self.boot_logger.debug(f'setup [{self.namespace}] post init hooks')
+        for hook in self.post_init_hooks:
+            hook.init()  # 后初始化钩子
+
     def initialize(self):
         """ 初始化的实际执行方法 """
-        self.pre_init()
-        self._init_config()
-        self._init_logger()
-        self._init_locale()
-        self.on_init()
-        self.post_init()
+        self.exec_pre_init_hooks()
+        self.exec_on_init_hooks()
+        self.exec_post_init_hooks()
+
+    def enable_boot_logger(self) -> bool:
+        """ 选择是否启用boot_logger """
+        return True
 
     @property
     def resource_directory_path(self) -> Path:
@@ -282,51 +336,151 @@ class ResourceContext:
         return Path(root_path) / 'config' / f'{self.namespace}.yaml'
 
 
-class ContextPluginSupportMixin:
-    """ 插件混入支持，通过继承此类来让类支持插件注册 """
-    _plugin_registry: list[ContextPlugin]  # 上下文插件注册表
-
-    def __init__(self):
-        if not isinstance(self, ResourceContext):
-            raise TypeError(f'{self.__class__} is not a subclass of ResourceContext')
-
-        super().__init__()
-        self._plugin_registry = []
-
-    def register_plugin(self, plugin: ContextPlugin):
-        self._plugin_registry.append(plugin)
-
+from enum import Enum, auto
+class InitPhase(Enum):
+    """ 插件初始化阶段 """
+    BEFORE_PRE_INIT = auto()  # pre_init执行前后
+    AFTER_PRE_INIT = auto()
+    BEFORE_ON_INIT = auto()  # on_init执行前后
+    AFTER_ON_INIT = auto()
+    BEFORE_POST_INIT = auto()  # post_init执行前后
+    AFTER_POST_INIT = auto()
 
 
 T = TypeVar('T', bound=ResourceContext)
+from collections import defaultdict
+from typing import DefaultDict
+class PluginHookManager:
+    """ 插件钩子函数管理器，用于组织管理插件初始化 """
+    def __init__(self, ctx: T):
+        self.ctx = ctx  # 当前上下文
+        self._hooks: DefaultDict[InitPhase, list[InitHook]] = defaultdict(list)
+
+    def _register_hook(self, phase: InitPhase, hook: InitHook):
+        """ 在特定阶段注册插件钩子 """
+        if hook: self._hooks[phase].append(hook)
+
+    def register_plugin(self, plugin: ContextPlugin):
+        """ 注册插件 """
+        self._register_hook(InitPhase.BEFORE_PRE_INIT, plugin.before_pre_init(self.ctx))
+        self._register_hook(InitPhase.AFTER_PRE_INIT, plugin.after_pre_init(self.ctx))
+        self._register_hook(InitPhase.BEFORE_ON_INIT, plugin.before_on_init(self.ctx))
+        self._register_hook(InitPhase.AFTER_ON_INIT, plugin.after_on_init(self.ctx))
+        self._register_hook(InitPhase.BEFORE_POST_INIT, plugin.before_post_init(self.ctx))
+        self._register_hook(InitPhase.AFTER_POST_INIT, plugin.after_post_init(self.ctx))
+
+    def setup_hook(self, phase: InitPhase):
+        """ 执行特定阶段的初始化钩子函数 """
+        for hook in self._hooks[phase]:
+            hook.init()
+
+class PluginSupportMixin:
+    """ 插件混入支持，通过继承此类来让类支持插件注册 """
+    _plugin_manager: PluginHookManager  # 上下文插件注册表
+
+    # noinspection PyTypeChecker
+    def __init__(self, namespace):
+        if not isinstance(self, ResourceContext):
+            raise TypeError(f'{self.__class__} is not a subclass of ResourceContext')
+
+        super().__init__(namespace)  # 调用父级初始化函数
+        self._plugin_manager = PluginHookManager(self)  # 初始化插件管理器
+
+    # noinspection PyUnresolvedReferences
+    def register_plugin(self, plugin: ContextPlugin):
+        """ 注册插件 """
+        self.boot_logger.debug(f'register plugin [{plugin.plugin_id}] for [{self.namespace}]')
+        self._plugin_manager.register_plugin(plugin)
+
+    def _setup_hook(self, phase: InitPhase):
+        """ 执行特定阶段的初始化钩子 """
+        self._plugin_manager.setup_hook(phase)
+
+    # noinspection PyUnresolvedReferences
+    def initialize(self):
+        """ 覆写父类ResourceContext的initialize初始化函数，实现注入插件初始化片段 """
+        self._setup_hook(InitPhase.BEFORE_PRE_INIT)
+        self.exec_pre_init_hooks()  # 执行pre_init
+        self._setup_hook(InitPhase.AFTER_PRE_INIT)
+
+        self._setup_hook(InitPhase.BEFORE_ON_INIT)
+        self.exec_on_init_hooks()
+        self._setup_hook(InitPhase.AFTER_ON_INIT)
+
+        self._setup_hook(InitPhase.BEFORE_POST_INIT)
+        self.exec_post_init_hooks()
+        self._setup_hook(InitPhase.AFTER_POST_INIT)
+
+
 class ContextPlugin:
     """ 上下文插件父类，通过继承上下文插件类来实现为服务上下文编写拓展插件 """
     priority = -1  # 优先级，平衡时的优先决策
-    plugin_id: str = None  # 插件唯一标识符
-    depends_on: list[str] = []  # 插件所需依赖
+    plugin_id: str  # 插件唯一标识符  todo: 完善插件id合法性判断，避免重复插件id
+    depends_on: list[str] = []  # 插件所需依赖 todo: 完善依赖树处理
 
-    def modify_config_schema(self, schema: dict):
-        """ 拓展配置结构 """
-        pass
+    def __init__(self, plugin_id):
+        if not plugin_id:
+            raise RuntimeError('illegal plugin_id')
+        self.plugin_id = plugin_id
 
-    def plugin_setup(self, ctx: T):
-        """ 插件初始化 """
-        pass
+    def before_pre_init(self, ctx: T) -> InitHook:
+        """ pre_init之前执行的初始化逻辑 """
+
+    def after_pre_init(self, ctx: T) -> InitHook:
+        """ pre_init之后执行的初始化逻辑 """
+
+    def before_on_init(self, ctx: T) -> InitHook:
+        """ on_init之前执行的初始化逻辑 """
+
+    def after_on_init(self, ctx: T) -> InitHook:
+        """ on_init之后执行的初始化逻辑 """
+
+    def before_post_init(self, ctx: T) -> InitHook:
+        """ post_init之前执行的初始化逻辑 """
+
+    def after_post_init(self, ctx: T) -> InitHook:
+        """ post_init之后执行的初始化逻辑 """
 
     def __call__(self, ctx: Type[T]):
-        if isinstance(ctx, ContextPluginSupportMixin):
-            raise TypeError(f'{ctx.__class__} is not a subclass of ContextPluginSupportMixin')
+        if not issubclass(ctx, PluginSupportMixin):
+            # 需要类使用PluginSupportMixin混入之后才可使用插件功能
+            raise TypeError(f'{ctx} is not a subclass of PluginSupportMixin')
 
         plugin_self = self
-        class EnhancedResourceContext(ctx):
+        class EnhancedContext(ctx):
+            # noinspection PyArgumentList
             def __init__(self):
-                super(EnhancedResourceContext, self).__init__()
-                plugin_self.modify_config_schema(self.config_schema)  # 拓展配置结构
-                self.append_priority_plugin_setup(plugin_self.plugin_setup, priority=plugin_self.priority)
-        return EnhancedResourceContext
+                super(EnhancedContext, self).__init__()
+                self.register_plugin(plugin_self)  # 注册插件
+        return EnhancedContext
 
 
-class WebApplicationContextV1(ResourceContext):
+class EnableI18N(ContextPlugin):
+    """ 启用本地化 """
+    factory_supplier: Callable[[str, Path, str], U]  # 工厂供应商，提供本地化实例
+
+    def __init__(self, factory_supplier: Callable[[str, Path, str], U]=None):
+        self.factory_supplier = factory_supplier
+        super().__init__('enable_i18n')
+
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path(
+                'application.language',
+                {'type': 'string', 'default': 'en-US'})
+        return InitHook(hook_func)
+
+    def after_on_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            locale_dir = ctx.resource_directory_path / 'locales'
+            default_language = ctx.config.get(ResourceContextConfigKey.LANGUAGE)  # 默认语言
+
+            if self.factory_supplier: ctx.locale = self.factory_supplier(ctx.namespace, locale_dir, default_language)
+            else: ctx.locale = DefaultLocaleFactory(ctx.namespace, locale_dir, default_language)
+        return InitHook(hook_func)
+
+
+class WebApplicationContext(ResourceContext):
     """
     web服务应用上下文，基于资源上下文ResourceContext，web服务应用上下文同样具备配置，本地化，日志输出的
     基础能力，基于此web服务应用上下文通过封装flask服务实例提供了更灵活便捷的用法
@@ -335,57 +489,51 @@ class WebApplicationContextV1(ResourceContext):
     """
     app: Flask  # web应用
     banner: str  # 旗帜
-    priority_plugin_setups: OrderedDict  # 优先级插件初始化
+    locale: Optional[U]  # 本地化
 
-    def __init__(self, namespace):
-        super().__init__(namespace)
-        self.priority_plugin_setups = OrderedDict()
+    def on_init(self) -> InitHook:
+        def hook_func():
+            self.init_flask_app()  # 初始化flask
+            self.init_oauthlib()  # 初始化oauthlib
+            self.init_exception_handlers()  # 初始化异常处理器
+            self.print_banner()  # 打印旗帜
+        return InitHook(hook_func)
 
-        self.config_schema['application']['schema']['security']['schema'] = {
-            'secret-key': {'type': 'string', 'default': 'undefined'},
-            'oauth': {
+    def pre_init(self) -> InitHook:
+        def hook_func():
+            self.config_schema_builder.set_at_path('application.security', {
                 'type': 'dict',
                 'schema': {
-                    'insecure-transport': {'type': 'boolean', 'default': False},  # 允许在HTTP下执行oauth
-                    'relax-token-scope': {'type': 'boolean', 'default': False},  # 允许动态调整oauth申请权限
-                }
-            }
-        }
-
-        self.config_schema['application']['schema']['wsgi-server'] = {
-            'type': 'dict',
-            'schema': {
-                'host': {'type': 'string', 'default': '127.0.0.1'},
-                'port': {'type': 'integer', 'default': 5000},
-                'werkzeug': {
-                    'type': 'dict',
-                    'schema': {
-                        'debug-mode': {'type': 'boolean', 'default': False},
-                        'log-output': {'type': 'boolean', 'default': False},
-                        'use-reloader': {'type': 'boolean', 'default': False},
-                    }
-                },
-                'gunicorn': {
-                    'type': 'dict',
-                    'schema': {
-                        'workers': {'type': 'integer', 'default': 1},
-                        'threads': {'type': 'integer', 'default': 4},
-                        'daemon': {'type': 'boolean', 'default': False},
-                        'worker-class': {'type': 'string', 'default': 'gthread'},
-                        'worker-connections': {'type': 'integer', 'default': 2000},  # 仅对eventlet gevent生效
-                        'pidfile': {'type': 'string', 'default': 'gunicorn/gunicorn.pid'},
-                        'accesslog': {'type': 'string', 'default': 'gunicorn/gunicorn_access.log'},
-                        'errorlog': {'type': 'string', 'default': 'gunicorn/gunicorn_error.log'},
-                        'loglevel': {'type': 'string', 'default': 'warning'},
+                    'secret-key': {'type': 'string', 'default': 'undefined'},
+                    'oauth': {
+                        'type': 'dict',
+                        'schema': {
+                            'insecure-transport': {'type': 'boolean', 'default': False},  # 允许在HTTP下执行oauth
+                            'relax-token-scope': {'type': 'boolean', 'default': False},  # 允许动态调整oauth申请权限
+                        }
                     }
                 }
-            }
-        }
+            }).set_at_path('application.wsgi-server', {
+                'type': 'dict',
+                'schema': {
+                    'host': {'type': 'string', 'default': '127.0.0.1'},
+                    'port': {'type': 'integer', 'default': 5000},
+                    'werkzeug': {
+                        'type': 'dict',
+                        'schema': {
+                            'debug-mode': {'type': 'boolean', 'default': False},
+                            'log-output': {'type': 'boolean', 'default': False},
+                            'use-reloader': {'type': 'boolean', 'default': False},
+                        }
+                    }
+                }
+            })
+        return InitHook(hook_func)
 
     def init_flask_app(self):
         """ 初始化flask app """
         dev_mode = self.config.get(ResourceContextConfigKey.DEV_MODE)
-        _ = self.locale.get()
+        _ = self._safe_gettext()
         if dev_mode: self.logger.warning(_(
             "dev mode is enabled, know more about development mode at README.md, this mode is only used for "
             "development and testing, do not enable this mode in production environment"))
@@ -408,7 +556,7 @@ class WebApplicationContextV1(ResourceContext):
         def register_errorhandler(status, error_consumer):
             @self.app.errorhandler(status)
             def handler(e):
-                _ = self.locale.get()
+                _ = self._safe_gettext()
                 self.logger.error(e)  # 记录日志
                 response = error_consumer(e, _)
                 response.status_code = status
@@ -425,7 +573,7 @@ class WebApplicationContextV1(ResourceContext):
 
         @self.app.errorhandler(Exception)
         def handle_uncaught(e: Exception) -> Response:
-            _ = self.locale.get()
+            _ = self._safe_gettext()
             # todo: 此处向开发者提交未知异常消息，记录错误日志信息
             self.logger.error(_("unknown: %s") % e)
             response = jsonify({'message': str(e)})
@@ -452,71 +600,56 @@ class WebApplicationContextV1(ResourceContext):
             use_reloader=use_reloader,
         )
 
-    @property
-    def gunicorn_config(self) -> GunicornConfig:
-        config = GunicornConfig()
-        """ gunicorn上下文，包含gunicorn配置项 """
-        config.workers = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKERS)  # 进程数
-        config.threads = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_THREADS)  # 线程数
-        config.bind = f'{self.config.get(WebApplicationContextConfigKey.WSGI_HOST)}:{self.config.get(WebApplicationContextConfigKey.WSGI_PORT)}'  # 端口ip
-        config.daemon = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_DAEMON)  # 是否后台运行
-        config.worker_class = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKER_CLASS)  # 工作模式协程
-        config.worker_connections = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKER_CONNECTIONS)  # 最大连接数（并发量）
-
-        # todo: 修复gunicorn启动时的pidfile accesslog errorlog配置问题
-        config.pidfile = str(self.temp_directory_path / self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_PIDFILE))  # gunicorn进程文件'/var/run/gunicorn.pid'
-        config.accesslog = str(self.temp_directory_path / self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_ACCESSLOG))  # 设置访问日志和错误信息日志路径'/var/log/gunicorn_access.log'
-        config.errorlog = str(self.temp_directory_path / self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_ERRORLOG))  # '/var/log/gunicorn_error.log'
-        config.loglevel = self.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_LOGLEVEL)  # 设置日志记录水平 warning
-        return config
-
-    def append_priority_plugin_setup(self, plugin_setup: Callable[[WebApplicationContextV1], None], priority: int=-1) -> None:
-        if priority not in self.priority_plugin_setups:
-            self.priority_plugin_setups[priority] = []
-        self.priority_plugin_setups[priority].append(plugin_setup)
-
-    def init_priority_plugins(self):
-        for priority in sorted(self.priority_plugin_setups.keys(), reverse=True):  # 降序执行初始化闭包
-            for priority_plugin_setup in self.priority_plugin_setups[priority]:
-                priority_plugin_setup(self)
-
-    def get_locale(self, locale_dir, default_language) -> U:
-        from utils.locale import FlaskLocaleFactory
-        return FlaskLocaleFactory(locale_domain=self.namespace,
-                                  locale_dir=locale_dir,
-                                  default_language=default_language)
-
-    def on_init(self):
-        self.init_flask_app()  # 初始化flask
-        self.init_oauthlib()  # 初始化oauthlib
-        self.init_exception_handlers()  # 初始化异常处理器
-        self.print_banner()  # 打印旗帜
-        self.init_priority_plugins()  # 初始化优先级插件
+    def _safe_gettext(self) -> gettext:
+        if hasattr(self, 'locale'): return self.locale.get()
+        return gettext.gettext
 
 
-T = TypeVar('T', bound=WebApplicationContextV1)
-class WebApplicationContextPlugin:
-    """ 上下文插件父类，通过继承上下文插件类来实现为服务上下文编写拓展插件 """
-    priority = -1  # 优先级，初始化闭包执行顺序依据
-    def modify_config_schema(self, schema: dict):
-        """ 拓展配置结构 """
-        pass
+class EnableGunicorn(ContextPlugin):
+    """ 启用gunicorn，启用此项之后可以使用gunicorn_config属性获取gunicorn启动配置项 """
+    def __init__(self):
+        super().__init__('enable_gunicorn')
 
-    def plugin_setup(self, ctx: T):
-        """ 插件初始化 """
-        pass
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.wsgi-server.gunicorn', {
+                'type': 'dict',
+                'schema': {
+                    'workers': {'type': 'integer', 'default': 1},
+                    'threads': {'type': 'integer', 'default': 4},
+                    'daemon': {'type': 'boolean', 'default': False},
+                    'worker-class': {'type': 'string', 'default': 'gthread'},
+                    'worker-connections': {'type': 'integer', 'default': 2000},  # 仅对eventlet gevent生效
+                    'pidfile': {'type': 'string', 'default': 'gunicorn/gunicorn.pid'},
+                    'accesslog': {'type': 'string', 'default': 'gunicorn/gunicorn_access.log'},
+                    'errorlog': {'type': 'string', 'default': 'gunicorn/gunicorn_error.log'},
+                    'loglevel': {'type': 'string', 'default': 'warning'},
+                }
+            })
+        return InitHook(hook_func)
 
-    def __call__(self, ctx: Type[T]):
-        if isinstance(ctx, WebApplicationContextV1):
-            raise TypeError(f'{ctx.__class__} is not a subclass of WebApplicationContextV1')
+    def after_post_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            gunicorn_config = GunicornConfig()
+            """ gunicorn上下文，包含gunicorn配置项 """
+            gunicorn_config.workers = ctx.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKERS)  # 进程数
+            gunicorn_config.threads = ctx.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_THREADS)  # 线程数
+            gunicorn_config.bind = f'{ctx.config.get(WebApplicationContextConfigKey.WSGI_HOST)}:{ctx.config.get(WebApplicationContextConfigKey.WSGI_PORT)}'  # 端口ip
+            gunicorn_config.daemon = ctx.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_DAEMON)  # 是否后台运行
+            gunicorn_config.worker_class = ctx.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_WORKER_CLASS)  # 工作模式协程
+            gunicorn_config.worker_connections = ctx.config.get(
+                WebApplicationContextConfigKey.WSGI_GUNICORN_WORKER_CONNECTIONS)  # 最大连接数（并发量）
 
-        plugin_self = self
-        class EnhancedWebApplicationContext(ctx):
-            def __init__(self):
-                super(EnhancedWebApplicationContext, self).__init__()
-                plugin_self.modify_config_schema(self.config_schema)  # 拓展配置结构
-                self.append_priority_plugin_setup(plugin_self.plugin_setup, priority=plugin_self.priority)
-        return EnhancedWebApplicationContext
+            # todo: 修复gunicorn启动时的pidfile accesslog errorlog配置问题
+            gunicorn_config.pidfile = str(ctx.temp_directory_path / ctx.config.get(
+                WebApplicationContextConfigKey.WSGI_GUNICORN_PIDFILE))  # gunicorn进程文件'/var/run/gunicorn.pid'
+            gunicorn_config.accesslog = str(ctx.temp_directory_path / ctx.config.get(
+                WebApplicationContextConfigKey.WSGI_GUNICORN_ACCESSLOG))  # 设置访问日志和错误信息日志路径'/var/log/gunicorn_access.log'
+            gunicorn_config.errorlog = str(ctx.temp_directory_path / ctx.config.get(
+                WebApplicationContextConfigKey.WSGI_GUNICORN_ERRORLOG))  # '/var/log/gunicorn_error.log'
+            gunicorn_config.loglevel = ctx.config.get(WebApplicationContextConfigKey.WSGI_GUNICORN_LOGLEVEL)  # 设置日志记录水平 warning
+            ctx.gunicorn_config = gunicorn_config
+        return InitHook(hook_func)
 
 
 class CorsConfigKey:
@@ -525,43 +658,51 @@ class CorsConfigKey:
     SECURITY_CORS_ALLOW_METHODS = 'application.security.cors.allow-methods'
     SECURITY_CORS_SUPPORTS_CREDENTIALS = 'application.security.cors.supports-credentials'
 
-class EnableCors(WebApplicationContextPlugin):
-    priority = 1  # socketio依赖cors配置项
+
+class EnableCors(ContextPlugin):
     """ 启用cors """
-    def modify_config_schema(self, schema: dict):
-        schema['application']['schema']['security']['schema']['cors'] = {
-            'type': 'dict',
-            'schema': {
-                'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
-                'allow-headers': {'type': 'list', 'default': ['Content-Type', 'Authorization', 'Accept-Language']},
-                'allow-methods': {'type': 'list', 'default': ['GET', 'POST', 'PUT', 'DELETE', 'TRACE']},
-                'supports-credentials': {'type': 'boolean', 'default': True},
-            }
-        }
+    def __init__(self):
+        super().__init__('enable_cors')
 
-    def plugin_setup(self, ctx: T):
-        """ 前后端项目需要配置适当跨域 """
-        from flask_cors import CORS
-        # 启用CORS对所有路由，并允许携带Access token在Authorization请求头
-        origins = ctx.config.get(CorsConfigKey.SECURITY_CORS_ALLOW_ORIGINS)
-        headers = ctx.config.get(CorsConfigKey.SECURITY_CORS_ALLOW_HEADERS)
-        methods = ctx.config.get(CorsConfigKey.SECURITY_CORS_ALLOW_METHODS)
-        supports_credentials = ctx.config.get(CorsConfigKey.SECURITY_CORS_SUPPORTS_CREDENTIALS)
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.security.cors', {
+                'type': 'dict',
+                'schema': {
+                    'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
+                    'allow-headers': {'type': 'list', 'default': ['Content-Type', 'Authorization', 'Accept-Language']},
+                    'allow-methods': {'type': 'list', 'default': ['GET', 'POST', 'PUT', 'DELETE', 'TRACE']},
+                    'supports-credentials': {'type': 'boolean', 'default': True},
+                }
+            })
+        return InitHook(hook_func)
 
-        CORS(ctx.app, resources={
-            # 支持前端调用后端RESTFUL server_auth
-            # 如果手动携带Authorization请求头，需要明确来源，而非'*'，浏览器可能对'*'来源的响应不作答复
-            r"/api/*": {  # 支持restful server_auth
-                "origins": origins,
-                "allow_headers": headers,
-                "allow_methods": methods,
-            },
-            r"/socket.io/*": {  # 支持socketio
-                "origins": origins,
-                "allow_headers": headers,
-                "allow_methods": methods,
-            }
-        }, supports_credentials=supports_credentials)  # 允许cookie session凭证
+    def after_post_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 前后端项目需要配置适当跨域 """
+            from flask_cors import CORS
+            # 启用CORS对所有路由，并允许携带Access token在Authorization请求头
+            origins = ctx.config.get(CorsConfigKey.SECURITY_CORS_ALLOW_ORIGINS)
+            headers = ctx.config.get(CorsConfigKey.SECURITY_CORS_ALLOW_HEADERS)
+            methods = ctx.config.get(CorsConfigKey.SECURITY_CORS_ALLOW_METHODS)
+            supports_credentials = ctx.config.get(CorsConfigKey.SECURITY_CORS_SUPPORTS_CREDENTIALS)
+
+            CORS(ctx.app, resources={
+                # 支持前端调用后端RESTFUL server_auth
+                # 如果手动携带Authorization请求头，需要明确来源，而非'*'，浏览器可能对'*'来源的响应不作答复
+                r"/api/*": {  # 支持restful server_auth
+                    "origins": origins,
+                    "allow_headers": headers,
+                    "allow_methods": methods,
+                },
+                r"/socket.io/*": {  # 支持socketio
+                    "origins": origins,
+                    "allow_headers": headers,
+                    "allow_methods": methods,
+                }
+            }, supports_credentials=supports_credentials)  # 允许cookie session凭证
+        return InitHook(hook_func)
+
 
 class SessionConfigKey:
     # 会话配置
@@ -583,94 +724,102 @@ class SessionConfigKey:
     SESSION_FILESYSTEM_FILE_DIRECTORY = 'application.session.filesystem.file-directory'
 
 
-class SessionEnhance(WebApplicationContextPlugin):
+class SessionEnhance(ContextPlugin):
     """ 会话增强 """
-    def modify_config_schema(self, schema: dict):
-        schema['application']['schema']['session'] = {
-            'type': 'dict',
-            'schema': {
-                'type': {'type': 'string', 'default': 'filesystem'},
-                'cookie-samesite': {'type': 'string', 'default': 'None'},
-                'cookie-httponly': {'type': 'boolean', 'default': False},
-                'cookie-secure': {'type': 'boolean', 'default': False},  # 仅允许在https下传输cookie
-                'permanent': {'type': 'boolean', 'default': False},
-                'permanent-lifetime': {'type': 'integer', 'default': 3600},
-                'lifetime': {'type': 'integer', 'default': 1800},
-                'use-signer': {'type': 'boolean', 'default': False},
-                'key-prefix': {'type': 'string', 'default': 'session:'},
-                'redis': {
-                    'type': 'dict',
-                    'schema': {
-                        'host': {'type': 'string', 'default': '127.0.0.1'},
-                        'port': {'type': 'integer', 'default': 6379},
-                        'username': {'type': 'string', 'default': ''},
-                        'password': {'type': 'string', 'default': ''},
-                        'database': {'type': 'integer', 'default': 0},
+    def __init__(self):
+        super().__init__('session_enhance')
+
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.session', {
+                'type': 'dict',
+                'schema': {
+                    'type': {'type': 'string', 'default': 'filesystem'},
+                    'cookie-samesite': {'type': 'string', 'default': 'None'},
+                    'cookie-httponly': {'type': 'boolean', 'default': False},
+                    'cookie-secure': {'type': 'boolean', 'default': False},  # 仅允许在https下传输cookie
+                    'permanent': {'type': 'boolean', 'default': False},
+                    'permanent-lifetime': {'type': 'integer', 'default': 3600},
+                    'lifetime': {'type': 'integer', 'default': 1800},
+                    'use-signer': {'type': 'boolean', 'default': False},
+                    'key-prefix': {'type': 'string', 'default': 'session:'},
+                    'redis': {
+                        'type': 'dict',
+                        'schema': {
+                            'host': {'type': 'string', 'default': '127.0.0.1'},
+                            'port': {'type': 'integer', 'default': 6379},
+                            'username': {'type': 'string', 'default': ''},
+                            'password': {'type': 'string', 'default': ''},
+                            'database': {'type': 'integer', 'default': 0},
+                        },
                     },
-                },
-                'filesystem': {
-                    'type': 'dict',
-                    'schema': {
-                        'file-threshold': {'type': 'integer', 'default': 5000},
-                        'file-directory': {'type': 'string', 'default': 'session'},  # /temp/session
+                    'filesystem': {
+                        'type': 'dict',
+                        'schema': {
+                            'file-threshold': {'type': 'integer', 'default': 5000},
+                            'file-directory': {'type': 'string', 'default': 'session'},  # /temp/session
+                        }
                     }
                 }
-            }
-        }
+            })
+        return InitHook(hook_func)
 
-    def plugin_setup(self, ctx: T):
-        from flask import session as flask_session
-        ctx.session = flask_session
+    def after_on_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            from flask import session as flask_session
+            ctx.session = flask_session
 
-        session_type = ctx.config.get(SessionConfigKey.SESSION_TYPE)
-        session_prefix = ctx.config.get(SessionConfigKey.SESSION_KEY_PREFIX)
-        session_permanent = ctx.config.get(SessionConfigKey.SESSION_PERMANENT)
+            session_type = ctx.config.get(SessionConfigKey.SESSION_TYPE)
+            session_prefix = ctx.config.get(SessionConfigKey.SESSION_KEY_PREFIX)
+            session_permanent = ctx.config.get(SessionConfigKey.SESSION_PERMANENT)
 
-        # log.debug(f'using session type : {session_type}')
-        # log.debug(f'session prefix : {session_prefix}')
+            # log.debug(f'using session type : {session_type}')
+            # log.debug(f'session prefix : {session_prefix}')
 
-        ctx.app.config['SESSION_KEY_PREFIX'] = session_prefix  # 设置session前缀
-        ctx.app.config['SESSION_PERMANENT'] = session_permanent  # session是否永久存活
+            ctx.app.config['SESSION_KEY_PREFIX'] = session_prefix  # 设置session前缀
+            ctx.app.config['SESSION_PERMANENT'] = session_permanent  # session是否永久存活
 
-        from datetime import timedelta
-        if session_permanent:
-            # 会话时间永久
-            session_permanent_lifetime = ctx.config.get(SessionConfigKey.SESSION_PERMANENT_LIFETIME)
-            ctx.app.config['SESSION_PERMANENT_LIFETIME'] = timedelta(seconds=session_permanent_lifetime)
-            # log.debug(f'enable session permanent, session permanent lifetime: {session_permanent_lifetime}')
-        else:
-            # 会话将会在浏览器关闭之后清除
-            session_lifetime = ctx.config.get(SessionConfigKey.SESSION_LIFETIME)
-            ctx.app.config['SESSION_LIFETIME'] = timedelta(seconds=session_lifetime)
+            from datetime import timedelta
+            if session_permanent:
+                # 会话时间永久
+                session_permanent_lifetime = ctx.config.get(SessionConfigKey.SESSION_PERMANENT_LIFETIME)
+                ctx.app.config['SESSION_PERMANENT_LIFETIME'] = timedelta(seconds=session_permanent_lifetime)
+                # log.debug(f'enable session permanent, session permanent lifetime: {session_permanent_lifetime}')
+            else:
+                # 会话将会在浏览器关闭之后清除
+                session_lifetime = ctx.config.get(SessionConfigKey.SESSION_LIFETIME)
+                ctx.app.config['SESSION_LIFETIME'] = timedelta(seconds=session_lifetime)
 
-            # log.debug(f'session lifetime : {session_lifetime}')
-            # log.debug(f'disable session permanent, session lifetime: {session_lifetime}')
+                # log.debug(f'session lifetime : {session_lifetime}')
+                # log.debug(f'disable session permanent, session lifetime: {session_lifetime}')
 
-        ctx.app.config['SESSION_USE_SIGNER'] = ctx.config.get(SessionConfigKey.SESSION_USE_SIGNER)  # 会话防止篡改
-        ctx.app.config['SESSION_COOKIE_SAMESITE'] = ctx.config.get(SessionConfigKey.SESSION_COOKIE_SAMESITE)  # 会话同源策略
-        ctx.app.config['SESSION_COOKIE_HTTPONLY'] = ctx.config.get(SessionConfigKey.SESSION_COOKIE_HTTPONLY)
-        ctx.app.config['SESSION_COOKIE_SECURE'] = ctx.config.get(SessionConfigKey.SESSION_COOKIE_SECURE)
+            ctx.app.config['SESSION_USE_SIGNER'] = ctx.config.get(SessionConfigKey.SESSION_USE_SIGNER)  # 会话防止篡改
+            ctx.app.config['SESSION_COOKIE_SAMESITE'] = ctx.config.get(
+                SessionConfigKey.SESSION_COOKIE_SAMESITE)  # 会话同源策略
+            ctx.app.config['SESSION_COOKIE_HTTPONLY'] = ctx.config.get(SessionConfigKey.SESSION_COOKIE_HTTPONLY)
+            ctx.app.config['SESSION_COOKIE_SECURE'] = ctx.config.get(SessionConfigKey.SESSION_COOKIE_SECURE)
 
-        if session_type == 'redis':  # redis存储
-            import redis
-            ctx.app.config['SESSION_TYPE'] = session_type
-            host = ctx.config.get(SessionConfigKey.SESSION_REDIS_HOST)
-            port = ctx.config.get(SessionConfigKey.SESSION_REDIS_PORT)
-            database = ctx.config.get(SessionConfigKey.SESSION_REDIS_DATABASE)
-            ctx.app.config['SESSION_REDIS'] = redis.StrictRedis(host=host, port=port, db=database)
+            if session_type == 'redis':  # redis存储
+                import redis
+                ctx.app.config['SESSION_TYPE'] = session_type
+                host = ctx.config.get(SessionConfigKey.SESSION_REDIS_HOST)
+                port = ctx.config.get(SessionConfigKey.SESSION_REDIS_PORT)
+                database = ctx.config.get(SessionConfigKey.SESSION_REDIS_DATABASE)
+                ctx.app.config['SESSION_REDIS'] = redis.StrictRedis(host=host, port=port, db=database)
 
-        elif session_type == 'filesystem':  # filesystem存储
-            ctx.app.config['SESSION_TYPE'] = session_type
+            elif session_type == 'filesystem':  # filesystem存储
+                ctx.app.config['SESSION_TYPE'] = session_type
 
-            session_directory = ctx.config.get(SessionConfigKey.SESSION_FILESYSTEM_FILE_DIRECTORY)
-            session_directory_path = path.join(root_path, 'temp', ctx.namespace, session_directory)
-            # log.debug(f'session file directory: {session_directory_path}')
+                session_directory = ctx.config.get(SessionConfigKey.SESSION_FILESYSTEM_FILE_DIRECTORY)
+                session_directory_path = path.join(root_path, 'temp', ctx.namespace, session_directory)
+                # log.debug(f'session file directory: {session_directory_path}')
 
-            session_threshold = ctx.config.get(SessionConfigKey.SESSION_FILESYSTEM_FILE_THRESHOLD)
-            ctx.app.config['SESSION_FILE_THRESHOLD'] = session_threshold
-            ctx.app.config['SESSION_FILE_DIR'] = session_directory_path
+                session_threshold = ctx.config.get(SessionConfigKey.SESSION_FILESYSTEM_FILE_THRESHOLD)
+                ctx.app.config['SESSION_FILE_THRESHOLD'] = session_threshold
+                ctx.app.config['SESSION_FILE_DIR'] = session_directory_path
 
-        Session(ctx.app)
+            Session(ctx.app)
+        return InitHook(hook_func)
 
 class CacheConfigKey:
     """ 缓存配置 """
@@ -687,75 +836,81 @@ class CacheConfigKey:
     CACHE_FILESYSTEM_FILE_DIRECTORY = 'application.cache.filesystem.file-directory'
 
 
-class EnableCache(WebApplicationContextPlugin):
+class EnableCache(ContextPlugin):
     """ 启用缓存 """
-    priority = -1
-    def modify_config_schema(self, schema: dict):
-        schema['application']['schema']['cache'] = {
-            'type': 'dict',
-            'schema': {
-                'type': {'type': 'string', 'default': 'filesystem'},
-                'timeout': {'type': 'integer', 'default': 60},  # 默认缓存过期时间，刷新缓存间隔
-                'key-prefix': {'type': 'string', 'default': 'cache:'},
-                'ignore-errors': {'type': 'boolean', 'default': False},  # 忽略缓存错误
-                'filesystem': {
-                    'type': 'dict',
-                    'schema': {
-                        'file-threshold': {'type': 'integer', 'default': 5000},
-                        'file-directory': {'type': 'string', 'default': 'cache'},  # /temp/cache
-                    }
-                },
-                'redis': {
-                    'type': 'dict',
-                    'schema': {
-                        'host': {'type': 'string', 'default': '127.0.0.1'},
-                        'port': {'type': 'integer', 'default': 6379},
-                        'username': {'type': 'string', 'default': ''},
-                        'password': {'type': 'string', 'default': ''},
-                        'database': {'type': 'integer', 'default': 0},
+    def __init__(self):
+        super().__init__('enable_cache')
+
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.cache', {
+                'type': 'dict',
+                'schema': {
+                    'type': {'type': 'string', 'default': 'filesystem'},
+                    'timeout': {'type': 'integer', 'default': 60},  # 默认缓存过期时间，刷新缓存间隔
+                    'key-prefix': {'type': 'string', 'default': 'cache:'},
+                    'ignore-errors': {'type': 'boolean', 'default': False},  # 忽略缓存错误
+                    'filesystem': {
+                        'type': 'dict',
+                        'schema': {
+                            'file-threshold': {'type': 'integer', 'default': 5000},
+                            'file-directory': {'type': 'string', 'default': 'cache'},  # /temp/cache
+                        }
+                    },
+                    'redis': {
+                        'type': 'dict',
+                        'schema': {
+                            'host': {'type': 'string', 'default': '127.0.0.1'},
+                            'port': {'type': 'integer', 'default': 6379},
+                            'username': {'type': 'string', 'default': ''},
+                            'password': {'type': 'string', 'default': ''},
+                            'database': {'type': 'integer', 'default': 0},
+                        }
                     }
                 }
-            }
-        }
+            })
+        return InitHook(hook_func)
 
-    def plugin_setup(self, ctx: T):
-        """ 初始化缓存，使用flask_caching """
-        ctx.cache = Cache()
-        cache_type = ctx.config.get(CacheConfigKey.CACHE_TYPE)
-        cache_timeout = ctx.config.get(CacheConfigKey.CACHE_TIMEOUT)
-        cache_prefix = ctx.config.get(CacheConfigKey.CACHE_KEY_PREFIX)
-        cache_ignore_errors = ctx.config.get(CacheConfigKey.CACHE_IGNORE_ERRORS)
+    def after_on_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 初始化缓存，使用flask_caching """
+            ctx.cache = Cache()
+            cache_type = ctx.config.get(CacheConfigKey.CACHE_TYPE)
+            cache_timeout = ctx.config.get(CacheConfigKey.CACHE_TIMEOUT)
+            cache_prefix = ctx.config.get(CacheConfigKey.CACHE_KEY_PREFIX)
+            cache_ignore_errors = ctx.config.get(CacheConfigKey.CACHE_IGNORE_ERRORS)
 
-        # log.debug(f'using cache type : {cache_type}')
-        # log.debug(f'cache prefix : {cache_prefix}')
+            # log.debug(f'using cache type : {cache_type}')
+            # log.debug(f'cache prefix : {cache_prefix}')
 
-        ctx.app.config['CACHE_DEFAULT_TIMEOUT'] = cache_timeout  # 缓存超时时间
-        ctx.app.config['CACHE_KEY_PREFIX'] = cache_prefix
+            ctx.app.config['CACHE_DEFAULT_TIMEOUT'] = cache_timeout  # 缓存超时时间
+            ctx.app.config['CACHE_KEY_PREFIX'] = cache_prefix
 
-        # if not cache_ignore_errors:
-        #     log.debug('musicatri run while ignoring no cache errors')
-        ctx.app.config['CACHE_IGNORE_ERRORS'] = cache_ignore_errors
+            # if not cache_ignore_errors:
+            #     log.debug('musicatri run while ignoring no cache errors')
+            ctx.app.config['CACHE_IGNORE_ERRORS'] = cache_ignore_errors
 
-        if cache_type == 'filesystem':
-            # 使用文件系统进行缓存
-            cache_directory = ctx.config.get(CacheConfigKey.CACHE_FILESYSTEM_FILE_DIRECTORY)
-            cache_directory_path = path.join(root_path, 'temp', ctx.namespace, cache_directory)
-            cache_filesystem_threshold = ctx.config.get(CacheConfigKey.CACHE_FILESYSTEM_FILE_THRESHOLD)
-            # log.debug(f'cache file directory: {cache_directory_path}')
+            if cache_type == 'filesystem':
+                # 使用文件系统进行缓存
+                cache_directory = ctx.config.get(CacheConfigKey.CACHE_FILESYSTEM_FILE_DIRECTORY)
+                cache_directory_path = path.join(root_path, 'temp', ctx.namespace, cache_directory)
+                cache_filesystem_threshold = ctx.config.get(CacheConfigKey.CACHE_FILESYSTEM_FILE_THRESHOLD)
+                # log.debug(f'cache file directory: {cache_directory_path}')
 
-            ctx.app.config['CACHE_TYPE'] = cache_type
-            ctx.app.config['CACHE_DIR'] = cache_directory_path
-            ctx.app.config['CACHE_THRESHOLD'] = cache_filesystem_threshold
+                ctx.app.config['CACHE_TYPE'] = cache_type
+                ctx.app.config['CACHE_DIR'] = cache_directory_path
+                ctx.app.config['CACHE_THRESHOLD'] = cache_filesystem_threshold
 
-        elif cache_type == 'redis':
-            ctx.app.config['CACHE_TYPE'] = cache_type
-            ctx.app.config['CACHE_REDIS_HOST'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_HOST)
-            ctx.app.config['CACHE_REDIS_PORT'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_PORT)
-            ctx.app.config['CACHE_REDIS_DB'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_DATABASE)
-            ctx.app.config['CACHE_REDIS_USERNAME'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_USERNAME)
-            ctx.app.config['CACHE_REDIS_PASSWORD'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_PASSWORD)
+            elif cache_type == 'redis':
+                ctx.app.config['CACHE_TYPE'] = cache_type
+                ctx.app.config['CACHE_REDIS_HOST'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_HOST)
+                ctx.app.config['CACHE_REDIS_PORT'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_PORT)
+                ctx.app.config['CACHE_REDIS_DB'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_DATABASE)
+                ctx.app.config['CACHE_REDIS_USERNAME'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_USERNAME)
+                ctx.app.config['CACHE_REDIS_PASSWORD'] = ctx.config.get(CacheConfigKey.CACHE_REDIS_PASSWORD)
 
-        ctx.cache.init_app(ctx.app)
+            ctx.cache.init_app(ctx.app)
+        return InitHook(hook_func)
 
 
 class DatabaseConfigKey:
@@ -768,69 +923,108 @@ class DatabaseConfigKey:
     DATABASE_DATABASE = 'application.database.database'
     DATABASE_TRACK_MODIFICATION = 'application.database.track-modification'
 
-class EnableDatabase(WebApplicationContextPlugin):
+class EnableDatabase(ContextPlugin):
     """ 启用数据库 """
-    priority = -1
+    def __init__(self):
+        super().__init__('enable_database')
 
-    def modify_config_schema(self, schema: dict):
-        schema['application']['schema']['database'] = {
-            'type': 'dict',
-            'schema': {
-                'driver': {'type': 'string', 'default': 'mysql'},
-                'host': {'type': 'string', 'default': '127.0.0.1'},
-                'port': {'type': 'integer', 'default': 3306},
-                'username': {'type': 'string', 'default': 'root'},
-                'password': {'type': 'string', 'default': '1234'},
-                'database': {'type': 'string', 'default': 'musicatri-database'},
-                'track-modification': {'type': 'boolean', 'default': False},
-            }
-        }
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.database', {
+                'type': 'dict',
+                'schema': {
+                    'driver': {'type': 'string', 'default': 'mysql'},
+                    'host': {'type': 'string', 'default': '127.0.0.1'},
+                    'port': {'type': 'integer', 'default': 3306},
+                    'username': {'type': 'string', 'default': 'root'},
+                    'password': {'type': 'string', 'default': '1234'},
+                    'database': {'type': 'string', 'default': 'musicatri-database'},
+                    'track-modification': {'type': 'boolean', 'default': False},
+                }
+            })
+        return InitHook(hook_func)
 
-    def plugin_setup(self, ctx: T):
-        """ 初始化数据库 """
-        ctx.db = SQLAlchemy()
-        host = ctx.config.get(DatabaseConfigKey.DATABASE_HOST)
-        port = ctx.config.get(DatabaseConfigKey.DATABASE_PORT)
-        driver = ctx.config.get(DatabaseConfigKey.DATABASE_DRIVER)
-        username = ctx.config.get(DatabaseConfigKey.DATABASE_USERNAME)
-        password = ctx.config.get(DatabaseConfigKey.DATABASE_PASSWORD)
-        database = ctx.config.get(DatabaseConfigKey.DATABASE_DATABASE)
-        track_modification = ctx.config.get(DatabaseConfigKey.DATABASE_TRACK_MODIFICATION)
+    def after_on_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 初始化数据库 """
+            ctx.db = SQLAlchemy()
+            host = ctx.config.get(DatabaseConfigKey.DATABASE_HOST)
+            port = ctx.config.get(DatabaseConfigKey.DATABASE_PORT)
+            driver = ctx.config.get(DatabaseConfigKey.DATABASE_DRIVER)
+            username = ctx.config.get(DatabaseConfigKey.DATABASE_USERNAME)
+            password = ctx.config.get(DatabaseConfigKey.DATABASE_PASSWORD)
+            database = ctx.config.get(DatabaseConfigKey.DATABASE_DATABASE)
+            track_modification = ctx.config.get(DatabaseConfigKey.DATABASE_TRACK_MODIFICATION)
 
-        if driver == 'mysql':
-            database_uri = f'mysql+pymysql://{username}:{password}@{host}:{port}/{database}?charset=utf8'
-        else:
-            raise RuntimeError('unsupported driver')
+            if driver == 'mysql':
+                database_uri = f'mysql+pymysql://{username}:{password}@{host}:{port}/{database}?charset=utf8'
+            else:
+                raise RuntimeError('unsupported driver')
 
-        ctx.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = track_modification  # 追踪模式
-        ctx.app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
+            ctx.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = track_modification  # 追踪模式
+            ctx.app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
+        return InitHook(hook_func)
 
 
 class SocketIOConfigKey:
     SOCKETIO_CORS_ALLOW_ORIGINS = 'application.socketio.cors.allow-origins'
 
-class EnableSocketIO(WebApplicationContextPlugin):
-    """ 开启socketio """
-    priority = -1
-    def __call__(self, ctx: Type[T]):
-        plugin_self = self
-        class EnhancedApplicationContext(ctx):
-            def __init__(self):
-                super(EnhancedApplicationContext, self).__init__()
-                plugin_self.modify_config_schema(self.config_schema)  # 拓展配置结构
-                self.append_priority_plugin_setup(plugin_self.plugin_setup, priority=plugin_self.priority)
 
-            def run_werkzeug(self):
+class EnableSocketIO(ContextPlugin):
+    """ 开启socketio """
+    def __init__(self):
+        super().__init__('enable_socketio')
+
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.socketio', {
+                'type': 'dict',
+                'schema': {
+                    'cors': {
+                        'type': 'dict',
+                        'schema': {
+                            'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
+                        }
+                    }
+                }
+            })
+        return InitHook(hook_func)
+
+    def after_on_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 初始化socketio插件 """
+            origins = ctx.config.get(SocketIOConfigKey.SOCKETIO_CORS_ALLOW_ORIGINS)  # 配置跨域
+            # 禁用socketio本身的session管理，使RESTFUL_API和SOCKETIO共用session
+            ctx.socketio = SocketIO()  # 创建socketio实例
+            ctx.socketio.init_app(
+                ctx.app,
+                cors_allowed_origins=origins,
+                async_mode='threading',  # todo: 修改支持其他服务启动形式
+                manage_session=False
+            )
+
+            # from sockets import user_socketio, admin_socketio
+            # user_socketio.init(socketio)  # 初始化用户socketio服务器
+            # admin_socketio.init(socketio)  # 初始化管理员socketio服务器
+            # log.debug(f"socketio using server: {socketio.async_mode} ")
+
+        return InitHook(hook_func)
+
+
+    def after_post_init(self, ctx: T) -> InitHook:
+        def hook_func():
+
+            def run_werkzeug():
                 """ 覆写run_werkzeug启动流程 """
                 # 覆写原始的run_werkzeug启动流程，在socketio启动时需要通过socketio实例直接启动flask
-                host = self.config.get(WebApplicationContextConfigKey.WSGI_HOST)  # 服务器主机名
-                port = self.config.get(WebApplicationContextConfigKey.WSGI_PORT)  # 服务器端口号
-                debug_mode = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_DEBUG_MODE)  # 调试模式
-                log_output = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
-                use_reloader = self.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
+                host = ctx.config.get(WebApplicationContextConfigKey.WSGI_HOST)  # 服务器主机名
+                port = ctx.config.get(WebApplicationContextConfigKey.WSGI_PORT)  # 服务器端口号
+                debug_mode = ctx.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_DEBUG_MODE)  # 调试模式
+                log_output = ctx.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_LOG_OUTPUT)  # 是否打印flask日志
+                use_reloader = ctx.config.get(WebApplicationContextConfigKey.WSGI_WERKZEUG_USE_RELOADER)  # 使用热重载
 
-                self.socketio.run(
-                    app=self.app,
+                ctx.socketio.run(
+                    app=ctx.app,
                     host=host,
                     port=port,
                     debug=debug_mode,
@@ -838,39 +1032,10 @@ class EnableSocketIO(WebApplicationContextPlugin):
                     use_reloader=use_reloader,
                     allow_unsafe_werkzeug=True
                 )  # 使用werkzeug启动flask
-        return EnhancedApplicationContext
 
-    def modify_config_schema(self, schema: dict):
-        schema['application']['schema']['socketio'] = {
-            'type': 'dict',
-            'schema': {
-                'cors': {
-                    'type': 'dict',
-                    'schema': {
-                        'allow-origins': {'type': 'list', 'default': ['http://localhost:5173']},
-                    }
-                }
-            }
-        }
+            ctx.run_werkzeug = run_werkzeug
 
-    def plugin_setup(self, ctx: T):
-        """ 初始化socketio插件 """
-        origins = ctx.config.get(SocketIOConfigKey.SOCKETIO_CORS_ALLOW_ORIGINS)  # 配置跨域
-        # 禁用socketio本身的session管理，使RESTFUL_API和SOCKETIO共用session
-        ctx.socketio = SocketIO()  # 创建socketio实例
-        ctx.socketio.init_app(
-            ctx.app,
-            cors_allowed_origins=origins,
-            async_mode='threading',  # todo: 修改支持其他服务启动形式
-            manage_session=False
-        )
-
-        # from sockets import user_socketio, admin_socketio
-        # user_socketio.init(socketio)  # 初始化用户socketio服务器
-        # admin_socketio.init(socketio)  # 初始化管理员socketio服务器
-        # log.debug(f"socketio using server: {socketio.async_mode} ")
-
-        ctx.logger.info(f'socketio enabled for application context.py [{ctx.namespace}]')
+        return InitHook(hook_func)
 
 
 class NacosConfigKey:
@@ -883,39 +1048,45 @@ class NacosConfigKey:
     NACOS_REG_WEIGHT = 'application.nacos.registration.weight'  # 权重
     NACOS_REG_HEARTBEAT_INTERVAL = 'application.nacos.registration.heartbeat-interval'  # 心跳信号间隔
 
-class EnableNacos(WebApplicationContextPlugin):
+class EnableNacos(ContextPlugin):
     """ 启用nacos注册中心，启用之后服务在启动时会被自动注册到nacos注册中心 """
-    def modify_config_schema(self, schema: dict):
-        """ 初始化nacos相关的配置拓展 """
-        schema['application']['schema']['nacos'] = {
-            'type': 'dict',
-            'schema': {
-                'server-addr': {'type': 'string', 'default': 'localhost'},  # nacos服务所在地址
-                'server-port': {'type': 'integer', 'default': '8848'},
-                'registration': {  # 服务注册
-                    'type': 'dict',
-                    'schema': {
-                        'service-name': {'type': 'string', 'default': 'undefined'},  # 服务名称
-                        'service-addr': {'type': 'string', 'default': '127.0.0.1'},  # 服务地址
-                        'service-port': {'type': 'integer', 'default': 5000},  # 服务端口
-                        'cluster-name': {'type': 'string', 'default': 'undefined'},  # 集群名称
-                        'weight': {'type': 'integer', 'default': 1},
-                        'heartbeat-interval': {'type': 'integer', 'default': 5}
-                    }
-                },
-            }
-        }
+    def __init__(self):
+        super().__init__('enable_nacos')
 
-    def plugin_setup(self, ctx: T):
-        """ nacos插件初始化 """
-        self.init_nacos_client(ctx)  # 初始化nacos客户端
-        self.register_nacos_service(ctx)  # 将服务实例注册进入nacos
-        self.start_heartbeat(ctx)
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 初始化nacos相关的配置拓展 """
+            ctx.config_schema_builder.set_at_path('application.nacos', {
+                'type': 'dict',
+                'schema': {
+                    'server-addr': {'type': 'string', 'default': 'localhost'},  # nacos服务所在地址
+                    'server-port': {'type': 'integer', 'default': '8848'},
+                    'registration': {  # 服务注册
+                        'type': 'dict',
+                        'schema': {
+                            'service-name': {'type': 'string', 'default': 'undefined'},  # 服务名称
+                            'service-addr': {'type': 'string', 'default': '127.0.0.1'},  # 服务地址
+                            'service-port': {'type': 'integer', 'default': 5000},  # 服务端口
+                            'cluster-name': {'type': 'string', 'default': 'undefined'},  # 集群名称
+                            'weight': {'type': 'integer', 'default': 1},
+                            'heartbeat-interval': {'type': 'integer', 'default': 5}
+                        }
+                    }
+                }
+            })
+        return InitHook(hook_func)
+
+    def after_post_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ nacos插件初始化 """
+            self.init_nacos_client(ctx)  # 初始化nacos客户端
+            self.register_nacos_service(ctx)  # 将服务实例注册进入nacos
+            self.start_heartbeat(ctx)
+        return InitHook(hook_func)
 
     @staticmethod
     def init_nacos_client(ctx: T):
         """ 初始化nacos """
-        ctx.logger.info(f'nacos enabled for application context.py [{ctx.namespace}]')
         nacos_server_addr = ctx.config.get(NacosConfigKey.NACOS_SERVER_ADDR)
         nacos_server_port = ctx.config.get(NacosConfigKey.NACOS_SERVER_PORT)
 
@@ -940,8 +1111,6 @@ class EnableNacos(WebApplicationContextPlugin):
             cluster_name=cluster_name,
             weight=weight,
         )
-
-        ctx.logger.info(ctx.nacos_client.list_naming_instance(service_name='undefined'))
 
     @staticmethod
     def start_heartbeat(ctx: T):
@@ -984,60 +1153,66 @@ class SwaggerConfigKey:
     SWAGGER_LICENSE_NAME = 'application.swagger.license.name'
     SWAGGER_LICENSE_URL = 'application.swagger.license.url'
 
-class EnableSwagger(WebApplicationContextPlugin):
+class EnableSwagger(ContextPlugin):
     """ 启用Swagger，依赖注释自动生成接口文档 """
-    priority = -1
-    def modify_config_schema(self, schema: dict):
-        schema['application']['schema']['swagger'] = {
-            'type': 'dict',
-            'schema': {
-                'title': {'type': 'string', 'default': 'undefined'},  # swagger文档标题
-                'uiversion': {'type': 'integer', 'default': 3},  # ui界面版本
-                'description': {'type': 'string', 'default': 'undefined'},  # 文档描述信息
-                'version': {'type': 'string', 'default': '1.0.0'},  # 文档版本
-                'terms-of-service': {'type': 'string', 'default': 'undefined'},  # 帮助文档页面
-                'contact': {  # 联系方式
-                    'type': 'dict',
-                    'schema': {
-                        'name': {'type': 'string', 'default': 'undefined'},  # 作者名
-                        'email': {'type': 'string', 'default': 'undefined'},  # 作者邮箱
-                        'url': {'type': 'string', 'default': 'undefined'},  # 项目链接
-                    }
-                },
-                'license': {  # 证书
-                    'type': 'dict',
-                    'schema': {
-                        'name': {'type': 'string', 'default': 'MIT'},  # 协议
-                        'url': {'type': 'string', 'default': 'https://opensource.org/licenses/MIT'},  # 协议链接
-                    }
-                },
-            }
-        }
+    def __init__(self):
+        super().__init__('enable_swagger')
 
-    def plugin_setup(self, ctx: T):
-        """ 初始化项目接口文档(flasgger) """
-        dev_mode = ctx.config.get(ResourceContextConfigKey.DEV_MODE)
-        if not dev_mode: return  # 仅在开发者模式下开启swagger文档
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            ctx.config_schema_builder.set_at_path('application.swagger', {
+                'type': 'dict',
+                'schema': {
+                    'title': {'type': 'string', 'default': 'undefined'},  # swagger文档标题
+                    'uiversion': {'type': 'integer', 'default': 3},  # ui界面版本
+                    'description': {'type': 'string', 'default': 'undefined'},  # 文档描述信息
+                    'version': {'type': 'string', 'default': '1.0.0'},  # 文档版本
+                    'terms-of-service': {'type': 'string', 'default': 'undefined'},  # 帮助文档页面
+                    'contact': {  # 联系方式
+                        'type': 'dict',
+                        'schema': {
+                            'name': {'type': 'string', 'default': 'undefined'},  # 作者名
+                            'email': {'type': 'string', 'default': 'undefined'},  # 作者邮箱
+                            'url': {'type': 'string', 'default': 'undefined'},  # 项目链接
+                        }
+                    },
+                    'license': {  # 证书
+                        'type': 'dict',
+                        'schema': {
+                            'name': {'type': 'string', 'default': 'MIT'},  # 协议
+                            'url': {'type': 'string', 'default': 'https://opensource.org/licenses/MIT'},  # 协议链接
+                        }
+                    }
+                }
+            })
+        return InitHook(hook_func)
 
-        from flasgger import Swagger
-        swagger_config = {  # swagger初始化
-            "title": ctx.config.get(SwaggerConfigKey.SWAGGER_TITLE),
-            "uiversion": ctx.config.get(SwaggerConfigKey.SWAGGER_UIVERSION),
-            "description": ctx.config.get(SwaggerConfigKey.SWAGGER_DESCRIPTION),
-            "version": ctx.config.get(SwaggerConfigKey.SWAGGER_VERSION),
-            "termsOfService": ctx.config.get(SwaggerConfigKey.SWAGGER_TERMS_OF_SERVICE),
-            "contact": {
-                "name": ctx.config.get(SwaggerConfigKey.SWAGGER_CONTACT_NAME),
-                "email": ctx.config.get(SwaggerConfigKey.SWAGGER_CONTACT_EMAIL),
-                "url": ctx.config.get(SwaggerConfigKey.SWAGGER_CONTACT_URL)
-            },
-            "license": {
-                "name": ctx.config.get(SwaggerConfigKey.SWAGGER_LICENSE_NAME),
-                "url": ctx.config.get(SwaggerConfigKey.SWAGGER_LICENSE_URL)
+    def after_post_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 初始化项目接口文档(flasgger) """
+            dev_mode = ctx.config.get(ResourceContextConfigKey.DEV_MODE)
+            if not dev_mode: return  # 仅在开发者模式下开启swagger文档
+
+            from flasgger import Swagger
+            swagger_config = {  # swagger初始化
+                "title": ctx.config.get(SwaggerConfigKey.SWAGGER_TITLE),
+                "uiversion": ctx.config.get(SwaggerConfigKey.SWAGGER_UIVERSION),
+                "description": ctx.config.get(SwaggerConfigKey.SWAGGER_DESCRIPTION),
+                "version": ctx.config.get(SwaggerConfigKey.SWAGGER_VERSION),
+                "termsOfService": ctx.config.get(SwaggerConfigKey.SWAGGER_TERMS_OF_SERVICE),
+                "contact": {
+                    "name": ctx.config.get(SwaggerConfigKey.SWAGGER_CONTACT_NAME),
+                    "email": ctx.config.get(SwaggerConfigKey.SWAGGER_CONTACT_EMAIL),
+                    "url": ctx.config.get(SwaggerConfigKey.SWAGGER_CONTACT_URL)
+                },
+                "license": {
+                    "name": ctx.config.get(SwaggerConfigKey.SWAGGER_LICENSE_NAME),
+                    "url": ctx.config.get(SwaggerConfigKey.SWAGGER_LICENSE_URL)
+                }
             }
-        }
-        ctx.app.config['SWAGGER'] = swagger_config
-        Swagger(ctx.app)
+            ctx.app.config['SWAGGER'] = swagger_config
+            Swagger(ctx.app)
+        return InitHook(hook_func)
 
 
 from common import Result
@@ -1051,15 +1226,15 @@ class BotState:
     def identify(self):
         return self._identify
 
-    def enter(self, ctx: DiscordBotContextV1):  # 状态变更
+    def enter(self, ctx: DiscordBotContext):  # 状态变更
         """ 切入状态时的钩子函数 """
         pass
 
-    def fadeout(self, ctx: DiscordBotContextV1):
+    def fadeout(self, ctx: DiscordBotContext):
         """ 切出此状态时将会触发此钩子函数 """
         pass
 
-    def do_enter(self, ctx: DiscordBotContextV1):
+    def do_enter(self, ctx: DiscordBotContext):
         """ 实际切入状态时触发此钩子函数 """
         # 发布内部事件后执行切入状态钩子函数
         ctx.bot_eventbus.emit(BotEvent.STATE_CHANGE, self.identify)
@@ -1068,25 +1243,25 @@ class BotState:
         # socketio.start_background_task(target=socketio.emit, event=SocketioEvent.ATRI_STATE_CHANGE, data=self.identify, namespace='/socket/admin')
         # socketio.emit(SocketioEvent.ATRI_STATE_CHANGE, self.identify, namespace='/socket/admin')
 
-    def do_fadeout(self, ctx: DiscordBotContextV1):
+    def do_fadeout(self, ctx: DiscordBotContext):
         """ 实际切出状态时触发此钩子函数 """
         self.fadeout(ctx)
 
-    def start(self, ctx: DiscordBotContextV1) -> Result:
+    def start(self, ctx: DiscordBotContext) -> Result:
         """ 启动机器人 """
         return Result(500, "unsupported operation: start")
 
-    def stop(self, ctx: DiscordBotContextV1) -> Result:
+    def stop(self, ctx: DiscordBotContext) -> Result:
         """ 停止机器人 """
         return Result(500, "unsupported operation: stop")
 
     # 初始化，在应用启动时初始化机器人线程
-    def launch(self, ctx: DiscordBotContextV1) -> Result:
+    def launch(self, ctx: DiscordBotContext) -> Result:
         """ 启动机器人线程 """
         return Result(500, "unsupported operation: launch")
 
     # 用于线程退出的时候清理资源
-    def terminate(self, ctx: DiscordBotContextV1) -> Result:
+    def terminate(self, ctx: DiscordBotContext) -> Result:
         """ 停止机器人线程 """
         return Result(500, "unsupported operation: terminate")
 
@@ -1099,7 +1274,7 @@ class BotThreadIdle(BotState):
     def __init__(self):
         super().__init__('created')
 
-    def launch(self, ctx: DiscordBotContextV1) -> Result:
+    def launch(self, ctx: DiscordBotContext) -> Result:
         def thread_target():
             ctx.bot_event_loop = asyncio.new_event_loop()  # 初始化事件循环
             asyncio.set_event_loop(ctx.bot_event_loop)  # 设置bot_thread的主事件循环
@@ -1127,7 +1302,7 @@ class BotIdle(BotState):
     def __init__(self):
         super().__init__('initializing')
 
-    def enter(self, ctx: DiscordBotContextV1):
+    def enter(self, ctx: DiscordBotContext):
         ctx.init_bot_instance()  # 初始化机器人实例
         ctx.update_state(BotStopped())  # 亚托莉准备就绪
 
@@ -1135,7 +1310,7 @@ class BotStopped(BotState):
     def __init__(self):
         super().__init__('stopped')
 
-    def start(self, ctx: DiscordBotContextV1) -> Result:
+    def start(self, ctx: DiscordBotContext) -> Result:
         """ 启动亚托莉 """
         ctx.update_state(BotStarting())   # 切换到starting状态
 
@@ -1158,10 +1333,10 @@ class BotStopped(BotState):
         asyncio.run_coroutine_threadsafe(async_start(), ctx.bot_event_loop)
         return Result(200, "submit bot launching task")  # 执行亚托莉启动工作流
 
-    def stop(self, ctx: DiscordBotContextV1):
+    def stop(self, ctx: DiscordBotContext):
         return Result(200, "bot already stopped")
 
-    def terminate(self, ctx: DiscordBotContextV1):
+    def terminate(self, ctx: DiscordBotContext):
         # ctx.bot_instance.close()  # 关闭资源
         # todo: 完善Stopped状态下的terminate方法
         pass
@@ -1172,10 +1347,10 @@ class BotStarted(BotState):
     def __init__(self):
         super().__init__('started')
 
-    def start(self, ctx: DiscordBotContextV1) -> Result:
+    def start(self, ctx: DiscordBotContext) -> Result:
         return Result(200, 'bot already started')
 
-    def stop(self, ctx: DiscordBotContextV1) -> Result:
+    def stop(self, ctx: DiscordBotContext) -> Result:
         """ 停止亚托莉 """
         ctx.update_state(BotStopping())   # 切换到stopping状态
         async def async_stop():  # 异步停止亚托莉
@@ -1198,10 +1373,10 @@ class BotStopping(BotState):  # 正在停止
     def __init__(self):
         super().__init__('stopping')
 
-    def start(self, ctx: DiscordBotContextV1):
+    def start(self, ctx: DiscordBotContext):
         raise RuntimeError('bot is still stopping')
 
-    def stop(self, ctx: DiscordBotContextV1):
+    def stop(self, ctx: DiscordBotContext):
         return Result(400, 'musicatri is still stopping')
 
 
@@ -1223,38 +1398,37 @@ class DiscordBotContextConfigKey:
 
 from pyee.executor import ExecutorEventEmitter
 from asyncio import AbstractEventLoop
-class DiscordBotContextV1(ResourceContext):
+
+class DiscordBotContext(ResourceContext):
     """ discord机器人服务上下文，用于快速构建机器人实例 """
+    bot_token: str  # 机器人令牌
+
+    bot_thread: Thread  # 机器人线程，基于asyncio启动事件循环
     bot_instance: BotInstance  # 机器人实例
     bot_eventbus: ExecutorEventEmitter  # 事件总线，用于在机器人内部传递事件消息
-    bot_thread: Thread  # 机器人线程，基于asyncio启动事件循环
     bot_event_loop: AbstractEventLoop  # 占用机器人线程的事件循环，执行asyncio异步任务
 
-    bot_token: str  # 机器人令牌
-    bot_intents: Intents  # 机器人接收discord网关事件意图
-    bot_command_prefix: str  # 机器人命令前缀
-
-    def __init__(self,
-                 namespace: str,
-                 command_prefix: str,
-                 intents: Intents=Intents.all()):
+    def __init__(self, namespace: str):
         """ 上下文初始化 """
         super().__init__(namespace=namespace)
         self.bot_eventbus = ExecutorEventEmitter()  # 事件总线
         self._state = None
 
-        self.bot_intents = intents
-        self.bot_command_prefix = command_prefix
-        self.config_schema['application']['schema']['bot'] = {
-            'type': 'dict',
-            'schema': {
-                'token': {'type': 'string', 'default': 'bot-token'}
-            }
-        }
+    def pre_init(self) -> InitHook:
+        def hook_func():
+            self.config_schema_builder.set_at_path('application.bot', {
+                'type': 'dict',
+                'schema': {
+                    'token': {'type': 'string', 'default': 'bot-token'}
+                }
+            })
+        return InitHook(hook_func)
 
-    def on_init(self):
-        self.do_init_bot_event_listener(self.bot_eventbus)  # 初始化机器人事件监听器
-        self.update_state(BotThreadIdle())  # 初始化状态
+    def on_init(self) -> InitHook:
+        def hook_func():
+            self.do_init_bot_event_listener(self.bot_eventbus)  # 初始化机器人事件监听器
+            self.update_state(BotThreadIdle())  # 初始化状态
+        return InitHook(hook_func)
 
     # def init_logger(self):
     #     """ 初始化日志记录 """
@@ -1316,8 +1490,8 @@ class DiscordBotContextV1(ResourceContext):
 
     def init_bot_instance(self):
         """ 初始化上下文的亚托莉对象 """
-        bot = BotInstance(command_prefix=self.bot_command_prefix,
-                          intents=self.bot_intents)
+        bot = BotInstance(command_prefix=self.get_command_prefix(),
+                          intents=self.get_intents())
         self.bot_instance = bot  # 此处应优先初始化字段，避免空指针
         self.do_init_bot_event_hook(bot)
         self.do_init_bot_command(bot)
@@ -1353,8 +1527,13 @@ class DiscordBotContextV1(ResourceContext):
         async def on_disconnect():
             """ 机器人断开连接 """
             self.bot_eventbus.emit(BotEvent.DISCONNECT_SUCCESS)
-
         self.init_bot_event_hook(bot)
 
     # todo: 增加阻塞方法，支持以同步形式启动机器人上下文
 
+    @abstractmethod
+    def get_command_prefix(self) -> str:
+        pass
+
+    def get_intents(self) -> Intents:
+        return Intents.all()
