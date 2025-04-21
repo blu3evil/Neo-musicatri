@@ -32,3 +32,5 @@ export class Result {
     return this.code === 601 || this.code === 602
   }
 }
+
+

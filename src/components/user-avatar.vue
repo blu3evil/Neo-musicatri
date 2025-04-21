@@ -38,18 +38,14 @@ export default {
       if (props.allowRefresh
         && userAvatarURL.value === null
         && userAvatarStatus.value === 'unset' ) {
-        store.dispatch('loadUserAvatar').then()
+        // store.dispatch('loadUserAvatar').then()
       }
-    }
-
-    const refreshAvatar = (userId, userAvatar) => {
-
     }
 
     // 在用户每次建立连接的时候初始化头像
     watch(userSocketStatus, async (newVal, oldVal) => {
       if (newVal === 'connected') {
-        store.dispatch('loadUserAvatar').then()
+        // store.dispatch('loadUserAvatar').then()
       }
     })
 

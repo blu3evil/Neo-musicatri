@@ -96,6 +96,17 @@ export const router = createRouter({
             },
           ]
         },
+        {
+          path: 'bot-management',  // 机器人面板
+          component: () => import('./views/workspace/bot-management/BotManagement.vue'),
+          meta: { requireAdmin: true },
+          children: [
+            {
+              path: 'overview',
+              component: () => import('./views/workspace/bot-management/Overview.vue'),
+            },
+          ]
+        },
       ]
     },
     {
@@ -158,6 +169,10 @@ class Navigator {
     return router.push(`/workspace/musiclib-management/${page}`)
   }
 
+  toBotManagement(page) {
+    return router.push(`/workspace/bot-management/${page}`)
+  }
+
   toSettings(page) {
     return router.push(`/settings/${page}`)
   }
@@ -167,6 +182,7 @@ class Navigator {
       case 'app-management': await this.toAppManagementHistory(); break;
       case 'user-management': await this.toUserManagementHistory(); break;
       case 'musiclib-management': await this.toMusiclibManagementHistory(); break;
+      case 'bot-management': await this.toBotManagementHistory(); break;
       default: await this.toPortal()
     }
   }
@@ -179,6 +195,11 @@ class Navigator {
   toAppManagementHistory() {
     const history = store.getters.history.appManagementHistory
     return router.push(`/workspace/app-management/${history}`)
+  }
+
+  toBotManagementHistory() {
+    const history = store.getters.history.botManagementHistory
+    return router.push(`/workspace/bot-management/${history}`)
   }
 
   toUserManagementHistory() {

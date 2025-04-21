@@ -45,4 +45,19 @@ globalEventbus.on(Events.MITT.ADMIN_FUNCTION.DISABLE.FAILED, reason => {
   ToastMessage.error(i18n.global.t('view.AboutSetting.admin_function_disable_failed', { reason }))
 })
 
+// 用户数据成功修改
+globalEventbus.on(Events.MITT.USER.DATA.PATCH.SUCCESS, globalName => {
+  ToastMessage.success(i18n.global.t('view.workspace.UserManagement.submit_change_success', { globalName }))
+})
+
+// 删除用户
+globalEventbus.on(Events.MITT.USER.DELETE.FAILED, ({ globalName, reason }) => {
+  ToastMessage.error(i18n.global.t('view.workspace.UserManagement.delete_user_failed', { globalName, reason }))
+})
+
+globalEventbus.on(Events.MITT.USER.DELETE.SUCCESS, ({ globalName }) => {
+  ToastMessage.success(i18n.global.t('view.workspace.UserManagement.delete_user_success', { globalName }))
+})
+
+
 

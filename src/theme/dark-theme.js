@@ -31,5 +31,9 @@ export default {
   '--button-bg-color': '#424242',  /* 按钮背景色 */
   '--button-border-color': '#2f2f2f',  /* 按钮边框颜色 */
   '--button-text-color': 'rgb(239,233,233)',  /* 按钮字体颜色 */
+
+  '--button-danger-bg-color': '#e10c54',  /* 删除按钮背景色 */
+  '--button-danger-border-color': '#e10c54',  /* 删除按钮边框颜色 */
+  '--button-danger-text-color': 'rgb(239,233,233)',  /* 删除按钮字体颜色 */
 }
 

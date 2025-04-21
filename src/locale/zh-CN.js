@@ -60,7 +60,8 @@ export default {
         'admin_function': '管理员功能',
         'app-management': '应用面板',
         'user_management': '用户面板',
-        'musiclib_management': '曲库面板'
+        'musiclib_management': '曲库面板',
+        'bot_management': '机器人',
       },
       'Portal': {},
       'Dashboard': {
@@ -72,14 +73,25 @@ export default {
         'management': '用户管理',
         'username_label': '标识名',
         'global_name_label': '用户名',
+        'user_id': '用户id',
         'roles_label': '权限',
         'is_active_label': '状态',
         'query': '检索',
         'fuzzy_query_placeholder': "使用'*'进行模糊匹配",
-        'empty_text': '亚托莉什么也没有找到>.<'
+        'empty_text': '亚托莉什么也没有找到>.<',
+        'submit_change_or_not': '要提交此次修改嘛?',
+        'submit_change_success': '成功修改{globalName}用户的数据',
+        'operation_label': '操作',
+        'delete_user': '删除用户',
+        'delete_user_or_not': '真的要删除用户{globalName}的数据嘛',
+        'delete_user_failed': '用户{globalName}删除失败: {reason}',
+        'delete_user_success': '用户{globalName}删除成功'
       },
       'MusiclibManagement': {
         'overview': '曲库总览'
+      },
+      'BotManagement': {
+        'overview': '机器人总览',
       }
     },
     'AppearanceSetting': {

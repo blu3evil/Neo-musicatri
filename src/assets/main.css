@@ -41,6 +41,10 @@
     --button-border-color: #e0e0e0;  /* 按钮边框颜色 */
     --button-text-color: #e0e0e0;  /* 按钮字体颜色 */
 
+    --button-danger-bg-color: #e0e0e0;  /* 按钮背景色 */
+    --button-danger-border-color: #e0e0e0;  /* 按钮边框颜色 */
+    --button-danger-text-color: #e0e0e0;  /* 按钮字体颜色 */
+
     /* 表格 */
 }
 
@@ -194,8 +198,6 @@ body {
     border: 2px solid var(--popper-border-color) !important;
 }
 
-
-
 /* 多选择框下拉选单选项样式 */
 .el-select-dropdown__item {
     font-size: var(--text-small) !important;
@@ -310,6 +312,7 @@ body {
 .el-button--primary, .el-button {
     font-family: 'FZMiShaoTi', sans-serif !important;
     border-radius: var(--border-radius) !important;
+
     --el-button-bg-color: var(--button-bg-color) !important;
     --el-button-border-color: var(--button-border-color) !important;
     --el-button-text-color: var(--button-text-color) !important;
@@ -322,6 +325,25 @@ body {
     --el-button-active-color: var(--button-text-color) !important;
     --el-button-active-bg-color: var(--button-bg-color) !important;
     --el-button-active-border-color: var(--button-border-color) !important;
+}
+
+.el-button--danger {
+    --el-button-bg-color: var(--button-danger-bg-color) !important;
+    --el-button-border-color: var(--button-danger-bg-color) !important;
+    --el-button-text-color: var(--button-danger-text-color) !important;
+
+    --el-button-hover-text-color: var(--button-danger-text-color) !important;
+    --el-button-hover-link-text-color: var(--button-danger-text-color) !important;
+    --el-button-hover-bg-color: var(--button-danger-bg-color) !important;
+    --el-button-hover-border-color: var(--button-danger-border-color) !important;
+
+    --el-button-active-color: var(--button-danger-text-color) !important;
+    --el-button-active-bg-color: var(--button-danger-bg-color) !important;
+    --el-button-active-border-color: var(--button-danger-border-color) !important;
+}
+
+.el-button-danger {
+
 }
 
 /* 按钮加载状态 */
@@ -353,5 +375,7 @@ body {
 .el-switch__core .el-switch__action {
     background-color: var(--switch-btn-bg-color) !important;
 }
+
+
 
 

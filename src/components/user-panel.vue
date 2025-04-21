@@ -1,6 +1,7 @@
 <!-- 用户信息面板 -->
 <script>
 import UserAvatar from '@/components/user-avatar.vue'
+import UserAvatarV2 from '@/components/user-avatar-v2.vue'
 import { Tools, CloseBold } from '@element-plus/icons-vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
@@ -12,6 +13,7 @@ import { PopupMessage } from '@/utils/ui-helper.js'
 export default {
   components: {
     UserAvatar /* 用户头像 */,
+    UserAvatarV2,  /* 用户头像V2 */
     Tools /* element plus图标 */ ,
     CloseBold,
     Refresh,
@@ -21,6 +23,10 @@ export default {
     const { t } = useI18n()
     const store = useStore()
     const currentUser = computed(() => store.getters.currentUser)
+    const currentUserAvatarContext = computed(() => {
+      const currentUser = store.getters.currentUser
+      return store.getters.safeUserAvatarContexts(currentUser.id)
+    })
 
     const onLogoutClick = () => {
       PopupMessage.warning(t('component.user-panel.confirm_logout'))
@@ -33,6 +39,7 @@ export default {
       t,
       navigator,
       currentUser,
+      currentUserAvatarContext,
       onLogoutClick,
     }
   }
@@ -40,15 +47,17 @@ export default {
 </script>
 <template>
   <el-row>  <!-- 用户头像 -->
-    <el-col :span="6"><div class="text-small" >
-      <UserAvatar class="user-avatar"
-                  :allow-refresh="true"
-                  icon-style="margin-top: 9px" />
-    </div></el-col>
-    <el-col :span="18"><div class="text-small" style="margin-top: 6px" >
-      <el-row>{{currentUser.username}}</el-row>
-      <el-row>id:{{currentUser.id}}</el-row>
-    </div></el-col>
+    <el-col :span="6">
+      <UserAvatarV2 :user-avatar-context="currentUserAvatarContext"
+                    class="user-avatar"
+                    :click-to-refresh="true" />
+    </el-col>
+    <el-col :span="18">
+      <div class="text-small" style="margin-top: 2px" >
+        <el-row>{{currentUser.username}}</el-row>
+        <el-row>id:{{currentUser.id}}</el-row>
+      </div>
+    </el-col>
   </el-row>
 
   <el-row style="margin-top: 15px">  <!-- 更多设置 -->

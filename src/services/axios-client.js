@@ -6,8 +6,11 @@ import { Result } from '@/common.js'
 export let discordClient = null  // discord客户端
 export let musicatriClient = null  // musicatri客户端
 
-
 const musicatriClientResponseHandler = (response) => {
+  if ([401, 403].includes(response.status)) {
+    store.commit('clearCurrentUser')  // 未验证时清理当前用户
+  }
+
   return Promise.resolve(
     new Result(response.status, response.data.message, response.data.data)
   )

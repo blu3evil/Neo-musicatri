@@ -7,6 +7,27 @@ export const Events = {
         LOAD_FAILED: 'mitt:user_management:load_users_preview:load_failed',  // 加载用户概览失败
       }
     },
+    USER: {
+      AVATAR: {
+        LOAD_SUCCESS: "mitt:user:avatar:load_success",  // 用户头像加载失败
+        LOAD_FAILED: "mitt:user:avatar:load_failed"  // 用户头像加载失败
+      },
+      DETAILS: {
+        LOAD_SUCCESS: "mitt:user:avatar:load_success",  // 用户详情加载失败
+        LOAD_FAILED: "mitt:user:avatar:load_failed"  // 用户详情加载成功
+      },
+      DATA: {
+        PATCH: {
+          SUCCESS: 'mitt:user:data:patch:success',
+          FAILED: 'mitt:user:data:patch:failed',
+          CANCEL: 'mitt:user:data:patch:cancel',  // 取消提交
+        }
+      },
+      DELETE: {
+        SUCCESS: 'mitt:user:delete:success',
+        FAILED: 'mitt:user:delete:failed',
+      }
+    },
     CURRENT_USER: {
       AVATAR: {
         LOAD_SUCCESS: "mitt:current_user:avatar:load_success",  // 当前用户头像加载成功

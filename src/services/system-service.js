@@ -1,8 +1,6 @@
 // 系统服务
 // noinspection JSUnresolvedReference
 import { musicatriClient } from '@/services/axios-client.js'
-import { config } from '@/config.js'
-
 const urlPrefix = '/system'
 
 class SystemService {

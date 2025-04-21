@@ -2,11 +2,13 @@
 <script>
 import UserPanel from '@/components/user-panel.vue'
 import UserAvatar from '@/components/user-avatar.vue'
+import UserAvatarV2 from '@/components/user-avatar-v2.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { navigator } from '@/router.js'
 import { Tools, Loading } from '@element-plus/icons-vue'
 import { authService } from '@/services/auth-service.js'
+import { useStore } from 'vuex'
 
 export default {
   components: {
@@ -14,15 +16,22 @@ export default {
     UserAvatar /* 用户头像 */,
     Tools ,
     Loading,
+    UserAvatarV2,
   },
   setup() {
     const { t } = useI18n()  // 本地化
+    const store = useStore()
     const isAvatarActive = ref(false)
     const isLogin = computed(() => authService.checkLogin())
+    const currentUserAvatarContext = computed(() => {
+      const userId = store.getters.currentUser.id
+      return store.getters.safeUserAvatarContexts(userId)
+    })
 
     return {
       isLogin,
       isAvatarActive,
+      currentUserAvatarContext,
       navigator,
       t, // 本地化
     }
@@ -49,22 +58,18 @@ export default {
     <!-- 用户头像 -->
     <el-menu-item index="1" v-if="isLogin">
       <el-popover
-        placement="bottom-start"
+        placement="bottom-end"
         :width="340"
         trigger="click"
         @show="isAvatarActive = true"
         @hide="isAvatarActive = false"
       >
         <template #reference>
-          <UserAvatar :class="{
-            active: isAvatarActive,
-            'user-avatar': true ,
-            'navbar-user-avatar': true
-          }"
-                      @click="isAvatarActive = !isAvatarActive"
-                      :allow-refresh="false"
-                      text-style="margin-top: 4px"
-                      icon-style="margin-left: 5px; margin-bottom: 1px"/>
+          <UserAvatarV2
+            :user-avatar-context="currentUserAvatarContext"
+            @click="isAvatarActive = !isAvatarActive"
+            :class="{'user-avatar': true, active: isAvatarActive}"
+          />
         </template>
         <UserPanel />
       </el-popover>
@@ -83,6 +88,7 @@ export default {
 .el-menu--horizontal .el-menu-item:not(.is-disabled):focus,
 .el-menu--horizontal .el-menu-item:not(.is-disabled):hover {
   background-color: transparent; /* 隐藏按钮悬停背景色 */
+  color: var(--navbar-color) !important;
 }
 
 /* 菜单栏按钮激活时 */

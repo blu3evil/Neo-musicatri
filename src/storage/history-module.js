@@ -4,6 +4,7 @@ const historyPrototype = {
   appManagementHistory: 'overview',
   userManagementHistory: 'overview',
   musiclibManagementHistory: 'overview',
+  botManagementHistory: 'overview',
 }
 export default {
   namespace: true,

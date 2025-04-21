@@ -5,7 +5,7 @@ import CommonBackground from '@/components/common-background.vue'
 import CommonSidebar from '@/components/common-sidebar.vue'
 import { computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { Stopwatch, Compass, User, Files } from '@element-plus/icons-vue'
+import { Stopwatch, Compass, User, Files, Refrigerator } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { navigator } from '@/router.js'
 import { authService } from '@/services/auth-service.js'
@@ -48,6 +48,11 @@ export default {
         icon: Files,
         label: t('view.workspace.Workspace.musiclib_management'),
       },
+      {
+        name: 'bot-management',
+        icon: Refrigerator,
+        label: t('view.workspace.Workspace.bot_management'),
+      }
     ]
 
     onMounted(() => {
