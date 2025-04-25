@@ -7,7 +7,7 @@ import CommonBackground from '@/components/common-background.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
-import { authServiceV1 } from '@/services/auth-service.js'
+import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
 import { navigator } from '@/router.js'
 import { config } from '@/config.js'
 import { useStore } from 'vuex'
@@ -40,8 +40,9 @@ export default {
             t('component.pending-panel.waiting_response'),
             true,
           )
-          const result = await authServiceV1.userAuthorize(code) // 执行用户认证
-          if (result.isSuccess()) {  // 认证成功
+          // const result = await authServiceV1.userAuthorize(code) // 执行用户认证
+          const result = await authServiceV2.authorize(code) // 执行用户认证
+          if (result.isSuccess()) {
             context.setState(new UserLoginStatus())
           } else {  // 分4类处理异常
             ErrorState.handleErrorResult(result)
@@ -62,7 +63,9 @@ export default {
     class UserLoginStatus extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(t('view.UserLoginCallback.user_login'), true)
-        const result = await authServiceV1.userLogin()
+        // const result = await authServiceV1.userLogin()
+        const result = await authServiceV2.login()
+
         if (result.isSuccess()) {
           // 登陆成功后建立socketio连接
           context.setState(new loadCurrentUserDetailsState())

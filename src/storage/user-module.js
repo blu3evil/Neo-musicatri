@@ -2,19 +2,19 @@ import { Result } from '@/common.js'
 import { globalEventbus } from '@/mitt/global-eventbus.js'
 import { Events } from '@/events.js'
 import { discordService } from '@/services/discord_service.js'
-import { userServiceV1 } from '@/services/user-service-v1.js'
-import { authServiceV1 } from '@/services/auth-service.js'
+import { userServiceV1 } from '@/services/user-service.js'
+import { authServiceV2 } from '@/services/auth-service.js'
 // import { userSocketContext } from '@/sockets/user-socket.js'
 // import { adminSocketContext } from '@/sockets/admin-socket.js'
 import { navigator } from '@/router.js'
 import { AvatarStatus } from '@/status.js'
 
 const userPrototype = {
-  'id': '000174134145',
+  'id': null,
   'avatar': null,
-  'username': 'pineclone',
-  'global_name': 'pineclone',
-  'roles': [],
+  'username': null,
+  'global_name': null,
+  'roles': null,
 }
 
 const userAvatarPrototype = {
@@ -27,9 +27,7 @@ export default {
   state: () => ({
     currentUser: userPrototype, // 当前用户(此处作占位)
     userAvatar: userAvatarPrototype, // 当前用户头像
-
     userAvatarContexts: {},  /* 用户头像上下文，存储用户头像相关状态量 */
-
     userSocketStatus: 'disconnected', // userSocket当前状态
     adminSocketStatus: 'disconnected', // adminSocket当前状态
     enableAdminFunction: false, // 启用管理员功能
@@ -171,7 +169,7 @@ export default {
 
     // 登出当前用户
     async logoutCurrentUser({ dispatch }) {
-      const result = await authServiceV1.userLogout()
+      const result = await authServiceV2.logout()
       if (result.isSuccess()) {
         // 登出成功
         // await userSocketContext.disconnect()  // 断开user socket连接

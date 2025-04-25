@@ -2,7 +2,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { store } from '@/storage/index.js'
-import { authServiceV1 } from '@/services/auth-service.js'
+import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
 
 // vue路由定义
 export const router = createRouter({
@@ -136,15 +136,27 @@ router.beforeEach(async (
   let requireAdmin = to.meta.requireAdmin
 
   if (requireLogin) {  // 登录检查
-    if (!authServiceV1.checkLogin()) {
+    // if (!authServiceV1.checkLogin()) {
+    //   next('/login')
+    //   return
+    // }
+    const result = await authServiceV2.validate()
+    if (!result.isSuccess()) {
       next('/login')
       return
     }
   }
 
   if (requireAdmin) {
-    if (!authServiceV1.checkRole('admin')) {
-      next('/workspace/portal')  // 无管理员权限
+    // if (!authServiceV1.checkRole('admin')) {
+    //   next('/workspace/portal')  // 无管理员权限
+    //   return
+    // }
+
+    // 改用严格权限校验
+    const result = await authServiceV2.validate(['admin', 'user'])
+    if (!result.isSuccess()) {
+      next('/workspace/portal')
       return
     }
   }

@@ -3,11 +3,11 @@
 import UserPanel from '@/components/user-panel.vue'
 import UserAvatar from '@/components/user-avatar.vue'
 import UserAvatarV2 from '@/components/user-avatar-v2.vue'
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { navigator } from '@/router.js'
 import { Tools, Loading } from '@element-plus/icons-vue'
-import { authServiceV1 } from '@/services/auth-service.js'
+import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
 import { useStore } from 'vuex'
 
 export default {
@@ -22,10 +22,21 @@ export default {
     const { t } = useI18n()  // 本地化
     const store = useStore()
     const isAvatarActive = ref(false)
-    const isLogin = computed(() => authServiceV1.checkLogin())
+
+    // const isLogin = computed(() => authServiceV1.checkLogin())
+    // const isLogin = computed(async () => {
+    //   const result = await authServiceV2.validate()
+    //   return result.isSuccess()
+    // })
+    const isLogin = ref(false)
     const currentUserAvatarContext = computed(() => {
       const userId = store.getters.currentUser.id
       return store.getters.safeUserAvatarContexts(userId)
+    })
+
+    watchEffect(async () => {
+      const result = await authServiceV2.validate()
+      isLogin.value = result.isSuccess()
     })
 
     return {
@@ -36,6 +47,7 @@ export default {
       t, // 本地化
     }
   },
+
 }
 </script>
 

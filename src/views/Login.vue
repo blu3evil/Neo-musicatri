@@ -7,8 +7,8 @@ import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
 import { navigator } from '@/router.js'
-import { authServiceV1 } from '@/services/auth-service.js'
-import { systemServiceV1 } from '@/services/system-service-v1.js'
+import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
+import { systemServiceV1 } from '@/services/system-service.js'
 import { config } from '@/config.js'
 import { useStore } from 'vuex'
 
@@ -53,7 +53,9 @@ export default {
     class CheckUserLoginState extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(t('view.UserLogin.checking_login_status'), true)
-        const result = await authServiceV1.userLogin()
+        // const result = await authServiceV1.userLogin()
+        const result = await authServiceV2.login()
+
         if (result.isSuccess()) {
           // 认证成功，加载用户信息
           context.setState(new LoadUserInfoState())

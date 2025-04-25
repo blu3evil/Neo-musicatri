@@ -1,5 +1,5 @@
 // 服务器信息模块
-import { systemServiceV1 } from '@/services/system-service-v1.js'
+import { systemServiceV1 } from '@/services/system-service.js'
 import { globalEventbus } from '@/mitt/global-eventbus.js'
 import { Events } from '@/events.js'
 const systemInfoPrototype = {

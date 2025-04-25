@@ -6,8 +6,8 @@ import AdminFunctionPanel from '@/components/admin-function-panel.vue'
 import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { atriAudio } from '@/utils/media-helper.js'
-import { computed, onMounted } from 'vue'
-import { authServiceV1 } from '@/services/auth-service.js'
+import { computed, onMounted, ref, watchEffect } from 'vue'
+import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
 import { config } from '@/config.js'
 
 export default {
@@ -20,17 +20,24 @@ export default {
     const { t } = useI18n()
     const store = useStore()
     const activeTheme = computed(() => store.getters.activeTheme) // 当前主题
-    const isAdmin = computed(() => authServiceV1.checkRole('admin'))
+    // const isAdmin = computed(() => authServiceV1.checkRole('admin'))
+
+    const isAdmin = ref(false)  // 是否为管理员
 
     const onDiscordIconClick = () =>
       window.open(config['DISCORD_LINK'], '_blank')
     const onGithubIconClick = () =>
       window.open(config['GITHUB_LINK'], '_blank')
 
-    onMounted(() => {
-      store.dispatch('setHistory', {
+    onMounted(async () => {
+      await store.dispatch('setHistory', {
         name: 'settingsHistory', history: 'about'
       })
+    })
+
+    watchEffect(async () => {
+      const result = await authServiceV2.validate(['user', 'admin'])
+      isAdmin.value = result.isSuccess()
     })
 
     return {

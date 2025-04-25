@@ -37,8 +37,15 @@ export const initClient = config => {
   })
 
   musicatriClientPrototype.interceptors.request.use((config) => {
+
     config.withCredentials = true  // 允许携带关键凭证
     config.headers['Accept-Language'] = store.getters.activeLanguage  // 携带语言头响应本地化
+
+    const authorizationHeader = store.getters.authorizationHeader  // 如果凭证存在那么携带
+    if (authorizationHeader !== null && authorizationHeader !== undefined) {
+      config.headers['Authorization'] = authorizationHeader
+    }
+
     return config
   }, (error) => {
     return Promise.reject(error);
