@@ -2,7 +2,7 @@
 
 import { createRouter, createWebHistory } from 'vue-router'
 import { store } from '@/storage/index.js'
-import { authService } from '@/services/auth-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 
 // vue路由定义
 export const router = createRouter({
@@ -57,7 +57,7 @@ export const router = createRouter({
         },
         {
           path: 'app-management',  // 应用面板
-          component: () => import('@/views/workspace/app-management/AppManagement.vue'),
+          component: () => import('@/views/workspace/app-management/Index.vue'),
           meta: { requireAdmin: true },
           children: [
             {
@@ -72,7 +72,7 @@ export const router = createRouter({
         },
         {
           path: 'user-management',  // 用户面板
-          component: () => import('@/views/workspace/user-management/UserManagement.vue'),
+          component: () => import('@/views/workspace/user-management/Index.vue'),
           meta: { requireAdmin: true },
           children: [
             {
@@ -87,18 +87,22 @@ export const router = createRouter({
         },
         {
           path: 'musiclib-management',  // 曲库面板
-          component: () => import('@/views/workspace/musiclib-management/MusiclibManagement.vue'),
+          component: () => import('@/views/workspace/musiclib-management/Index.vue'),
           meta: { requireAdmin: true },
           children: [
             {
               path: 'overview',
               component: () => import('./views/workspace/musiclib-management/Overview.vue'),
             },
+            {
+              path: 'management',
+              component: () => import('./views/workspace/musiclib-management/Management.vue')
+            }
           ]
         },
         {
           path: 'bot-management',  // 机器人面板
-          component: () => import('./views/workspace/bot-management/BotManagement.vue'),
+          component: () => import('./views/workspace/bot-management/Index.vue'),
           meta: { requireAdmin: true },
           children: [
             {
@@ -132,14 +136,14 @@ router.beforeEach(async (
   let requireAdmin = to.meta.requireAdmin
 
   if (requireLogin) {  // 登录检查
-    if (!authService.checkLogin()) {
+    if (!authServiceV1.checkLogin()) {
       next('/login')
       return
     }
   }
 
   if (requireAdmin) {
-    if (!authService.checkRole('admin')) {
+    if (!authServiceV1.checkRole('admin')) {
       next('/workspace/portal')  // 无管理员权限
       return
     }

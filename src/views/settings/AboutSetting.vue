@@ -7,7 +7,7 @@ import { useStore } from 'vuex'
 import { useI18n } from 'vue-i18n'
 import { atriAudio } from '@/utils/media-helper.js'
 import { computed, onMounted } from 'vue'
-import { authService } from '@/services/auth-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 import { config } from '@/config.js'
 
 export default {
@@ -20,7 +20,7 @@ export default {
     const { t } = useI18n()
     const store = useStore()
     const activeTheme = computed(() => store.getters.activeTheme) // 当前主题
-    const isAdmin = computed(() => authService.checkRole('admin'))
+    const isAdmin = computed(() => authServiceV1.checkRole('admin'))
 
     const onDiscordIconClick = () =>
       window.open(config['DISCORD_LINK'], '_blank')
@@ -39,7 +39,7 @@ export default {
       isAdmin,
       onGithubIconClick,
       onDiscordIconClick,
-      authService,
+      authService: authServiceV1,
       atriAudio,
     }
   },

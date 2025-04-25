@@ -2,8 +2,8 @@ import { Result } from '@/common.js'
 import { globalEventbus } from '@/mitt/global-eventbus.js'
 import { Events } from '@/events.js'
 import { discordService } from '@/services/discord_service.js'
-import { userService } from '@/services/user-service.js'
-import { authService } from '@/services/auth-service.js'
+import { userServiceV1 } from '@/services/user-service-v1.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 // import { userSocketContext } from '@/sockets/user-socket.js'
 // import { adminSocketContext } from '@/sockets/admin-socket.js'
 import { navigator } from '@/router.js'
@@ -136,7 +136,7 @@ export default {
       // const result1 = await userSocketContext.connect()  // socketio连接建立失败
       // if (!result1.isSuccess()) return result1
       // 初始化用户信息
-      const result = await userService.getCurrentUserDetails()
+      const result = await userServiceV1.getCurrentUserDetails()
       // console.log(result)
 
       if (result.code === 200) {
@@ -171,7 +171,7 @@ export default {
 
     // 登出当前用户
     async logoutCurrentUser({ dispatch }) {
-      const result = await authService.userLogout()
+      const result = await authServiceV1.userLogout()
       if (result.isSuccess()) {
         // 登出成功
         // await userSocketContext.disconnect()  // 断开user socket连接

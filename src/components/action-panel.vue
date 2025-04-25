@@ -114,64 +114,66 @@ export default {
 }
 </script>
 <template>
-  <CommonPanel>
-    <template #header>
-      <div class="card-header">
-        <h2>
-          <EllipsisString :message="title" :ellipsis="ellipsisDisplay" />
-        </h2>
-        {{ subtitle }}
-      </div>
-    </template>
+  <div class="action-panel">
+    <CommonPanel>
+      <template #header>
+        <div class="card-header">
+          <h2>
+            <EllipsisString :message="title" :ellipsis="ellipsisDisplay" />
+          </h2>
+          {{ subtitle }}
+        </div>
+      </template>
 
-    <h3 class="text-error" v-if="isError">{{ message }}</h3>
-    <h3 class="text-success" v-if="!isError">{{ message }}</h3>
-    <div v-for="link in links">
-      <a
-        class="slide-animation-a"
-        :href="link['href']"
-        :target="link['target']"
-        v-if="link['click'] == null"
-      >
-        <!-- 超链接 -->
-        {{ link['desc'] }}
-        <!-- 链接描述 -->
-      </a>
-      <a
-        class="slide-animation-a"
-        :href="link['href']"
-        :target="link['target']"
-        v-if="link['click'] != null"
-        @click.prevent="link['click']"
-      >
-        <!-- 事件链接 -->
-        {{ link['desc'] }}
-      </a>
-    </div>
-
-    <template #footer>
-      <div>
-        {{ t('component.pending-panel.footer') }}
+      <h3 class="text-error" v-if="isError">{{ message }}</h3>
+      <h3 class="text-success" v-if="!isError">{{ message }}</h3>
+      <div v-for="link in links">
+        <a
+          class="slide-animation-a"
+          :href="link['href']"
+          :target="link['target']"
+          v-if="link['click'] == null"
+        >
+          <!-- 超链接 -->
+          {{ link['desc'] }}
+          <!-- 链接描述 -->
+        </a>
+        <a
+          class="slide-animation-a"
+          :href="link['href']"
+          :target="link['target']"
+          v-if="link['click'] != null"
+          @click.prevent="link['click']"
+        >
+          <!-- 事件链接 -->
+          {{ link['desc'] }}
+        </a>
       </div>
-    </template>
-  </CommonPanel>
+
+      <template #footer>
+        <div>
+          {{ t('component.pending-panel.footer') }}
+        </div>
+      </template>
+    </CommonPanel>
+  </div>
 </template>
 <style>
-.el-card {
+.action-panel .el-card {
   height: 300px;
   width: 800px;
 }
 
-.el-card__header {
+.action-panel .el-card__header {
   padding: 10px 0 0 10px;
 }
 
-.el-card__body {
+.action-panel .el-card__body {
   padding: 0 0 0 10px;
   flex: 1;
 }
 
-.el-card__footer {
+.action-panel .el-card__footer {
   padding: 0 0 5px 10px;
 }
 </style>

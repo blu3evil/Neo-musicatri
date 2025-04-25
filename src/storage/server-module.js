@@ -1,5 +1,5 @@
 // 服务器信息模块
-import { systemService } from '@/services/system-service.js'
+import { systemServiceV1 } from '@/services/system-service-v1.js'
 import { globalEventbus } from '@/mitt/global-eventbus.js'
 import { Events } from '@/events.js'
 const systemInfoPrototype = {
@@ -23,7 +23,7 @@ export default {
     },
     // 初始化服务器信息
     async loadSystemInfo({ commit }) {
-      const result = await systemService.getSystemInfo()
+      const result = await systemServiceV1.getSystemInfo()
       if (result.isSuccess()) {
         globalEventbus.emit(Events.MITT.SYSTEM_INFO.LOAD_SUCCESS)
         commit('setSystemInfo', result.data)  // 成功获取服务信息

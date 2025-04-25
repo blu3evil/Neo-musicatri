@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { computed, ref } from 'vue'
 import { useStore } from 'vuex'
 import { globalEventbus } from '@/mitt/global-eventbus.js'
-import { authService } from '@/services/auth-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 import { Events } from '@/events.js'
 
 export default {
@@ -18,7 +18,7 @@ export default {
       async set(value) {
         // 请求后端查询是否有对应的权限
         isLoading.value = true
-        const result = await authService.verifyRole('admin')  // 校验管理员权限
+        const result = await authServiceV1.verifyRole('admin')  // 校验管理员权限
         if (result.isSuccess()) {  // 允许提权
           globalEventbus.emit(value?
             Events.MITT.ADMIN_FUNCTION.ENABLE.SUCCESS:

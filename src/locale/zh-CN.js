@@ -1,4 +1,10 @@
 export default {
+  'el': {
+    'pagination': {
+      'goto': '前往',
+      'pageClassifier': '页',
+    }
+  },
   'global': {
     'admin': '管理员',
     'user': '用户',
@@ -88,7 +94,8 @@ export default {
         'delete_user_success': '用户{globalName}删除成功'
       },
       'MusiclibManagement': {
-        'overview': '曲库总览'
+        'overview': '曲库总览',
+        'management': '曲库管理',
       },
       'BotManagement': {
         'overview': '机器人总览',
@@ -213,5 +220,5 @@ export default {
       'popup_message_warning_cancel': '取消',
       'system_info_load_failed': '服务器信息获取失败',
     }
-  },
+  }
 }

@@ -7,7 +7,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { navigator } from '@/router.js'
 import { Tools, Loading } from '@element-plus/icons-vue'
-import { authService } from '@/services/auth-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 import { useStore } from 'vuex'
 
 export default {
@@ -22,7 +22,7 @@ export default {
     const { t } = useI18n()  // 本地化
     const store = useStore()
     const isAvatarActive = ref(false)
-    const isLogin = computed(() => authService.checkLogin())
+    const isLogin = computed(() => authServiceV1.checkLogin())
     const currentUserAvatarContext = computed(() => {
       const userId = store.getters.currentUser.id
       return store.getters.safeUserAvatarContexts(userId)

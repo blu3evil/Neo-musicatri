@@ -1,7 +1,7 @@
 // css主题初始化
 import './assets/main.css'
 
-import { createApp } from 'vue'
+import { createApp, watchEffect } from 'vue'
 import App from './App.vue'
 const app = createApp(App);
 
@@ -15,17 +15,20 @@ import { initClient } from '@/services/axios-client.js'
 await initClient(config)
 
 // i18n初始化
-import { initI18n } from '@/locale/index.js'
-app.use(initI18n(store.getters.activeLanguage))
-
-// 路由初始化
-import { router } from './router.js'
-app.use(router)
+import { initI18n, availableLanguages } from '@/locale/index.js'
+const i18n = initI18n(store.getters.activeLanguage)
+app.use(i18n)
 
 // element-plus初始化
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
-app.use(ElementPlus)
+app.use(ElementPlus, {
+  locale: availableLanguages[store.getters.activeLanguage].locale
+})
+
+// 路由初始化
+import { router } from './router.js'
+app.use(router)
 
 // element-plus图表注册
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'

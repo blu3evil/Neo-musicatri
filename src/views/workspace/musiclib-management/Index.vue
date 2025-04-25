@@ -21,6 +21,11 @@ export default {
         path: '/workspace/musiclib-management/overview',
         span: t('view.workspace.MusiclibManagement.overview'),
       },
+      {
+        name: 'management',
+        path: '/workspace/musiclib-management/management',
+        span: t('view.workspace.MusiclibManagement.management'),
+      },
     ]
 
     onMounted(() => {

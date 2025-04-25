@@ -2,8 +2,9 @@ import { availableLanguages } from '@/locale/index.js'
 const localstorageTag = 'activeLanguage'
 
 function validateLanguage(language) {
+  if (language === null || language === undefined || language === '') return false
   const validLanguage = availableLanguages[language]
-  return validLanguage !== undefined && availableLanguages[language] !== null
+  return validLanguage !== undefined && validLanguage !== null
 }
 
 export default {
@@ -19,6 +20,7 @@ export default {
   },
   actions: {
     setActiveLanguage({ commit }, language) {
+      console.log(language)
       if (validateLanguage(language)) {
         commit('setActiveLanguage', language)
         return true
@@ -36,7 +38,7 @@ export default {
       if (await dispatch('setActiveLanguage', navigatorLang)) return
 
       // 未找到可用语言，使用英文作为默认语言
-      if (!await dispatch('setActiveLanguage', 'en-US')) {
+      if (!await dispatch('setActiveLanguage', 'enUs')) {
         console.log('language initialize failed')
       }
     },

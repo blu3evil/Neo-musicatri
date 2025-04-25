@@ -8,7 +8,7 @@ import { useStore } from 'vuex'
 import { Stopwatch, Compass, User, Files, Refrigerator } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { navigator } from '@/router.js'
-import { authService } from '@/services/auth-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 
 export default {
   components: {
@@ -62,7 +62,7 @@ export default {
     return {
       t,
       navigator,
-      authService,
+      authService: authServiceV1,
       activeMenuItem,
       adminMenuItems,
       normalMenuItems,

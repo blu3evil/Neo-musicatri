@@ -3,11 +3,11 @@ import en_US from './en-US.js'
 import { createI18n } from 'vue-i18n'
 
 export const availableLanguages = {
-  'en-US': {
+  'enUs': {
     name: 'English(US)',
     locale: en_US,
   },
-  'zh-CN': {
+  'zhCn': {
     name: '简体中文',
     locale: zh_CN,
   }

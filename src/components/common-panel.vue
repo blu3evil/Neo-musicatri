@@ -48,6 +48,6 @@ export default {
   color: var(--text-color); /* 使用主题字色 */
   background-color: var(--redirect-card-bg-color); /* 背景色 */
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7); /* 阴影效果 */
-  border-radius: 13px;
+  border-radius: var(--border-radius);
 }
 </style>

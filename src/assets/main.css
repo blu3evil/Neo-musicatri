@@ -4,7 +4,7 @@
     --bg-color-2: #e0e0e0;  /* 浅色 */
     --divider-color: #e0e0e0;  /* 分割线 */
     --divider-text-color: #e0e0e0;  /* 分割字体颜色 */
-    --border-radius: 8px;
+    --border-radius: 10px;
 
     --text-color: #ffffff;  /* 普通文本颜色 */
     --text-color-2: #e0e0e0;  /* 更暗淡的文本颜色 */
@@ -374,6 +374,13 @@ body {
 
 .el-switch__core .el-switch__action {
     background-color: var(--switch-btn-bg-color) !important;
+}
+
+/* 多选框的弹出提示，展示当前已选项 */
+.el-select-dropdown.is-multiple .el-select-dropdown__item.is-selected:after {
+    background-color: var(--text-active-color) !important;
+    height: 20px !important;
+    width: 20px !important;
 }
 
 

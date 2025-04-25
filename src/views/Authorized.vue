@@ -7,7 +7,7 @@ import CommonBackground from '@/components/common-background.vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
-import { authService } from '@/services/auth-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
 import { navigator } from '@/router.js'
 import { config } from '@/config.js'
 import { useStore } from 'vuex'
@@ -40,7 +40,7 @@ export default {
             t('component.pending-panel.waiting_response'),
             true,
           )
-          const result = await authService.userAuthorize(code) // 执行用户认证
+          const result = await authServiceV1.userAuthorize(code) // 执行用户认证
           if (result.isSuccess()) {  // 认证成功
             context.setState(new UserLoginStatus())
           } else {  // 分4类处理异常
@@ -62,7 +62,7 @@ export default {
     class UserLoginStatus extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(t('view.UserLoginCallback.user_login'), true)
-        const result = await authService.userLogin()
+        const result = await authServiceV1.userLogin()
         if (result.isSuccess()) {
           // 登陆成功后建立socketio连接
           context.setState(new loadCurrentUserDetailsState())
@@ -79,6 +79,7 @@ export default {
     // 加载当前用户信息
     class loadCurrentUserDetailsState extends AbstractState {
       async enter(context) {
+        await bgRef.value.loadAsync('/src/assets/user-login-callback/ev005cl.png')
         panelRef.value.setTitle(
           t('view.UserLogin.load_user_details'), true)
 
@@ -179,7 +180,7 @@ export default {
           t('view.UserLoginCallback.awaiting_authorize'),
           true,
         )
-        const result = await authService.getAuthorizeUrl()
+        const result = await authServiceV1.getAuthorizeUrl()
         if (result.isSuccess()) {
           // 成功拉取授权链接，执行跳转
           window.location.href = result.data.authorize_url

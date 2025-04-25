@@ -7,8 +7,8 @@ import { useI18n } from 'vue-i18n'
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
 import { navigator } from '@/router.js'
-import { authService } from '@/services/auth-service.js'
-import { systemService } from '@/services/system-service.js'
+import { authServiceV1 } from '@/services/auth-service.js'
+import { systemServiceV1 } from '@/services/system-service-v1.js'
 import { config } from '@/config.js'
 import { useStore } from 'vuex'
 
@@ -34,7 +34,7 @@ export default {
           true,
         )
         // 检查服务端健康状态
-        const result = await systemService.getSystemHealth()
+        const result = await systemServiceV1.getSystemHealth()
         if (result.isSuccess()) {
           // 状态健康，进入校验自身登陆情况状态
           context.setState(new CheckUserLoginState())
@@ -53,7 +53,7 @@ export default {
     class CheckUserLoginState extends AbstractState {
       async enter(context) {
         panelRef.value.setTitle(t('view.UserLogin.checking_login_status'), true)
-        const result = await authService.userLogin()
+        const result = await authServiceV1.userLogin()
         if (result.isSuccess()) {
           // 认证成功，加载用户信息
           context.setState(new LoadUserInfoState())
@@ -114,7 +114,7 @@ export default {
           t('view.UserLoginCallback.awaiting_authorize'),
           true,
         )
-        const result = await authService.getAuthorizeUrl()
+        const result = await authServiceV1.getAuthorizeUrl()
         if (result.isSuccess()) {
           // 成功拉取授权链接，切换到等待用户登录状态
           window.location.href = result.data.authorize_url // 跳转到授权链接
