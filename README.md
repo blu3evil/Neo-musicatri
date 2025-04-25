@@ -17,7 +17,7 @@ Discord开源音乐机器人，此仓库该项目为二次开发版本
 
 ```bash
 musicatri1  # 项目根目录
-├── server-auth.yaml  # 项目运行参数配置文件
+├── auth-server.yaml  # 项目运行参数配置文件
 ├── deploy  # docker相关文件目录, 详情参考[项目部署]-[docker部署]
 ├── langfiles  # 本地化目录
 ├── context.py.py  # 项目程序启动python文件

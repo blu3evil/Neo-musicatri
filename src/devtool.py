@@ -158,7 +158,7 @@ class CommandTree:
 
 import subprocess
 from pathlib import Path
-from utils import root_path
+from common import root_path
 class I18nUtils:
     """ 本地化资源构建工具类，通过调用本地化脚本生成.po以及.mo本地化文件 """
     # 修改此目录以支持脚本方法执行
@@ -391,7 +391,7 @@ class LocaleNamespaceHelpCommand(LeafCommand):
             def help_doc_printer():
                 logger.info("This command is about to set a specific namespace, namespace plays an important role in localization,")
                 logger.info("before step into locale job, a namespace must be specific, namespace is usually from a server's namespace,")
-                logger.info("for example 'server_auth' can own a namespace called 'server-auth', later this namespace will be used to")
+                logger.info("for example 'auth_server' can own a namespace called 'server-auth', later this namespace will be used to")
                 logger.info("create a resources directory in the path '/resources/<namespace>/...'")
                 logger.info("via namespace, It becomes possible to isolate the localization of different services")
             self.print_help_doc(help_doc_printer)
@@ -434,7 +434,7 @@ class LocaleGPOCommand(LocaleGenerateCommand):
         if not self.ensure_args(args): return  # 校验参数
 
         from os import path
-        from utils import root_path
+        from common import root_path
         logger.warn(f'Prepare i18n work for current namespace: {current_namespace}')
 
         # 检测/resources/{namespace}目录是否存在
@@ -456,8 +456,8 @@ class LocaleGPOCommand(LocaleGenerateCommand):
         lang_dir = path.join(namespace_locale_dir, target_lang)
         if not self.ensure_directory(lang_dir): return
 
-        logger.info('Input scanning scope, for example "server_auth" will cause scanning "/src/server_auth" package')
-        logger.info('Using Space to split multiple package, for example "server_auth server_bot" will cause scanning both packages')
+        logger.info('Input scanning scope, for example "auth_server" will cause scanning "/src/auth_server" package')
+        logger.info('Using Space to split multiple package, for example "auth_server bot_server" will cause scanning both packages')
         logger.info('Scanning: ', end='')
         scan_scope = input()
 
@@ -481,7 +481,7 @@ class LocaleGMOCommand(LocaleGenerateCommand):
         if not self.ensure_args(args): return  # 校验参数
 
         from os import path
-        from utils import root_path
+        from common import root_path
 
         logger.info('Enter target locale language, for example "en-US": ', end='')
         target_lang = input()

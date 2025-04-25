@@ -12,7 +12,7 @@ services:
 #    ports:
 #      - '5000:5000'
 #    volumes:
-#      - ./server-auth.yaml:/musicatri/server-auth.yaml
+#      - ./auth-server.yaml:/musicatri/auth-server.yaml
 #    depends_on:
 #      redis:
 #        condition: service_healthy
