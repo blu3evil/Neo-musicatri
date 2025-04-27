@@ -9,7 +9,7 @@ import { AbstractState, StateContext } from '@/pattern.js'
 import { navigator } from '@/router.js'
 import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
 import { systemServiceV1 } from '@/services/system-service.js'
-import { config } from '@/config.js'
+import { configPromise } from '@/config.js'
 import { useStore } from 'vuex'
 
 export default {
@@ -159,10 +159,10 @@ export default {
       }
 
       // 添加issue链接
-      appendSendIssueLink() {
+      async appendSendIssueLink() {
         panelRef.value.appendHrefLink(
           t('view.UserLogin.sending_issue'),
-          config['ISSUE_LINK']
+          await configPromise()['ISSUE_LINK']
         )
       }
 

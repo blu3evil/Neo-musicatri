@@ -10,9 +10,9 @@ import { store } from './storage'
 app.use(store)
 
 // axios初始化
-import { config } from '@/config.js'
+import { configPromise } from '@/config.js'
 import { initClient } from '@/services/axios-client.js'
-await initClient(config)
+initClient(configPromise)
 
 // i18n初始化
 import { initI18n, availableLanguages } from '@/locale/index.js'
@@ -30,7 +30,7 @@ app.use(ElementPlus, {
 import { router } from './router.js'
 app.use(router)
 
-// element-plus图表注册
+// element-plus图标注册
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)

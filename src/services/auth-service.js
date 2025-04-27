@@ -112,4 +112,4 @@ class AuthServiceV2 {
 }
 
 export const authServiceV1 = new AuthServiceV1('/v1/auth')
-export const authServiceV2 = new AuthServiceV2('/v2/auth')
+export const authServiceV2 = new AuthServiceV2('/v2/auth/user')

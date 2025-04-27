@@ -1,5 +1,6 @@
 /* 通用客户端 */
 import axios from 'axios'
+
 import { store } from '@/storage/index.js'
 import { Result } from '@/common.js'
 
@@ -28,8 +29,10 @@ const axiosErrorHandler = (error) => {
   return Promise.resolve(new Result(code, message, error))
 }
 
-export const initClient = config => {
+export const initClient = async configPromise => {
   // 初始化MusicatriAPI客户端
+  const config = await configPromise
+
   const musicatriClientPrototype = axios.create({
     validateStatus: status => status >= 200 && status < 600, // 禁用异常抛出
     baseURL: config['API_ENDPOINT'] || 'http://localhost:5000/api/v1',

@@ -1,6 +1,6 @@
 // noinspection JSUnresolvedReference
 
-import { config } from '@/config.js'
+import { configPromise } from '@/config.js'
 import { Events } from '@/events.js'
 import { SocketContext } from '@/sockets/socket-context.js'
 import { ToastMessage } from '@/utils/ui-helper.js'
@@ -8,7 +8,8 @@ import { i18n } from '@/locale/index.js'
 import { store } from '@/storage/index.js'
 
 class UserSocketContext extends SocketContext {
-  constructor() {
+  async constructor() {
+    const config = await configPromise
     super(`${config['SOCKET_ENDPOINT']}/user`, config['SOCKET_CONNECT_TIMEOUT'])
   }
 

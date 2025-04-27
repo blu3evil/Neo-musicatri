@@ -9,7 +9,7 @@ import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 import { AbstractState, StateContext } from '@/pattern.js'
 import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
 import { navigator } from '@/router.js'
-import { config } from '@/config.js'
+import { configPromise } from '@/config.js'
 import { useStore } from 'vuex'
 
 export default {
@@ -140,10 +140,10 @@ export default {
         )
       }
 
-      appendSendIssueLink() {
+      async appendSendIssueLink() {
         panelRef.value.appendHrefLink(
           t('view.UserLogin.sending_issue'),
-          config['ISSUE_LINK']
+          await configPromise()['ISSUE_LINK']
         )
       }
 

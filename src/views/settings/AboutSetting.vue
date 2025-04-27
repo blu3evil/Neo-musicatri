@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
 import { atriAudio } from '@/utils/media-helper.js'
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import { authServiceV1, authServiceV2 } from '@/services/auth-service.js'
-import { config } from '@/config.js'
+import { configPromise } from '@/config.js'
 
 export default {
   components: {
@@ -24,10 +24,16 @@ export default {
 
     const isAdmin = ref(false)  // 是否为管理员
 
-    const onDiscordIconClick = () =>
+    const onDiscordIconClick = async () => {
+      const config = await configPromise()
       window.open(config['DISCORD_LINK'], '_blank')
-    const onGithubIconClick = () =>
+    }
+
+    const onGithubIconClick = async () => {
+      const config = await configPromise()
       window.open(config['GITHUB_LINK'], '_blank')
+    }
+
 
     onMounted(async () => {
       await store.dispatch('setHistory', {

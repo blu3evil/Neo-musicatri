@@ -162,12 +162,14 @@ export default {
       // 比较权限是否被修改
       if (cache.roles.length !== current.roles.length) return false
 
-      const sortedCacheRoles = [...cache.roles].sort()
-      const sortedCurrentRoles = [...current.roles].sort()
+      const sortedCacheRoles = cache.roles.slice().sort()
+      const sortedCurrentRoles = current.roles.slice().sort()
 
-      sortedCacheRoles.every((val, index) => {
+      const rolesEqual = sortedCacheRoles.every((val, index) => {
         if (val !== sortedCurrentRoles[index]) return false
       })
+
+      if (!rolesEqual) return false
 
       // 比较状态是否被修改
       return cache.is_active === current.is_active;
