@@ -1,8 +1,8 @@
 """ 用户接口 """
-from flask import Blueprint, request
+from flask import Blueprint
 
-from auth_server.services.auth_service import auth_service_v2
-from auth_server.services.user_service import user_service
+from auth_server.services.auth_service import user_auth_service_v2
+from auth_server.services.user_service import user_service_v1
 from auth_server.context import context
 
 user_bp_v1 = Blueprint('user_bp_v1', __name__, url_prefix='/api/v1/users')
@@ -11,7 +11,7 @@ locale = context.locale
 
 # @auth_service_v1.login_required
 @user_bp_v1.route('/me/details', methods=['GET'])
-@auth_service_v2.validate_required()
+@user_auth_service_v2.validate_required()
 def get_current_user_details(current_user):
     """
     当前用户详情信息查询
@@ -105,7 +105,7 @@ def get_current_user_details(current_user):
     """
     # user_id = session.get('user_id')
     user_id = current_user.get('user_id')
-    result = user_service.get_user_details(user_id)
+    result = user_service_v1.get_user_details(user_id)
     return result.as_response()  # 将结果作为响应
 
 

@@ -16,7 +16,7 @@ resource_schema = {
                 'schema': {
                     'name': {'type': 'string', 'default': 'undefined'},
                     'version': {'type': 'string', 'default': '1.0.0'},
-                    'description': {'type': 'string', 'default': 'undefined context.py'},
+                    'description': {'type': 'string', 'default': 'undefined auth_client.py'},
                 }
             },
             'logging': {  # 日志配置
@@ -1074,7 +1074,103 @@ class NacosConfigKey:
     NACOS_REG_WEIGHT = 'application.nacos.registration.weight'  # 权重
     NACOS_REG_HEARTBEAT_INTERVAL = 'application.nacos.registration.heartbeat-interval'  # 心跳信号间隔
 
-class EnableNacos(ContextPlugin):
+
+from functools import wraps
+import inspect
+
+
+class ServiceRegistry:
+    def __init__(self, ctx: T):
+        self.ctx = ctx
+        self.namespace = 'public'
+        self.group_name = "DEFAULT_GROUP"
+
+    def get_service_address(self, service_name: str) -> Optional[str]:
+        """获取服务地址（随机选择一个健康实例）"""
+        try:
+            instances = self.ctx.nacos_client.list_naming_instance(
+                service_name,
+                namespace_id=self.namespace,
+                group_name=self.group_name,
+                healthy_only=True
+            )
+            if not instances['hosts']:
+                self.ctx.logger.warning(f"No healthy instance found for {service_name}")
+                return None
+
+            import random
+            instance = random.choice(instances['hosts'])  # 负载均衡
+            return f"http://{instance['ip']}:{instance['port']}"
+        except Exception as e:
+            self.ctx.logger.error(f"Failed to discover service {service_name}: {e}")
+            return None
+
+    def nacos_discover(self, service_name: str):
+        """
+        装饰器：从 Nacos 获取服务地址，并作为参数注入函数中
+        :param service_name: Nacos 中注册的服务名
+        """
+        def decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                service_url = self.get_service_address(service_name)
+                if not service_url:
+                    raise RuntimeError(f"Service [{service_name}] unavailable")
+
+                sig = inspect.signature(func)
+                params = sig.parameters  # 获取被装饰函数的参数名
+
+                if 'service_url' in params:  # 如果被装饰的方法签名包含user_id，则传递它
+                    return func(*args, **kwargs, service_url=service_url)
+
+                return func(*args, **kwargs)
+            return wrapper
+        return decorator
+
+
+
+class EnableNacosDiscover(ContextPlugin):
+    """ 启用服务发现，注入nacos_client实例用于服务发现 """
+    def __init__(self):
+        super().__init__('enable_nacos')
+
+    def before_pre_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ 初始化nacos相关的配置拓展 """
+            ctx.config_schema_builder.set_at_path('application.nacos', {
+                'type': 'dict',
+                'schema': {
+                    'server-addr': {'type': 'string', 'default': 'localhost'},  # nacos服务所在地址
+                    'server-port': {'type': 'integer', 'default': '8848'},
+                }
+            })
+        return InitHook(hook_func)
+
+    def after_post_init(self, ctx: T) -> InitHook:
+        def hook_func():
+            """ nacos插件初始化 """
+            self.init_nacos_client(ctx)  # 初始化nacos客户端
+            self.init_service_registry(ctx)  # 初始化服务注册表
+        return InitHook(hook_func)
+
+    @staticmethod
+    def init_nacos_client(ctx: T):
+        """ 初始化nacos """
+        nacos_server_addr = ctx.config.get(NacosConfigKey.NACOS_SERVER_ADDR)
+        nacos_server_port = ctx.config.get(NacosConfigKey.NACOS_SERVER_PORT)
+
+        from nacos import NacosClient
+        ctx.nacos_client = NacosClient(
+            f'{nacos_server_addr}:{nacos_server_port}',
+            namespace='public',
+        )  # 初始化nacos客户端实例
+
+    @staticmethod
+    def init_service_registry(ctx: T):
+        ctx.service_registry = ServiceRegistry(ctx)
+
+
+class EnableNacosRegister(ContextPlugin):
     """ 启用nacos注册中心，启用之后服务在启动时会被自动注册到nacos注册中心 """
     def __init__(self):
         super().__init__('enable_nacos')
@@ -1459,7 +1555,7 @@ class DiscordBotContext(ResourceContext):
     # def init_logger(self):
     #     """ 初始化日志记录 """
     #     # todo: 完善更详细的机器人日志配置项
-    #     facade = SimpleLoggerFacade(name='bot-context.py-logger')  # 日志配置
+    #     facade = SimpleLoggerFacade(name='bot-auth_client.py-logger')  # 日志配置
     #
     #     from utils.logger import BACKGROUND_RENDER_CONSOLE_FORMATTER
     #     facade.set_default(level=logging.DEBUG)

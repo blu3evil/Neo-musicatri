@@ -1,4 +1,5 @@
 from redis import Redis, StrictRedis
+
 from common.utils.locale import FlaskLocaleFactory
 from common.utils.context import *
 from common.aop.api_aspect import ApiAspect
@@ -15,7 +16,7 @@ class ServerAuthConfigKey:
     # 网易云音乐api配置
     NETEASECLOUDMUSIC_API_URL = 'neteasecloudmusic-api.url'
 
-@EnableNacos()  # 注册发现
+@EnableNacosRegister()  # 注册注册
 @EnableSocketIO()  # 长连接
 @EnableSwagger()  # 接口文档
 @EnableDatabase()  # 数据库
@@ -26,11 +27,14 @@ class ServerAuthConfigKey:
 @EnableApiAspect()  # 启用切面编程
 @EnableJWT()  # 启用jwt
 @EnableI18N(factory_supplier=FlaskLocaleFactory)  # 启用本地化
-class ServerAuthContext(PluginSupportMixin, WebApplicationContext):
+class AuthServerContext(PluginSupportMixin, WebApplicationContext):
     """ 用户接口服务 """
     db: SQLAlchemy
     redis: Redis  # redis客户端
     aspect: ApiAspect  # api切面
+
+    from flask_jwt_extended import JWTManager
+    jwt: JWTManager
 
     banner = """
         __  ___           _            __       _       ___         __  __  
@@ -69,7 +73,7 @@ class ServerAuthContext(PluginSupportMixin, WebApplicationContext):
             self._init_models()  # 初始化数据库表
             # self.init_redis()  # 初始化redis客户端
             self._init_views()  # 初始化路由
-            self._init_flask_lifecycle_event()
+            self._init_jwt()
         return InitHook(hook_func)
 
     def _init_models(self):
@@ -81,14 +85,17 @@ class ServerAuthContext(PluginSupportMixin, WebApplicationContext):
         """ 初始化路由 """
         from auth_server.views.static_blueprint import static_bp_v1
         from auth_server.views.system_blueprint import status_bp_v1
-        from auth_server.views.auth_blueprint import auth_bp_v1, auth_bp_v2
+        from auth_server.views.auth_blueprint import user_auth_bp_v1, user_auth_bp_v2, service_auth_bp_v2
         from auth_server.views.user_blueprint import user_bp_v1
+        from auth_server.views.service.user_blueprint import service_user_bp_v1
 
         self.app.register_blueprint(static_bp_v1)
         self.app.register_blueprint(status_bp_v1)
-        self.app.register_blueprint(auth_bp_v1)
-        self.app.register_blueprint(auth_bp_v2)  # 认证路由v2
+        self.app.register_blueprint(user_auth_bp_v1)
+        self.app.register_blueprint(user_auth_bp_v2)  # 用户认证路由v2
+        self.app.register_blueprint(service_auth_bp_v2)  # 服务认证路由v2
         self.app.register_blueprint(user_bp_v1)
+        self.app.register_blueprint(service_user_bp_v1)  # 服务-用户路由v1
 
         from auth_server.views.admin.user_blueprint import admin_user_bp_v1
         self.app.register_blueprint(admin_user_bp_v1)
@@ -99,16 +106,16 @@ class ServerAuthContext(PluginSupportMixin, WebApplicationContext):
         redis_db = self.config.get(SessionConfigKey.SESSION_REDIS_DATABASE)
         self.redis = StrictRedis(host=redis_host, port=redis_port, db=redis_db)
 
-    def _init_flask_lifecycle_event(self):
+    def _init_jwt(self):
         """ 注册flask生命周期事件 """
-        # @self.app.before_request
-        # def print_session():
-        #     from flask import request
-        #     self.logger.info(f"session raw: {dict(self.session)}")
-        #     self.logger.info(f'session id: {request.cookies.get("session")}')
+        from auth_server.services.cache_service import cache_service
+        @self.jwt.token_in_blocklist_loader
+        def validate_token(jwt_header, jwt_payload) -> bool:
+            jti = jwt_payload['jti']
+            return cache_service.is_token_revoked(jti)  # 通过缓存检查token是否已经被撤销
 
     def enable_boot_logger(self) -> bool:
         return False
 
-context = ServerAuthContext()
+context = AuthServerContext()
 context.initialize()

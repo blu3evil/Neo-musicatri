@@ -29,6 +29,7 @@ class Result:
     def data(self, data) -> None:
         self._data = data
 
+    
     # 将result直接作为flask响应
     def as_response(self) -> Response:
         response = jsonify({'message': self.message, 'data': self.data})

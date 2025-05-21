@@ -1,19 +1,18 @@
 import abc
 import uuid
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from datetime import datetime
 from functools import wraps
 
 from oauthlib.oauth2 import InvalidGrantError
-from typing_extensions import deprecated
 
 from common.domain.models import Result
 from auth_server.clients import discord_oauth
 
 from auth_server.context import context
 
-from auth_server.services.user_service import user_service  # 用户服务
-from auth_server.services.cache_service import cache_service  # 缓存服务
+from auth_server.services.user_service import user_service_v1  # 用户服务
+from auth_server.services.cache_service import cache_service, cache  # 缓存服务
 from auth_server.services.session_service import session_service  # 会话服务
 
 from auth_server.domain.models import copy_properties, DiscordUser, model_to_dict, Role, db
@@ -23,8 +22,12 @@ config = context.config
 locale = context.locale
 logger = context.logger
 
+user_login_type = "discord_user"
+
 class AuthService(abc.ABC):
-    """ 认证服务接口抽象父类，提供有关权限校验相关api """
+    """
+    认证服务接口抽象父类，提供有关权限校验相关api，例如discord认证流以及discord token校验
+    """
     @staticmethod
     def _process_discord_login(code) -> Result:
         """ 执行discord登录流程，主要是discordOauth2认证，方法返回user信息以及认证token """
@@ -65,7 +68,7 @@ class AuthService(abc.ABC):
         })  # 返回用户信息以及token
 
     @staticmethod
-    def _process_discord_token_validate(user_id):
+    def _process_discord_token_validate(user_id) -> Result:
         """
         discord token自校验刷新逻辑，在校验用户登录状态时应该调用此方法对缓存中存储的discord oauth认证
         令牌进行有效性判断，并在令牌失效时进行执行刷新
@@ -90,20 +93,24 @@ class AuthService(abc.ABC):
         return Result(200)  # 令牌有效
 
     @abstractmethod
-    def user_login(self, code) -> Result:
+    def login(self, credentials: dict) -> Result:
         """
         登录当前用户，基于discord oauth2回调构建的code码进行登录校验，在用户调用此方法成功登陆后
         应当存在策略记录当前用户的登陆状态
+
+        :param credentials: 登录凭证
         """
         pass
 
     @abstractmethod
-    def user_logout(self) -> Result:
+    def logout(self) -> Result:
         """
         登出当前用户，需要销毁基于user_login登录方法创建的用户登录凭证，从而撤销用户的登录状态
         """
         pass
 
+
+class CookieSessionAuthService(AuthService, ABC):
     def verify_login(self) -> Result:
         """ 校验当前用户登录状态 """
         _ = locale.get()
@@ -136,13 +143,18 @@ class AuthService(abc.ABC):
         return decorator
 
 
-class AuthServiceV1(AuthService):
+class UserAuthServiceV1(CookieSessionAuthService):
     """ 基于cookie-session的认证服务 """
-    def user_login(self, code) -> Result:
+    def login(self, credentials: dict) -> Result:
         """
         基于cookie-session的登录逻辑，在完成discord oauth2认证回调之后存储用户session信息，
         记录登录状态
         """
+        _ = locale.get()
+        code = credentials.get('code')
+        if not code:
+            return Result(401, _('invalid code'))
+
         result = self._process_discord_login(code)
         if result.code != 200: return result
 
@@ -160,7 +172,7 @@ class AuthServiceV1(AuthService):
 
         return Result(200)
 
-    def user_logout(self) -> Result:
+    def logout(self) -> Result:
         """ 登出当前用户 """
         _ = locale.get()
         result = session_service.get_current_user_id()
@@ -206,7 +218,7 @@ class AuthServiceV1(AuthService):
         if result.code != 200: return result
         user_id = result.data['user_id']
 
-        result = user_service.get_user_roles(user_id)
+        result = user_service_v1.get_user_roles(user_id)
         if result.code != 200: return result  # 向上层传递result
 
         if role.name not in result.data:
@@ -227,7 +239,7 @@ class AuthServiceV1(AuthService):
         if result.code != 200:
             return self._login_failed(401, _('illegal user session cache'), user_id)  # 未发现session key
 
-        result = user_service.get_user_info(user_id)  # 检查账号激活状态
+        result = user_service_v1.get_user_info(user_id)  # 检查账号激活状态
         if result.code != 200:
             return self._login_failed(401, _('user info not found'), user_id)
 
@@ -248,17 +260,70 @@ class AuthServiceV1(AuthService):
         if user_id: cache_service.clear_user_session(user_id=user_id)  # 清理用户会话缓存信息
         return Result(code, message)
 
-
 from flask_jwt_extended import create_access_token, verify_jwt_in_request, get_jwt_identity, get_jwt
-
 jwt = context.jwt  # jwt
+
+class JWTSessionAuthService(AuthService, ABC):
+    """ 基于jwt的登录校验逻辑 """
+    def validate(self, roles=None) -> Result:
+        """
+        同时校验用户的登陆状态以及权限级别，通过传入参数roles来指定校验的权限级别，校验
+        权限级别之前会先校验用户的登陆状态
+
+        完成校验之后返回此用户的id以及权限级别，可用于接口进行后续判断，相关参数以字典的形式
+        注入被装饰的方法形参当中
+        """
+        pass
+
+    def validate_required(self, roles: list[str]=None):
+        """ 用户状态校验 """
+        def decorator(func):
+            @wraps(func)
+            def decorated(*args, **kwargs):
+                result = self.validate(roles)  # 校验用户权限
+                if result.code == 200: return func(*args, **kwargs)
+                else: return result.as_response()
+            return decorated
+        return decorator
+
+    @staticmethod
+    def revoke_token():
+        """ 撤销token """
+        _ = locale.get()
+
+        token = get_jwt()
+        jti = token.get('jti')
+        exp = token.get('exp')
+
+        if not jti or not exp: return Result(400, _("Invalid token"))
+        logger.debug(f'revoke token: jti: {jti}, exp: {exp}')
+
+        now = int(datetime.utcnow().timestamp())
+        ttl = exp - now
+
+        if ttl <= 0: return Result(400, _("Token already expired"))  # 凭证已经过期
+
+        cache_service.set_revoked_token(jti, ttl)
+        return Result(200, _("Token revoked successfully"))
+
+    # @jwt.token_in_blocklist_loader
+    # def validate_token(self, decrypted_token) -> bool:
+    #     jti = decrypted_token['jti']
+    #     return cache_service.is_token_revoked(jti)  # 通过缓存检查token是否已经被撤销
+
+
 from datetime import timedelta
 import inspect
-class AuthServiceV2(AuthService):
+class UserAuthServiceV2(JWTSessionAuthService):
     """ 基于jwt的登录校验 """
-    def user_login(self, code) -> Result:
+    jwt_type = "user"
+
+    def login(self, credentials) -> Result:
         """ 基于jwt的登录逻辑，完成discord oauth2回调认证之后签发jwt，记录登录状态 """
         _ = locale.get()
+        code = credentials.get('code')
+        if not code: return Result(401, _('bad credentials'))
+
         result = self._process_discord_login(code)
         if result.code != 200: return result
 
@@ -275,7 +340,8 @@ class AuthServiceV2(AuthService):
         # 将jwt设置与discord access token同样的过期时间，默认为7天
         expires_at = user_token.get('expires_at', 604800)
         jwt_payload = {
-            'jti': uuid.uuid4(),
+            'jti': str(uuid.uuid4()),
+            'type': UserAuthServiceV2.jwt_type  # 用户端jwt
         }
 
         access_token = create_access_token(
@@ -284,29 +350,21 @@ class AuthServiceV2(AuthService):
             expires_delta=timedelta(seconds=expires_at)
         )
 
+        cache_service.set_user_token(user_id=user_id, token=access_token)  # 存储用户token
+
         return Result(200, data={
             'access_token': access_token,
             'token_type': 'Bearer',
             'expires_at': expires_at
         }, message=_("Authorize success"))  # 签发jwt
 
-    def user_logout(self) -> Result:
+    def logout(self) -> Result:
         """ 用户登出 """
         _ = locale.get()
         result = self.revoke_token()  # 撤销用户登录令牌
         if result.code != 200:
             return result  # 如果撤销失败，返回错误信息
         return Result(200, _("User logged out successfully"))
-
-    @deprecated("using 'validate' as new validating function")
-    def verify_login(self) -> Result:
-        """ 基于jwt进行权限校验 """
-        return super().verify_login()
-
-    @deprecated("using 'validate' as new validating function")
-    def verify_role(self, role: str) -> Result:
-        """ 校验权限 """
-        return super().verify_login()
 
     def _validate_login(self) -> Result:
         """ 校验用户登录状态 """
@@ -315,11 +373,15 @@ class AuthServiceV2(AuthService):
 
             verify_jwt_in_request()  # 校验jwt有效性
             user_id = get_jwt_identity()  # 获取jwt标识符，此处为用户id
+            jwt_payload = get_jwt()  # 获取payload
 
             if not user_id:  # 用户id不存在
                 return Result(401, _('invalid identity'))
 
-            result = user_service.get_user_info(user_id)  # 检查账号激活状态
+            if jwt_payload.get('type') != UserAuthServiceV2.jwt_type:
+                return Result(403, _('invalid token type'))
+
+            result = user_service_v1.get_user_info(user_id)  # 检查账号激活状态
             if result.code != 200:
                 return Result(401, _('user info not found'))
 
@@ -342,7 +404,7 @@ class AuthServiceV2(AuthService):
         """ 校验用户权限等级，同时返回用户拥有的权限级别 """
         _ = locale.get()
 
-        result = user_service.get_user_roles(user_id)
+        result = user_service_v1.get_user_roles(user_id)
         if result.code != 200: return result
         role_names = result.data  # 查询用户权限级别
 
@@ -413,34 +475,121 @@ class AuthServiceV2(AuthService):
             return decorated
         return decorator
 
+CLIENT_SECRETS = {
+    'bot-server': 'eh0woSw6tRlzzl2b4oCXHFQRm0ByrxWwJKE4S-Jfk7Y=',
+    'file-server': 'uIwMgEc9tBn6D6_u0BqHBY9DBLSKvLvyvywGZ_pwP98='
+}
+
+class ServiceAuthServiceV2(JWTSessionAuthService):
+    jwt_type = "service"
+
+    def validate(self, roles=None) -> Result:
+        """
+        校验服务权限级别
+        """
+        _ = locale.get()
+        roles = ['plain'] if roles is None else roles
+
+        result = self._validate_login()  # 校验服务登录状态
+        if result.code != 200: return result
+        client_id = result.data.get('client_id')  # 用户id
+
+        result = self._validate_role(roles)  # 校验用户权限级别
+        if result.code != 200:
+            result.data['client_id'] = client_id
+            return result
+
+        roles = result.data.get('roles')  # 用户权限级别
+        return Result(200, data={
+            'client_id': client_id,
+            'roles': roles
+        }, message=_('access granted'))  # 返回热数据
+
     @staticmethod
-    def revoke_token():
-        """ 撤销token """
+    def _validate_login() -> Result:
+        """ 校验用户登录状态 """
+        try:
+            _ = locale.get()
+            verify_jwt_in_request()  # 校验jwt有效性
+            client_id = get_jwt_identity()  # 获取jwt标识符，此处为用户id
+
+            jwt_payload = get_jwt()  # 获取payload
+
+            if not client_id:  # 服务id不存在
+                return Result(401, _('invalid identity'))
+
+            if jwt_payload.get('type') != ServiceAuthServiceV2.jwt_type:
+                return Result(403, _('invalid token type'))
+
+            return Result(200, data={
+                'client_id': client_id
+            })  # 登录校验成功
+
+        except Exception as e:
+            # NoAuthorizationError, ExpiredSignatureError...
+            # 抛出异常代表jwt校验失败
+            return Result(401, f'not logged in: {str(e)}')
+
+    @staticmethod
+    def _validate_role(roles: list[str]) -> Result:
+        """ 校验用户权限等级，同时返回用户拥有的权限级别 """
         _ = locale.get()
 
-        token = get_jwt()
-        jti = token.get('jti')
-        exp = token.get('exp')
+        jwt_payload = get_jwt()  # 获取payload
+        role_names = jwt_payload.get('roles')  # 查询用户权限级别
 
-        if not jti or not exp: return Result(400, _("Invalid token"))
-        logger.debug(f'revoke token: jti: {jti}, exp: {exp}')
+        code = 200
+        message = _('access granted')
 
-        now = int(datetime.utcnow().timestamp())
-        ttl = exp - now
+        for role_name in roles:
+            if role_name not in role_names:
+                code = 403
+                message = _('permission denied')
+                break
 
-        if ttl <= 0: return Result(400, _("Token already expired"))  # 凭证已经过期
+        return Result(code, message, data={ 'roles': role_names })
 
-        cache_service.set_revoked_token(jti, ttl)
-        return Result(200, _("Token revoked successfully"))
+    def login(self, credentials) -> Result:
+        _ = locale.get()
+        client_id = credentials.get('client_id')
+        client_secret = credentials.get('client_secret')
 
-    @jwt.token_in_blocklist_loader
-    def validate_token(self, decrypted_token) -> bool:
-        jti = decrypted_token['jti']
-        return cache_service.is_token_revoked(jti)  # 通过缓存检查token是否已经被撤销
+        stored_secret = CLIENT_SECRETS.get(client_id)
+        if stored_secret is None or stored_secret != client_secret:
+            return Result(401, _('invalid credentials'))
+
+        # jwt设置过期时间为7天
+        expires_at = 604800
+        jwt_payload = {
+            'jti': str(uuid.uuid4()),
+            'type': ServiceAuthServiceV2.jwt_type,  # 用户端jwt
+            'roles': ['plain']  # 默认权限
+        }
+
+        access_token = create_access_token(
+            identity=client_id,
+            additional_claims=jwt_payload,
+            expires_delta=timedelta(seconds=expires_at)
+        )
+
+        return Result(200, data={
+            'access_token': access_token,
+            'token_type': 'Bearer',
+            'expires_at': expires_at
+        }, message=_("Authorize success"))  # 签发jwt
+
+    def logout(self) -> Result:
+        _ = locale.get()
+        result = self.revoke_token()  # 撤销用户登录令牌
+        if result.code != 200:
+            return result  # 如果撤销失败，返回错误信息
+        return Result(200, _("Service logged out successfully"))
 
 
-auth_service_v1 = AuthServiceV1()  # 认证服务v1
-auth_service_v2 = AuthServiceV2()  # 认证服务v2
+user_auth_service_v1 = UserAuthServiceV1()  # 认证服务v1
+
+user_auth_service_v2 = UserAuthServiceV2()  # 用户认证服务v2
+service_auth_service_v2 = ServiceAuthServiceV2()  # 服务认证服务v2
 
 
 

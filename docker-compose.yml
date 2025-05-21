@@ -4,7 +4,7 @@ services:
 #  musicatri:
 #    image: pineclone/musicatri:dev-base-v2.1.0
 ##    build:
-##      context.py: .
+##      auth_client.py: .
 ##      dockerfile: Dockerfile
 #    entrypoint: /bin/bash
 #    tty: true

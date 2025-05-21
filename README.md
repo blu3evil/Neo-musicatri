@@ -20,7 +20,7 @@ musicatri1  # 项目根目录
 ├── auth-server.yaml  # 项目运行参数配置文件
 ├── deploy  # docker相关文件目录, 详情参考[项目部署]-[docker部署]
 ├── langfiles  # 本地化目录
-├── context.py.py  # 项目程序启动python文件
+├── auth_client.py.py  # 项目程序启动python文件
 └── website  # 项目前端页面文件
 ```
 
@@ -160,7 +160,7 @@ pip install -r requirements.txt  # 安装项目所需依赖
 全部配置完成后，通过python命令来启动机器人应用
 
 ```bash
-python context.py.py
+python auth_client.py.py
 ```
 
 如果一切顺利的话，你应该可以在你的服务器当中看到机器人上线了，你可以在聊天框输入

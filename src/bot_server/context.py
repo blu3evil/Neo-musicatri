@@ -4,12 +4,12 @@ from bot_server.bot.atri.context import BotAtriContext
 from common.utils.locale import FlaskLocaleFactory
 from common.utils.context import *
 
-@EnableNacos()  # 注册发现
+@EnableNacosRegister()  # 注册发现
 @EnableSwagger()  # 接口文档
 @EnableCors()  # 启用cors
 # @EnableCache()
 @EnableI18N(factory_supplier=FlaskLocaleFactory)  # 启用本地化
-class ServerBotContext(PluginSupportMixin, WebApplicationContext):
+class BotServerContext(PluginSupportMixin, WebApplicationContext):
     """ 机器人服务，将机器人操作封装为API接口，提供HTTP调用的能力 """
     # 字体: https://toolinone.com/cn/text-ascii/ Slant
     banner = """
@@ -40,5 +40,5 @@ class ServerBotContext(PluginSupportMixin, WebApplicationContext):
             self._init_views()
         return InitHook(hook_func)
 
-context = ServerBotContext()
+context = BotServerContext()
 context.initialize()

@@ -3,7 +3,7 @@
 """
 from datetime import time, datetime
 
-from auth_server.services.auth_service import auth_service_v2
+from auth_server.services.auth_service import user_auth_service_v2
 from flask import Blueprint, jsonify
 import time, math
 from auth_server.context import context
@@ -56,7 +56,7 @@ def health():
 # @auth_service_v1.role_required('user')
 @status_bp_v1.route('/info', methods=['GET'])
 @cache.cached(timeout=60)
-@auth_service_v2.validate_required()
+@user_auth_service_v2.validate_required()
 def info():
     """
     服务器描述接口

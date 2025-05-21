@@ -5,7 +5,7 @@ from common.domain.models import Result
 
 locale = context.locale
 
-class UserService:
+class UserServiceV1:
     @staticmethod
     def get_user_info(user_id):
         """ 获取用户discord账户信息 """
@@ -48,10 +48,10 @@ class UserService:
     @staticmethod
     def get_user_details(user_id):
         """ 获取用户详细信息，用于全局展示数据 """
-        info_result = user_service.get_user_info(user_id)  # 获取用户信息
+        info_result = user_service_v1.get_user_info(user_id)  # 获取用户信息
         if info_result.code != 200: return info_result
 
-        role_result = user_service.get_user_roles(user_id)  # 获取用户权限信息
+        role_result = user_service_v1.get_user_roles(user_id)  # 获取用户权限信息
         if role_result.code != 200: return role_result
 
         info_result.data['roles'] = role_result.data  # 成功获取用户以及权限信息
@@ -157,7 +157,6 @@ class UserService:
             'users': preview_data
         })
 
-
     @staticmethod
     def get_all_roles():
         """ 获取所有可用的权限级别 """
@@ -170,12 +169,10 @@ class UserService:
             'disabled': role.disabled
         } for role in roles])
 
-
     @staticmethod
     def _update_user_status(user: DiscordUser, is_active: bool):
         """ 更新用户账户当前状态 """
         user.is_active = is_active
-
 
     @staticmethod
     def _update_user_roles(user: DiscordUser, role_names: list[str]):
@@ -186,9 +183,7 @@ class UserService:
             raise RuntimeError(_('One or more roles are invalid'))
         user.roles = roles  # 修改用户权限
 
-
-    @staticmethod
-    def update_user(user_id: int, data: dict):
+    def update_user(self, user_id: int, data: dict):
         """ 部分更新更新用户数据 """
         _ = locale.get()
         user = db.session.query(DiscordUser).get(user_id)
@@ -197,13 +192,13 @@ class UserService:
 
         if 'is_active' in data:
             try:
-                UserService._update_user_status(user, data['is_active'])
+                self._update_user_status(user, data['is_active'])
             except Exception as e:
                 return Result(500, _('failed in updating user active status: %s') % e)
 
         if 'roles' in data:
             try:
-                UserService._update_user_roles(user, data['roles'])
+                self._update_user_roles(user, data['roles'])
             except Exception as e:
                 return Result(500, _('failed in updating user roles: %s') % e)
 
@@ -224,7 +219,8 @@ class UserService:
         db.session.delete(user)  # 删除用户数据
         db.session.commit()
 
-        result = cache_service.clear_user_session(user_id=user_id)  # 注销用户会话
+        # result = cache_service.clear_user_session(user_id=user_id)  # 注销用户会话
+        result = cache_service.clear_user_token()
         if result.code != 200: return result
 
         result = cache_service.clear_user_info(user_id=user_id)  # 清理用户数据缓存
@@ -232,5 +228,13 @@ class UserService:
 
         return Result(200, _('user deleted successfully'))
 
+    @staticmethod
+    def get_all_tokens(user_id: str) -> Result:
+        """ 获取指定用户的所有token """
+        result = cache_service.get_user_tokens(user_id)
+        return result
 
-user_service = UserService()
+
+user_service_v1 = UserServiceV1()
+
+

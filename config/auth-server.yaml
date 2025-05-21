@@ -101,12 +101,12 @@ application:
     server-addr: localhost
     server-port: 8848
     registration:
-      service-name: server-auth
+      service-name: auth-server
       service-addr: localhost
       service-port: 5000
       heartbeat-interval: 10
   swagger:
-    title: server-auth API接口文档
+    title: auth-server API接口文档
     uiversion: 3
     description: 认证服务API接口文档
     version: 0.2.0

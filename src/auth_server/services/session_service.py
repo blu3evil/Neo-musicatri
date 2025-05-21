@@ -7,7 +7,7 @@ from auth_server.services.cache_service import cache_service
 from common.utils.context import SessionConfigKey
 from common.domain.models import Result
 
-# redis = context.py.redis
+# redis = auth_client.py.redis
 session = context.session
 config = context.config
 locale = context.locale

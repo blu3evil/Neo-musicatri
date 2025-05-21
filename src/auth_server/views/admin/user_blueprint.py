@@ -1,8 +1,8 @@
 """ 管理员用户接口 """
 from flask import Blueprint, request
 
-from auth_server.services.auth_service import auth_service_v2
-from auth_server.services.user_service import user_service
+from auth_server.services.auth_service import user_auth_service_v2
+from auth_server.services.user_service import user_service_v1
 from auth_server.context import context
 
 admin_user_bp_v1 = Blueprint('admin_user_bp_v1', __name__, url_prefix='/api/v1/admin/users')
@@ -14,7 +14,7 @@ aspect = context.aspect
 # @auth_service_v1.login_required
 # @auth_service_v1.role_required('admin')
 @admin_user_bp_v1.route('/preview/all', methods=['GET'])
-@auth_service_v2.validate_required(['user', 'admin'])
+@user_auth_service_v2.validate_required(['user', 'admin'])
 def get_all_users_preview():
     """
     用户概览获取接口
@@ -83,13 +83,13 @@ def get_all_users_preview():
         'global_name': args.get('global_name', type=str),
         'is_active': args.get('is_active', type=int)
     }
-    result = user_service.get_all_users_preview(condition)
+    result = user_service_v1.get_all_users_preview(condition)
     return result.as_response()
 
 # @auth_service_v1.login_required
 # @auth_service_v1.role_required('admin')
 @admin_user_bp_v1.route('/preview', methods=['GET'])
-@auth_service_v2.validate_required(['user', 'admin'])
+@user_auth_service_v2.validate_required(['user', 'admin'])
 @aspect.pagination_query()  # 分页
 def get_users_preview(current_page, page_size):
     """
@@ -180,13 +180,13 @@ def get_users_preview(current_page, page_size):
         'global_name': args.get('global_name', type=str),
         'is_active': args.get('is_active', type=int)
     }
-    result = user_service.get_users_preview(condition, current_page, page_size)
+    result = user_service_v1.get_users_preview(condition, current_page, page_size)
     return result.as_response()
 
 # @auth_service_v1.login_required
 # @auth_service_v1.role_required('admin')
 @admin_user_bp_v1.route('<int:user_id>/details', methods=['GET'])
-@auth_service_v2.validate_required(['user', 'admin'])
+@user_auth_service_v2.validate_required(['user', 'admin'])
 def get_user_details(user_id):
     """
     获取指定用户的详细信息
@@ -282,13 +282,13 @@ def get_user_details(user_id):
       403:
         description: 权限不足，我发请求此接口
     """
-    result = user_service.get_user_details(user_id)
+    result = user_service_v1.get_user_details(user_id)
     return result.as_response()
 
 # @auth_service_v1.login_required
 # @auth_service_v1.role_required('admin')
 @admin_user_bp_v1.route('roles', methods=['GET'])
-@auth_service_v2.validate_required(['user', 'admin'])
+@user_auth_service_v2.validate_required(['user', 'admin'])
 def get_all_roles():
     """
     获取所有权限级别
@@ -324,13 +324,13 @@ def get_all_roles():
                     example: false
                     description: 此属性用于描述某个权限等级是否能被添加到用户，或是从用户身上移除
     """
-    result = user_service.get_all_roles()
+    result = user_service_v1.get_all_roles()
     return result.as_response()
 
 # @auth_service_v1.login_required
 # @auth_service_v1.role_required('admin')
 @admin_user_bp_v1.route('/<int:user_id>', methods=['PATCH'])
-@auth_service_v2.validate_required(['user', 'admin'])
+@user_auth_service_v2.validate_required(['user', 'admin'])
 def patch_user(user_id):
     """
     增量更新用户数据
@@ -372,13 +372,13 @@ def patch_user(user_id):
         'is_active': body.get('is_active'),
         'roles': body.get('roles')
     }
-    result = user_service.update_user(user_id, data)
+    result = user_service_v1.update_user(user_id, data)
     return result.as_response()
 
 # @auth_service_v1.login_required
 # @auth_service_v1.role_required('admin')
 @admin_user_bp_v1.route('<int:user_id>', methods=['DELETE'])
-@auth_service_v2.validate_required(['user', 'admin'])
+@user_auth_service_v2.validate_required(['user', 'admin'])
 def delete_user(user_id):
     """
     删除用户
@@ -403,5 +403,5 @@ def delete_user(user_id):
               example: "user deleted successfully"
               description: 成功删除用户
     """
-    result = user_service.delete_user(user_id)
+    result = user_service_v1.delete_user(user_id)
     return result.as_response()
