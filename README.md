@@ -2,7 +2,7 @@
 
 - 原项目github仓库地址：https://musicatri.github.io/
 
-Discord开源音乐机器人，此仓库该项目为二次开发版本
+Discord开源音乐机器人，此仓库该项目为重构二开版本
 **此分支为Musicatri原始项目代理增强版本，添加Clash容器作为代理节点以支持在云服务器上部署**
 
 ## 1.项目简介
